@@ -2,10 +2,10 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Launch Fractal (CMake Build)",
+      "name": "Launch Mirael (CMake Build)",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/debug/fractal.exe",
+      "program": "${workspaceFolder}/build/mirael.exe",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
