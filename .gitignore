@@ -1,0 +1,61 @@
+# Build directories
+/build/
+/out/
+/bin/
+/lib/
+/Debug/
+/Release/
+CMakeFiles/
+CMakeCache.txt
+Makefile
+cmake_install.cmake
+
+# VS Code settings
+# .vscode/ # temporarily disabled during initial dev
+
+# Compiled object files
+*.o
+*.obj
+*.lo
+*.slo
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Static and Shared libs
+*.lib
+*.a
+*.la
+*.lo
+*.def
+*.exp
+*.dll
+*.so
+*.dylib
+
+# MSVC debug/intermediate files
+*.ilk
+*.pdb
+*.exp
+*.idb
+
+# Logs and temp
+*.log
+*.tmp
+
+# Windows noise
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+
+# Clang/LLVM tooling
+compile_commands.json
