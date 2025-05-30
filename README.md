@@ -15,9 +15,8 @@ A program for visually exploring planar graph embeddings.
 - [SDL2](https://wiki.libsdl.org/SDL2/FrontPage)
   - [Release 2.32.6](https://github.com/libsdl-org/SDL/releases?q=2.32.6&expanded=true)
 - [OpenGL](https://www.opengl.org/)
+  - [GLAD](https://github.com/Dav1dde/glad/tree/master?tab=readme-ov-file)
 - [Dear ImGui](https://github.com/ocornut/imgui)
-- [LodePNG](https://github.com/lvandeve/lodepng)
-- [nlohmann/json](https://github.com/nlohmann/json)
 
 ### Future / Under Consideration
 - [LodePNG](https://github.com/nothings/stb)
