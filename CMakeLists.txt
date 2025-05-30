@@ -3,6 +3,7 @@ project(mirael)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # SDL2 setup
 set(SDL2_ROOT "D:/dev/libs/SDL2-2.32.6")

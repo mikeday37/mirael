@@ -1,13 +1,11 @@
-#include <string>
-#include <format>
-
 #include <SDL.h>
-
 #include "glad/glad.h"
-
 #include "imgui.h"
 #include "backends/imgui_impl_sdl2.h"
 #include "backends/imgui_impl_opengl3.h"
+
+#include <string>
+#include <format>
 
 #include "debug.hpp"
 #include "box.hpp"
@@ -107,7 +105,8 @@ int main(int argc, char* argv[]) {
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		// draw the box
-		//box.Render(renderer);
+		Graphics g;
+		box.Render(g);
 
 		// render the frame
 		ImGui::Render();

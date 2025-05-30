@@ -1,6 +1,7 @@
 #include <SDL.h>
 #include "box.hpp"
-#include <glad/glad.h>
+#include "graphics.hpp"
+#include "color.hpp"
 
 Box::Box(int x, int y, int w, int h) {
 	rect_ = { x, y, w, h };
@@ -26,10 +27,15 @@ void Box::HandleEvent(const SDL_Event &e) {
 	}
 }
 
-void Box::Render(SDL_Renderer *renderer) const {
-	// TODO
+void Box::Render(Graphics &g) const {
+	g.Rectangle(
+		{static_cast<float>(rect_.x), static_cast<float>(rect_.y)},
+		{static_cast<float>(rect_.x + rect_.w), static_cast<float>(rect_.y + rect_.h)},
+		4.0f,
+		dragging_ ? Color::Black : Color::White,
+		Color::Cyan
+	);
 }
-
 
 bool Box::HitTest(int x, int y) const {
 	bool hit =
