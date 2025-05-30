@@ -1,9 +1,11 @@
 #include <SDL.h>
 #include "box.hpp"
+#include <glad/glad.h>
 
-Box::Box(int x, int y, int w, int h, SDL_Color color) {
+Box::Box(int x, int y, int w, int h) {
 	rect_ = { x, y, w, h };
-	color_ = color;
+	initialX_ = x;
+	initialY_ = y;
 }
 
 void Box::HandleEvent(const SDL_Event &e) {
@@ -25,9 +27,9 @@ void Box::HandleEvent(const SDL_Event &e) {
 }
 
 void Box::Render(SDL_Renderer *renderer) const {
-	SDL_SetRenderDrawColor(renderer, color_.r, color_.g, color_.b, color_.a);
-	SDL_RenderDrawRect(renderer, &rect_);
+	// TODO
 }
+
 
 bool Box::HitTest(int x, int y) const {
 	bool hit =
@@ -37,4 +39,9 @@ bool Box::HitTest(int x, int y) const {
 		y <= rect_.y + rect_.h;
 
 	return hit;
+}
+
+void Box::ResetPosition() {
+	rect_.x = initialX_;
+	rect_.y = initialY_;
 }
