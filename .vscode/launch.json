@@ -5,7 +5,7 @@
       "name": "Launch Mirael (CMake Build)",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/mirael.exe",
+      "program": "${workspaceFolder}/out/build/MSVC_x64/Debug/mirael.exe",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",

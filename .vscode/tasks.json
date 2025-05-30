@@ -7,7 +7,7 @@
       "command": "cmake",
       "args": [
         "--build",
-        "build",
+        "out/build/MSVC_x64",
         "--config",
         "Debug"
       ],
