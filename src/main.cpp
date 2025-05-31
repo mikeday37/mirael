@@ -9,6 +9,59 @@
 
 #include "debug.hpp"
 #include "box.hpp"
+#include "uistate.hpp"
+
+void ShowFramerateWindow(UiState &uiState)
+{
+	if (ImGui::Begin("Framerate", NULL,
+			ImGuiWindowFlags_AlwaysAutoResize |
+			ImGuiWindowFlags_NoFocusOnAppearing |
+			ImGuiWindowFlags_NoTitleBar |
+			ImGuiWindowFlags_NoCollapse |
+			ImGuiWindowFlags_NoDecoration |
+			ImGuiWindowFlags_NoBackground
+		)) {
+
+		auto cursorPos = ImGui::GetCursorScreenPos();
+		auto pos = ImGui::GetWindowPos();
+		auto size = ImGui::GetWindowSize();
+
+		// draw the text in-window to autosize it
+		auto text = std::format("FPS: {:.1f}", ImGui::GetIO().Framerate);
+		ImGui::TextColored(ImVec4(0, 1.0f, 0, 1.0f), text.c_str());
+
+		// now redraw the background and text over everything so it's always visible
+		auto drawList = ImGui::GetForegroundDrawList();
+		drawList->AddRectFilled(pos, ImVec2(pos.x + size.x, pos.y + size.y), IM_COL32(0,0,0,205));
+		drawList->AddText(
+				ImVec2(cursorPos.x, cursorPos.y),
+				IM_COL32(0, 255, 0, 255),
+				text.c_str());
+	}
+	ImGui::End();
+}
+
+void ShowOptionsWindow(UiState &uiState, Box &box)
+{
+	if (!ImGui::Begin("Controls", NULL, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NavFlattened)) {
+		ImGui::End();
+		return;
+	}
+
+	if (ImGui::BeginMenuBar()) {
+		if (ImGui::BeginMenu("Debug")) {
+			ImGui::Checkbox("Show ImGui Demo", &uiState.showDebug);
+			ImGui::Checkbox("Show Framerate", &uiState.showFramerate);
+			ImGui::EndMenu();
+		}
+		ImGui::EndMenuBar();
+	}
+
+	if (ImGui::Button("Reset Box Position"))
+		box.ResetPosition();
+
+	ImGui::End();
+}
 
 int main(int argc, char* argv[]) {
 
@@ -70,16 +123,19 @@ int main(int argc, char* argv[]) {
 	Box box = { 100, 100, 200, 150 };
 
 	// main loop
+	UiState uiState;
 	while (running) {
 
 		// get all events for this frame
 		while (SDL_PollEvent(&e)) {
-			ImGui_ImplSDL2_ProcessEvent(&e);
+
+			bool imGuiHandled = ImGui_ImplSDL2_ProcessEvent(&e);
 
 			if (e.type == SDL_QUIT)
 				running = false;
 
-			box.HandleEvent(e);
+			if (!io.WantCaptureKeyboard && !io.WantCaptureMouse)
+				box.HandleEvent(e);
 		}
 
 		// start imgui frame
@@ -87,22 +143,18 @@ int main(int argc, char* argv[]) {
 		ImGui_ImplSDL2_NewFrame();
 		ImGui::NewFrame();
 
-		// menu bar
-		if (ImGui::BeginMainMenuBar()) {
-			if (ImGui::BeginMenu("Box")) {
-				if (ImGui::MenuItem("Reset Position")) {
-					box.ResetPosition();
-				}
-				ImGui::EndMenu();
-			}
-			ImGui::EndMainMenuBar();
-		}
-
-		// TODO: add ImGui UI elements
-
 		// clear screen with deep blue
 		glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
+
+		// show the UI, which begins with the Options Window
+		ShowOptionsWindow(uiState, box);
+		if (uiState.showDebug) {
+			ImGui::ShowDemoWindow(&uiState.showDebug);
+		}
+		if (uiState.showFramerate) {
+			ShowFramerateWindow(uiState);
+		}
 
 		// draw the box
 		Graphics g;
@@ -128,4 +180,3 @@ int main(int argc, char* argv[]) {
 
 	return 0;
 }
-
