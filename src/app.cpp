@@ -106,6 +106,7 @@ void App::Startup(StartupContext &c)
 // helper methods used by MainLoop()
 void ShowFramerateWindow(UiState &uiState);
 void ShowOptionsWindow(UiState &uiState, Box &box);
+void ShowAboutWindow(UiState &uiState);
 
 void App::MainLoop(StartupContext &c)
 {
@@ -151,6 +152,9 @@ void App::MainLoop(StartupContext &c)
 		}
 		if (uiState.showFramerate) {
 			ShowFramerateWindow(uiState);
+		}
+		if (uiState.showAbout) {
+			ShowAboutWindow(uiState);
 		}
 
 		// draw the box
@@ -234,11 +238,70 @@ void ShowOptionsWindow(UiState &uiState, Box &box)
 			ImGui::Checkbox("Show Framerate", &uiState.showFramerate);
 			ImGui::EndMenu();
 		}
+		if (ImGui::BeginMenu("Help")) {
+			ImGui::MenuItem("About", NULL, &uiState.showAbout);
+			ImGui::EndMenu();
+		}
 		ImGui::EndMenuBar();
 	}
 
 	if (ImGui::Button("Reset Box Position"))
 		box.ResetPosition();
+
+	ImGui::End();
+}
+
+void AttributionLine(const char *library, const char *libraryUrl, const char *license, const char *licenseUrl, const char *author)
+{
+		ImGui::TextLinkOpenURL(library, libraryUrl);
+		ImGui::SameLine();
+		ImGui::Text(" - ");
+		ImGui::SameLine();
+		ImGui::TextLinkOpenURL(license, licenseUrl);
+		ImGui::SameLine();
+		ImGui::Text(" - ");
+		ImGui::SameLine();
+		ImGui::Text(author);
+}
+
+void ShowAboutWindow(UiState &uiState)
+{
+	if (ImGui::Begin("About Mirael", &uiState.showAbout, ImGuiWindowFlags_AlwaysAutoResize)) {
+
+		ImGui::Text("");
+		ImGui::Text("(c) 2025 Mike Day");
+		ImGui::Text("");
+    	ImGui::Separator();
+		ImGui::Text("");
+		ImGui::Text("Mirael is my modern C++ playground for experimenting with");
+		ImGui::Text("algorithms and real-time visualizations.");
+		ImGui::Text("");
+		ImGui::Separator();
+		ImGui::Text("");
+		ImGui::Text("This project uses the following 3rd party libraries and");
+		ImGui::Text("acknowledges their licenses with thanks to their authors:");
+		ImGui::Text("");
+
+		AttributionLine(
+			"SDL2", "https://wiki.libsdl.org/SDL2/FrontPage",
+			"zlib license", "https://github.com/libsdl-org/SDL/blob/3a4de2ad89606e666168677ab00bcab2b9d2e734/LICENSE.txt",
+			"Sam Lantinga"
+		);
+
+		AttributionLine(
+			"GLAD", "https://github.com/Dav1dde/glad/tree/master?tab=readme-ov-file",
+			"MIT license##1", "https://github.com/Dav1dde/glad/blob/e86f90457371c6233053bacf0d6f486a51ddcd67/LICENSE",
+			"David Herberth"
+		);
+
+		AttributionLine(
+			"Dear ImGui", "https://github.com/ocornut/imgui",
+			"MIT license##2", "https://github.com/ocornut/imgui/blob/69e1fb50cacbde1c2c585ae59898e68c1818d9b7/LICENSE.txt",
+			"Omar Cornut"
+		);
+
+		ImGui::Text("");
+	}
 
 	ImGui::End();
 }
