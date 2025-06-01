@@ -22,3 +22,10 @@ A program for visually exploring planar graph embeddings.
 - [nlohmann/json](https://github.com/nlohmann/json)
 - [LodePNG](https://github.com/nothings/stb)
 - [stb_image_write](https://github.com/nothings/stb)
+
+## License Attributions
+
+This project uses the following 3rd party libraries and acknowledges their licenses with thanks to their authors:
+- SDL2 - [zlib license](LICENSES/SDL2_LICENSE.txt) - Sam Lantinga
+- GLAD - [MIT license](LICENSES/GLAD_LICENSE.txt) - David Herberth
+- Dear ImGui - [MIT license](LICENSES/Dear_ImGui_LICENSE.txt) - Omar Cornut
