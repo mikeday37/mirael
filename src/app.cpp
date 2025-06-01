@@ -231,12 +231,7 @@ void ToggleFullscreen(SDL_Window *window, bool fullscreen)
 		SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
 	} else {
 		SDL_SetWindowFullscreen(window, 0);
-		SDL_SetWindowResizable(window, SDL_TRUE);
 	}
-
-	/*int w, h;
-	SDL_GetWindowSize(window, &w, &h);
-	glViewport(0, 0, w, h);	*/
 }
 
 void ShowOptionsWindow(SDL_Window *window, UiState &uiState, Box &box)
