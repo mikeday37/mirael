@@ -231,11 +231,18 @@ void ShowOptionsWindow(UiState &uiState, Box &box)
 		ImGui::End();
 		return;
 	}
-
 	if (ImGui::BeginMenuBar()) {
+		if (ImGui::BeginMenu("File")) {
+			if (ImGui::MenuItem("Exit")) {
+				SDL_Event e;
+				e.type = SDL_QUIT;
+				SDL_PushEvent(&e);
+			}
+			ImGui::EndMenu();
+		}
 		if (ImGui::BeginMenu("Debug")) {
-			ImGui::Checkbox("Show ImGui Demo", &uiState.showDebug);
-			ImGui::Checkbox("Show Framerate", &uiState.showFramerate);
+			ImGui::MenuItem("Show ImGui Demo", nullptr, &uiState.showDebug);
+			ImGui::MenuItem("Show Framerate", nullptr, &uiState.showFramerate);
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Help")) {
