@@ -1,6 +1,8 @@
 #pragma once
-#include <SDL.h>
+
 #include "graphics.hpp"
+
+#include <SDL.h>
 
 class Box {
 public:

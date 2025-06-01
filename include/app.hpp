@@ -1,5 +1,8 @@
 #pragma once
 
+#include <SDL.h>
+#include "imgui.h"
+
 class App {
 public:
 	[[nodiscard]] static int Main(int argc, char *argv[]);
@@ -19,6 +22,11 @@ private:
 		StartupContext(App &app);
 		~StartupContext();
 
-		// useful stuff for tracking what needs to be passed around, what's been created so far and needs to be destroyed, etc.
+		bool sdlInitialized = false;
+		SDL_Window* window = NULL;
+		SDL_GLContext gl_context = NULL;
+		ImGuiContext* imGuiContext = NULL;
+		bool implSDL2Initialized = false;
+		bool implOpenGL3Initialized = false;
 	};
 };
