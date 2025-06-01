@@ -197,7 +197,7 @@ void App::Shutdown(StartupContext &c)
 
 void ShowFramerateWindow(UiState &uiState)
 {
-	if (ImGui::Begin("Framerate", NULL,
+	if (ImGui::Begin("Framerate", nullptr,
 			ImGuiWindowFlags_AlwaysAutoResize |
 			ImGuiWindowFlags_NoFocusOnAppearing |
 			ImGuiWindowFlags_NoTitleBar |
@@ -227,7 +227,7 @@ void ShowFramerateWindow(UiState &uiState)
 
 void ShowOptionsWindow(UiState &uiState, Box &box)
 {
-	if (!ImGui::Begin("Controls", NULL, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NavFlattened)) {
+	if (!ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NavFlattened)) {
 		ImGui::End();
 		return;
 	}
@@ -239,7 +239,7 @@ void ShowOptionsWindow(UiState &uiState, Box &box)
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Help")) {
-			ImGui::MenuItem("About", NULL, &uiState.showAbout);
+			ImGui::MenuItem("About", nullptr, &uiState.showAbout);
 			ImGui::EndMenu();
 		}
 		ImGui::EndMenuBar();

@@ -23,9 +23,9 @@ private:
 		~StartupContext();
 
 		bool sdlInitialized = false;
-		SDL_Window* window = NULL;
-		SDL_GLContext gl_context = NULL;
-		ImGuiContext* imGuiContext = NULL;
+		SDL_Window* window = nullptr;
+		SDL_GLContext gl_context = nullptr;
+		ImGuiContext* imGuiContext = nullptr;
 		bool implSDL2Initialized = false;
 		bool implOpenGL3Initialized = false;
 	};
