@@ -1,5 +1,7 @@
 #pragma once
 
+#include "box.hpp"
+
 #include <SDL.h>
 #include "imgui.h"
 
@@ -8,25 +10,30 @@ public:
 	[[nodiscard]] static int Main(int argc, char *argv[]);
 
 private:
-	int Run();
+	App() = default;
+	~App();
 
-	struct StartupContext;
+	void Startup();
+	void Shutdown();
 
-	void Startup(StartupContext &c);
-	void MainLoop(StartupContext &c);
-	void Shutdown(StartupContext &c);
+	void MainLoop();
 
-	struct StartupContext {
-		App &_app;
+	void ShowOptionsWindow(Box &box);
+	void OnFullscreenToggled();
+	void ShowFramerateWindow();
+	void ShowAboutWindow();
 
-		StartupContext(App &app);
-		~StartupContext();
+	// subsystem setup
+	bool sdlInitialized_ = false;
+	SDL_Window* window_ = nullptr;
+	SDL_GLContext glContext_ = nullptr;
+	ImGuiContext* imGuiContext_ = nullptr;
+	bool implSDL2Initialized_ = false;
+	bool implOpenGL3Initialized_ = false;
 
-		bool sdlInitialized = false;
-		SDL_Window* window = nullptr;
-		SDL_GLContext gl_context = nullptr;
-		ImGuiContext* imGuiContext = nullptr;
-		bool implSDL2Initialized = false;
-		bool implOpenGL3Initialized = false;
-	};
+	// app-level ui state
+	bool showDebug_ = false;
+	bool showFramerate_ = false;
+	bool showAbout_ = false;
+	bool fullscreen_ = false;
 };

@@ -1,7 +1,6 @@
 #include "app.hpp"
 #include "debug.hpp"
 #include "box.hpp"
-#include "uistate.hpp"
 
 #include <exception>
 #include <string>
@@ -16,17 +15,11 @@
 int App::Main(int argc, char *argv[])
 {
 	App app;
-	return app.Run();
-}
-
-int App::Run()
-{
 	int exitCode = 0;
-	StartupContext c(*this);
 
 	try {
-		Startup(c);
-		MainLoop(c);
+		app.Startup();
+		app.MainLoop();
 	}
 	catch (std::exception &e) {
 		trace(std::format("Exception caught: {}", e.what()));
@@ -37,15 +30,24 @@ int App::Run()
 		exitCode = 2;
 	}
 
-	// Shutdown(c) will be called when StartupContext leaves scope.
+	// Shutdown() will be called when App leaves scope.
 
     return exitCode;
 }
 
-App::StartupContext::StartupContext(App &app) : _app(app) {}
-App::StartupContext::~StartupContext() {_app.Shutdown(*this);}
+App::~App() {
+	try {
+		Shutdown();
+	}
+	catch (std::exception &e) {
+		trace(std::format("Exception caught during Shutdown(): {}", e.what()));
+	}
+	catch (...) {
+		trace("Unknown exception caught during Shutdown().");
+	}
+}
 
-void App::Startup(StartupContext &c)
+void App::Startup()
 {
 	trace("=== Startup ===");
 
@@ -53,21 +55,21 @@ void App::Startup(StartupContext &c)
 	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
 		throw std::runtime_error(std::format("SDL_Init(SDL_INIT_VIDEO) failed: {}", SDL_GetError()));
 	}
-	c.sdlInitialized = true;
+	sdlInitialized_ = true;
 
-	c.window = SDL_CreateWindow(
+	window_ = SDL_CreateWindow(
 		"Mirael",
 		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 		800, 600,
 		SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL
 	);
-	if (!c.window) {
+	if (!window_) {
 		throw std::runtime_error(std::format("SDL_CreateWindow(\"Mirael\",...) failed: {}", SDL_GetError()));
 	}
 
 	// OpenGL setup
-	c.gl_context = SDL_GL_CreateContext(c.window);
-	if (!c.gl_context) {
+	glContext_ = SDL_GL_CreateContext(window_);
+	if (!glContext_) {
 		throw std::runtime_error(std::format("SDL_GL_CreateContext(c.window) failed: {}", SDL_GetError()));
 	}
 	if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
@@ -86,29 +88,51 @@ void App::Startup(StartupContext &c)
 
 	// imgui setup
 	IMGUI_CHECKVERSION();
-	c.imGuiContext = ImGui::CreateContext();
-	if (!c.imGuiContext) {
+	imGuiContext_ = ImGui::CreateContext();
+	if (!imGuiContext_) {
 		throw std::runtime_error("ImGui::CreateContext() failed.");
 	}
 	ImGui::StyleColorsDark();
 
-	if (!ImGui_ImplSDL2_InitForOpenGL(c.window, c.gl_context)) {
+	if (!ImGui_ImplSDL2_InitForOpenGL(window_, glContext_)) {
 		throw std::runtime_error("ImGui_ImplSDL2_InitForOpenGL(window, gl_context) failed.");
 	}
-	c.implSDL2Initialized = true;
+	implSDL2Initialized_ = true;
 
 	if (!ImGui_ImplOpenGL3_Init("#version 130")) {
 		throw std::runtime_error("ImGui_ImplOpenGL3_Init(\"#version 130\") failed.");
 	}
-	c.implOpenGL3Initialized = true;
+	implOpenGL3Initialized_ = true;
 }
 
-// helper methods used by MainLoop()
-void ShowFramerateWindow(UiState &uiState);
-void ShowOptionsWindow(SDL_Window *window, UiState &uiState, Box &box);
-void ShowAboutWindow(UiState &uiState);
+void App::Shutdown()
+{
+	trace("=== Shutdown ===");
 
-void App::MainLoop(StartupContext &c)
+	// cleanup everything established during Startup() in reverse order.
+
+	if (implOpenGL3Initialized_)
+		ImGui_ImplOpenGL3_Shutdown();
+
+	if (implSDL2Initialized_)
+		ImGui_ImplSDL2_Shutdown();
+
+	if (imGuiContext_)
+		ImGui::DestroyContext(imGuiContext_);
+
+	if (glContext_)
+		SDL_GL_DeleteContext(glContext_);
+
+	if (window_)
+		SDL_DestroyWindow(window_);
+
+	if (sdlInitialized_)
+		SDL_Quit();
+
+	trace("Shutdown complete.");
+}
+
+void App::MainLoop()
 {
 	trace("=== Main Loop ===");
 
@@ -118,7 +142,6 @@ void App::MainLoop(StartupContext &c)
 	Box box = { 100, 100, 200, 150 };
 
 	// main loop
-	UiState uiState;
 	while (running) {
 
 		// get all events for this frame
@@ -146,15 +169,15 @@ void App::MainLoop(StartupContext &c)
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		// show the UI, which begins with the Options Window
-		ShowOptionsWindow(c.window, uiState, box);
-		if (uiState.showDebug) {
-			ImGui::ShowDemoWindow(&uiState.showDebug);
+		ShowOptionsWindow(box);
+		if (showDebug_) {
+			ImGui::ShowDemoWindow(&showDebug_);
 		}
-		if (uiState.showFramerate) {
-			ShowFramerateWindow(uiState);
+		if (showFramerate_) {
+			ShowFramerateWindow();
 		}
-		if (uiState.showAbout) {
-			ShowAboutWindow(uiState);
+		if (showAbout_) {
+			ShowAboutWindow();
 		}
 
 		// draw the box
@@ -164,38 +187,59 @@ void App::MainLoop(StartupContext &c)
 		// render the frame
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-		SDL_GL_SwapWindow(c.window);
+		SDL_GL_SwapWindow(window_);
 	}
 }
 
-void App::Shutdown(StartupContext &c)
+void App::OnFullscreenToggled()
 {
-	trace("=== Shutdown ===");
-
-	// cleanup everything established during Startup() in reverse order.
-
-	if (c.implOpenGL3Initialized)
-		ImGui_ImplOpenGL3_Shutdown();
-
-	if (c.implSDL2Initialized)
-		ImGui_ImplSDL2_Shutdown();
-
-	if (c.imGuiContext)
-		ImGui::DestroyContext(c.imGuiContext);
-
-	if (c.gl_context)
-		SDL_GL_DeleteContext(c.gl_context);
-
-	if (c.window)
-		SDL_DestroyWindow(c.window);
-
-	if (c.sdlInitialized)
-		SDL_Quit();
-
-	trace("Shutdown complete.");
+	if (fullscreen_) {
+		SDL_SetWindowFullscreen(window_, SDL_WINDOW_FULLSCREEN_DESKTOP);
+	} else {
+		SDL_SetWindowFullscreen(window_, 0);
+	}
 }
 
-void ShowFramerateWindow(UiState &uiState)
+void App::ShowOptionsWindow(Box &box)
+{
+	if (!ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NavFlattened)) {
+		ImGui::End();
+		return;
+	}
+	if (ImGui::BeginMenuBar()) {
+		if (ImGui::BeginMenu("File")) {
+			if (ImGui::MenuItem("Exit")) {
+				SDL_Event e;
+				e.type = SDL_QUIT;
+				SDL_PushEvent(&e);
+			}
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("View")) {
+			if (ImGui::MenuItem("Fullscreen", nullptr, &fullscreen_)) {
+				OnFullscreenToggled();
+			}
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Debug")) {
+			ImGui::MenuItem("Show ImGui Demo", nullptr, &showDebug_);
+			ImGui::MenuItem("Show Framerate", nullptr, &showFramerate_);
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Help")) {
+			ImGui::MenuItem("About", nullptr, &showAbout_);
+			ImGui::EndMenu();
+		}
+		ImGui::EndMenuBar();
+	}
+
+	if (ImGui::Button("Reset Box Position"))
+		box.ResetPosition();
+
+	ImGui::End();
+}
+
+void App::ShowFramerateWindow()
 {
 	if (ImGui::Begin("Framerate", nullptr,
 			ImGuiWindowFlags_AlwaysAutoResize |
@@ -225,54 +269,6 @@ void ShowFramerateWindow(UiState &uiState)
 	ImGui::End();
 }
 
-void ToggleFullscreen(SDL_Window *window, bool fullscreen)
-{
-	if (fullscreen) {
-		SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
-	} else {
-		SDL_SetWindowFullscreen(window, 0);
-	}
-}
-
-void ShowOptionsWindow(SDL_Window *window, UiState &uiState, Box &box)
-{
-	if (!ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NavFlattened)) {
-		ImGui::End();
-		return;
-	}
-	if (ImGui::BeginMenuBar()) {
-		if (ImGui::BeginMenu("File")) {
-			if (ImGui::MenuItem("Exit")) {
-				SDL_Event e;
-				e.type = SDL_QUIT;
-				SDL_PushEvent(&e);
-			}
-			ImGui::EndMenu();
-		}
-		if (ImGui::BeginMenu("View")) {
-			if (ImGui::MenuItem("Fullscreen", nullptr, &uiState.fullscreen)) {
-				ToggleFullscreen(window, uiState.fullscreen);
-			}
-			ImGui::EndMenu();
-		}
-		if (ImGui::BeginMenu("Debug")) {
-			ImGui::MenuItem("Show ImGui Demo", nullptr, &uiState.showDebug);
-			ImGui::MenuItem("Show Framerate", nullptr, &uiState.showFramerate);
-			ImGui::EndMenu();
-		}
-		if (ImGui::BeginMenu("Help")) {
-			ImGui::MenuItem("About", nullptr, &uiState.showAbout);
-			ImGui::EndMenu();
-		}
-		ImGui::EndMenuBar();
-	}
-
-	if (ImGui::Button("Reset Box Position"))
-		box.ResetPosition();
-
-	ImGui::End();
-}
-
 void AttributionLine(const char *library, const char *libraryUrl, const char *license, const char *licenseUrl, const char *author)
 {
 		ImGui::TextLinkOpenURL(library, libraryUrl);
@@ -286,9 +282,9 @@ void AttributionLine(const char *library, const char *libraryUrl, const char *li
 		ImGui::Text(author);
 }
 
-void ShowAboutWindow(UiState &uiState)
+void App::ShowAboutWindow()
 {
-	if (ImGui::Begin("About Mirael", &uiState.showAbout, ImGuiWindowFlags_AlwaysAutoResize)) {
+	if (ImGui::Begin("About Mirael", &showAbout_, ImGuiWindowFlags_AlwaysAutoResize)) {
 
 		ImGui::Text("");
 		ImGui::Text("(c) 2025 Mike Day");
