@@ -105,7 +105,7 @@ void App::Startup(StartupContext &c)
 
 // helper methods used by MainLoop()
 void ShowFramerateWindow(UiState &uiState);
-void ShowOptionsWindow(UiState &uiState, Box &box);
+void ShowOptionsWindow(SDL_Window *window, UiState &uiState, Box &box);
 void ShowAboutWindow(UiState &uiState);
 
 void App::MainLoop(StartupContext &c)
@@ -146,7 +146,7 @@ void App::MainLoop(StartupContext &c)
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		// show the UI, which begins with the Options Window
-		ShowOptionsWindow(uiState, box);
+		ShowOptionsWindow(c.window, uiState, box);
 		if (uiState.showDebug) {
 			ImGui::ShowDemoWindow(&uiState.showDebug);
 		}
@@ -225,7 +225,21 @@ void ShowFramerateWindow(UiState &uiState)
 	ImGui::End();
 }
 
-void ShowOptionsWindow(UiState &uiState, Box &box)
+void ToggleFullscreen(SDL_Window *window, bool fullscreen)
+{
+	if (fullscreen) {
+		SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+	} else {
+		SDL_SetWindowFullscreen(window, 0);
+		SDL_SetWindowResizable(window, SDL_TRUE);
+	}
+
+	/*int w, h;
+	SDL_GetWindowSize(window, &w, &h);
+	glViewport(0, 0, w, h);	*/
+}
+
+void ShowOptionsWindow(SDL_Window *window, UiState &uiState, Box &box)
 {
 	if (!ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NavFlattened)) {
 		ImGui::End();
@@ -237,6 +251,12 @@ void ShowOptionsWindow(UiState &uiState, Box &box)
 				SDL_Event e;
 				e.type = SDL_QUIT;
 				SDL_PushEvent(&e);
+			}
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("View")) {
+			if (ImGui::MenuItem("Fullscreen", nullptr, &uiState.fullscreen)) {
+				ToggleFullscreen(window, uiState.fullscreen);
 			}
 			ImGui::EndMenu();
 		}
