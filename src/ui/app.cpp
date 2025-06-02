@@ -1,18 +1,13 @@
-#include "app.hpp"
-#include "debug.hpp"
-#include "box.hpp"
-#include "framelimiter.hpp"
+#include "ui_pch.hpp"
 
-#include <exception>
-#include <string>
-#include <format>
-#include <vector>
+#include "ui/app.hpp"
+#include "ui/debug.hpp"
+#include "ui/box.hpp"
+#include "ui/framelimiter.hpp"
+
 #include <unordered_set>
 #include <ranges>
 
-#include <SDL.h>
-#include "glad/glad.h"
-#include "imgui.h"
 #include "backends/imgui_impl_sdl2.h"
 #include "backends/imgui_impl_opengl3.h"
 

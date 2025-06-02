@@ -1,7 +1,8 @@
-#include <SDL.h>
-#include "box.hpp"
-#include "graphics.hpp"
-#include "color.hpp"
+#include "ui_pch.hpp"
+
+#include "ui/box.hpp"
+#include "ui/graphics.hpp"
+#include "ui/color.hpp"
 
 Box::Box(int x, int y, int w, int h) {
 	rect_ = { x, y, w, h };

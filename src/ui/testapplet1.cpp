@@ -1,7 +1,8 @@
-#include "testapplet1.hpp"
-#include "color.hpp"
-#include "graphics.hpp"
-#include "imgui.h"
+#include "ui_pch.hpp"
+
+#include "ui/testapplet1.hpp"
+#include "ui/color.hpp"
+#include "ui/graphics.hpp"
 
 void TestApplet1::OnRenderBackground(Graphics &g) {
     g.Rectangle({10.0f, 10.0f}, {20.f, 20.f}, 3.0f, Color::White, Color::Black);

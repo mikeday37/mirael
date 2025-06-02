@@ -1,8 +1,9 @@
-#include "boxapplet.hpp"
-#include "color.hpp"
-#include "graphics.hpp"
-#include "box.hpp"
-#include "imgui.h"
+#include "ui_pch.hpp"
+
+#include "ui/boxapplet.hpp"
+#include "ui/color.hpp"
+#include "ui/graphics.hpp"
+#include "ui/box.hpp"
 
 BoxApplet::BoxApplet(App &app) :
 	Applet(app),

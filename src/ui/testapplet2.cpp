@@ -1,7 +1,8 @@
-#include "testapplet2.hpp"
-#include "color.hpp"
-#include "graphics.hpp"
-#include "imgui.h"
+#include "ui_pch.hpp"
+
+#include "ui/testapplet2.hpp"
+#include "ui/color.hpp"
+#include "ui/graphics.hpp"
 
 void TestApplet2::OnRenderBackground(Graphics &g) {
     g.Circle({10.0f, 10.0f}, 10.f, 3.0f, Color::White, Color::Black);

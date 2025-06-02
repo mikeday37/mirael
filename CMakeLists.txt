@@ -25,13 +25,29 @@ set(IMGUI_SOURCES
 # GLAD source
 set(GLAD_SOURCE external/glad/src/glad.c)
 
-# main sources
-file(GLOB_RECURSE SOURCES "src/*.cpp")
 
-# executable
-add_executable(mirael src/main.cpp ${SOURCES} ${IMGUI_SOURCES} ${GLAD_SOURCE})
+# === UI Object Library ===
+file(GLOB_RECURSE UI_SOURCES "src/ui/*.cpp")
 
-# includes and linking
+add_library(ui_obj OBJECT ${UI_SOURCES})
+
+target_precompile_headers(ui_obj PRIVATE src/ui/ui_pch.hpp)
+target_include_directories(ui_obj
+	PRIVATE
+		src
+		${SDL2_INCLUDE_DIR}
+		external/imgui
+		external/imgui/backends
+		external/glad/include
+	PUBLIC
+		include
+)
+target_link_libraries(ui_obj PRIVATE SDL2 SDL2main opengl32)
+
+
+# === Main Executable ===
+add_executable(mirael src/main.cpp $<TARGET_OBJECTS:ui_obj> ${IMGUI_SOURCES} ${GLAD_SOURCE})
+
 target_include_directories(mirael PRIVATE
 	include
 	${SDL2_INCLUDE_DIR}
@@ -42,6 +58,8 @@ target_include_directories(mirael PRIVATE
 target_link_directories(mirael PRIVATE ${SDL2_LIB_DIR})
 target_link_libraries(mirael SDL2 SDL2main opengl32)
 
+
+# === Post-Build ===
 # copy the SDL2.dll to the output directory after building
 if(EXISTS ${SDL2_DLL})
 	add_custom_command(TARGET mirael POST_BUILD

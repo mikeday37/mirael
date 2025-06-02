@@ -1,4 +1,6 @@
-#include "framelimiter.hpp"
+#include "ui_pch.hpp"
+
+#include "ui/framelimiter.hpp"
 
 #include <chrono>
 #include <thread>

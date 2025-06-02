@@ -1,8 +1,8 @@
-#include "graphics.hpp"
+#include "ui_pch.hpp"
 
-#include "imgui.h"
-#include "vector.hpp"
-#include "color.hpp"
+#include "ui/graphics.hpp"
+#include "ui/vector.hpp"
+#include "ui/color.hpp"
 
 Graphics::Graphics(ImDrawList *drawList) : drawList_(drawList)
 {
