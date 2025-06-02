@@ -23,7 +23,6 @@ private:
 	void MainLoop();
 
 	void ShowControlsWindow();
-	void OnFullscreenToggled();
 	void ShowFramerateWindow();
 	void ShowAboutWindow();
 
@@ -39,7 +38,17 @@ private:
 	bool showDebug_ = false;
 	bool showFramerate_ = false;
 	bool showAbout_ = false;
+
 	bool fullscreen_ = false;
+	void ApplyFullscreenOption();
+
+	enum class VsyncMode {
+		Off,
+		Double,
+		Triple
+	};
+	VsyncMode vsyncMode_ = VsyncMode::Double;
+	void ApplyVsyncMode();
 
 	// applet system
 	std::vector<Applet *> applets_;

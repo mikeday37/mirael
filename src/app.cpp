@@ -92,9 +92,7 @@ void App::Startup()
 	trace(std::format("INFO: GL_RENDERER = {}", openGlRenderer ? openGlRenderer : "(null)"));
 
 	// enable vsync
-	if (SDL_GL_SetSwapInterval(1) != 0) {
-		trace("WARNING: Unable to enable vsync.");
-	}
+	ApplyVsyncMode();
 
 	// imgui setup
 	IMGUI_CHECKVERSION();
@@ -221,13 +219,14 @@ void App::MainLoop()
 	}
 }
 
-void App::OnFullscreenToggled()
+void App::ApplyFullscreenOption()
 {
 	if (fullscreen_) {
 		SDL_SetWindowFullscreen(window_, SDL_WINDOW_FULLSCREEN_DESKTOP);
 	} else {
 		SDL_SetWindowFullscreen(window_, 0);
 	}
+	ApplyVsyncMode();
 }
 
 void App::ShowControlsWindow()
@@ -259,7 +258,19 @@ void App::ShowControlsWindow()
 		}
 		if (ImGui::BeginMenu("View")) {
 			if (ImGui::MenuItem("Fullscreen", nullptr, &fullscreen_)) {
-				OnFullscreenToggled();
+				ApplyFullscreenOption();
+			}
+			if (ImGui::BeginMenu("Vsync")) {
+				auto vsyncMenuItem = [this](const char *name, VsyncMode vsyncMode) -> void {
+					if (ImGui::MenuItem(name, nullptr, vsyncMode_ == vsyncMode)) {
+						vsyncMode_ = vsyncMode;
+						ApplyVsyncMode();
+					}
+				};
+				vsyncMenuItem("Off", VsyncMode::Off);
+				vsyncMenuItem("Double", VsyncMode::Double);
+				vsyncMenuItem("Triple", VsyncMode::Triple);
+				ImGui::EndMenu();
 			}
 			ImGui::EndMenu();
 		}
@@ -365,6 +376,19 @@ void App::ShowAboutWindow()
 	}
 
 	ImGui::End();
+}
+
+void App::ApplyVsyncMode()
+{
+	int swapInterval = 0;
+	switch (vsyncMode_) {
+		case VsyncMode::Off: swapInterval = 0; break;
+		case VsyncMode::Double: swapInterval = 1; break;
+		case VsyncMode::Triple: swapInterval = -1; break;
+	}
+	if (SDL_GL_SetSwapInterval(swapInterval) != 0) {
+		trace(std::format("ERROR: SDL_GL_SetSwapInterval({}) failed: {}", swapInterval, SDL_GetError()));
+	}
 }
 
 void App::RegisterApplets(std::initializer_list<Applet *> applets)
