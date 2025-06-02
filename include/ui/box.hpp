@@ -1,6 +1,6 @@
 #pragma once
 
-#include "graphics.hpp"
+#include "ui/graphics.hpp"
 
 #include <SDL.h>
 

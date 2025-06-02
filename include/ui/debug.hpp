@@ -1,7 +1,8 @@
 #pragma once
 
-#include <windows.h>
 #include <string>
+
+#include <windows.h>
 #include <ostream>
 
 inline void trace(const std::string& msg) {

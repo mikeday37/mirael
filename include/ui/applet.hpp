@@ -1,9 +1,10 @@
 #pragma once
 
-#include "graphics.hpp"
-#include <SDL.h>
+#include "ui/graphics.hpp"
 
 #include <string>
+
+#include <SDL.h>
 
 class App;
 

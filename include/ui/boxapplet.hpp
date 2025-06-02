@@ -1,7 +1,8 @@
 #pragma once
 
-#include "applet.hpp"
-#include "box.hpp"
+#include "ui/applet.hpp"
+#include "ui/box.hpp"
+
 #include <string>
 
 class BoxApplet final : public Applet {

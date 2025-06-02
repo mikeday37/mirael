@@ -1,10 +1,10 @@
 #pragma once
 
-#include "territoriesapplet.hpp"
-#include "untangleapplet.hpp"
-#include "boxapplet.hpp"
-#include "testapplet1.hpp"
-#include "testapplet2.hpp"
+#include "ui/territoriesapplet.hpp"
+#include "ui/untangleapplet.hpp"
+#include "ui/boxapplet.hpp"
+#include "ui/testapplet1.hpp"
+#include "ui/testapplet2.hpp"
 
 #include <vector>
 
@@ -49,7 +49,7 @@ private:
 		Double,
 		Triple
 	};
-	VsyncMode vsyncMode_ = VsyncMode::Double;
+	VsyncMode vsyncMode_ = VsyncMode::Off;
 	void ApplyVsyncMode();
 
 	// applet system

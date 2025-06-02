@@ -1,6 +1,7 @@
 #pragma once
 
-#include "applet.hpp"
+#include "ui/applet.hpp"
+
 #include <string>
 
 class TestApplet2 final : public Applet {
