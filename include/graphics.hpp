@@ -1,12 +1,13 @@
 #pragma once
 
-#include "imgui.h"
 #include "color.hpp"
 #include "vector.hpp"
 
+struct ImDrawList;
+
 class Graphics {
 public:
-	Graphics();
+	Graphics(ImDrawList *drawList);
 
 	void Line(Vector from, Vector to, float width, Color color);
 	void Circle(Vector center, float radius, float lineWidth, Color fillColor, Color lineColor);

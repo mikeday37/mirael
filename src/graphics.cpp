@@ -1,11 +1,11 @@
-#include "imgui.h"
 #include "graphics.hpp"
+
+#include "imgui.h"
 #include "vector.hpp"
 #include "color.hpp"
 
-Graphics::Graphics()
+Graphics::Graphics(ImDrawList *drawList) : drawList_(drawList)
 {
-	drawList_ = ImGui::GetBackgroundDrawList();
 }
 
 void Graphics::Line(Vector from, Vector to, float width, Color color)
@@ -29,7 +29,7 @@ void Graphics::Circle(Vector center, float radius, float lineWidth, Color fillCo
 	}
 
 	if (lineWidth > 0.0f && lineColor.a > 0.0f) {
-		drawList_->AddCircleFilled(
+		drawList_->AddCircle(
 			ImVec2(center.x, center.y),
 			radius,
 			ImGui::ColorConvertFloat4ToU32(ImVec4(lineColor.r, lineColor.g, lineColor.b, lineColor.a))

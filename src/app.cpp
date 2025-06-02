@@ -5,6 +5,9 @@
 #include <exception>
 #include <string>
 #include <format>
+#include <vector>
+#include <unordered_set>
+#include <ranges>
 
 #include <SDL.h>
 #include "glad/glad.h"
@@ -33,6 +36,12 @@ int App::Main(int argc, char *argv[])
 	// Shutdown() will be called when App leaves scope.
 
     return exitCode;
+}
+
+App::App() :
+	testApplet1_(*this),
+	testApplet2_(*this)
+{
 }
 
 App::~App() {
@@ -103,6 +112,14 @@ void App::Startup()
 		throw std::runtime_error("ImGui_ImplOpenGL3_Init(\"#version 130\") failed.");
 	}
 	implOpenGL3Initialized_ = true;
+
+	// applet setup
+	RegisterApplets({
+		&testApplet1_,
+		&testApplet2_
+	});
+	for (auto a : applets_)
+		a->OnStartup();
 }
 
 void App::Shutdown()
@@ -110,6 +127,9 @@ void App::Shutdown()
 	trace("=== Shutdown ===");
 
 	// cleanup everything established during Startup() in reverse order.
+
+	for (auto a : std::views::reverse(applets_))
+		a->OnShutdown();
 
 	if (implOpenGL3Initialized_)
 		ImGui_ImplOpenGL3_Shutdown();
@@ -155,8 +175,8 @@ void App::MainLoop()
 				running = false;
 			}
 
-			if (!io.WantCaptureKeyboard && !io.WantCaptureMouse)
-				box.HandleEvent(e);
+			if (currentApplet_ && !io.WantCaptureKeyboard && !io.WantCaptureMouse)
+				currentApplet_->OnEvent(e);
 		}
 
 		// start imgui frame
@@ -168,8 +188,14 @@ void App::MainLoop()
 		glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
+		// allow current applet to draw on the background
+		if (currentApplet_) {
+			Graphics g(ImGui::GetBackgroundDrawList());
+			currentApplet_->OnRenderBackground(g);
+		}
+
 		// show the UI, which begins with the Options Window
-		ShowOptionsWindow(box);
+		ShowControlsWindow();
 		if (showDebug_) {
 			ImGui::ShowDemoWindow(&showDebug_);
 		}
@@ -180,9 +206,11 @@ void App::MainLoop()
 			ShowAboutWindow();
 		}
 
-		// draw the box
-		Graphics g;
-		box.Render(g);
+		// allow current applet to draw on the foreground
+		if (currentApplet_) {
+			Graphics g(ImGui::GetForegroundDrawList());
+			currentApplet_->OnRenderForeground(g);
+		}
 
 		// render the frame
 		ImGui::Render();
@@ -200,7 +228,7 @@ void App::OnFullscreenToggled()
 	}
 }
 
-void App::ShowOptionsWindow(Box &box)
+void App::ShowControlsWindow()
 {
 	if (!ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NavFlattened)) {
 		ImGui::End();
@@ -212,6 +240,18 @@ void App::ShowOptionsWindow(Box &box)
 				SDL_Event e;
 				e.type = SDL_QUIT;
 				SDL_PushEvent(&e);
+			}
+			ImGui::EndMenu();
+		}
+		if (currentApplet_) {
+			currentApplet_->OnShowMenu();
+		}
+		if (ImGui::BeginMenu("Applet")) {
+			for (auto applet : applets_) {
+				bool selected = (applet == currentApplet_);
+				if (ImGui::MenuItem(applet->GetDisplayName().data(), nullptr, selected)) {
+					SetCurrentApplet(applet);
+				}
 			}
 			ImGui::EndMenu();
 		}
@@ -233,8 +273,9 @@ void App::ShowOptionsWindow(Box &box)
 		ImGui::EndMenuBar();
 	}
 
-	if (ImGui::Button("Reset Box Position"))
-		box.ResetPosition();
+	if (currentApplet_) {
+		currentApplet_->OnShowControls();
+	}
 
 	ImGui::End();
 }
@@ -322,4 +363,33 @@ void App::ShowAboutWindow()
 	}
 
 	ImGui::End();
+}
+
+void App::RegisterApplets(std::initializer_list<Applet *> applets)
+{
+	std::unordered_set<std::string> names;
+	for (auto a : applets) {
+		auto name = std::string(a->GetDisplayName());
+		auto [_, inserted] = names.insert(name);
+		if (!inserted) {
+			throw std::runtime_error(std::format("Applet display name collision on: {}", name));
+		}
+		applets_.push_back(a);
+	}
+}
+
+void App::SetCurrentApplet(Applet *applet)
+{
+	if (applet == currentApplet_)
+		return;
+
+	if (currentApplet_) {
+		currentApplet_->OnLoseFocus();
+	}
+
+	currentApplet_ = applet;
+
+	if (currentApplet_) {
+		currentApplet_->OnGainFocus();
+	}
 }

@@ -54,6 +54,9 @@
         "xstring": "cpp",
         "xtr1common": "cpp",
         "xutility": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "xhash": "cpp",
+        "list": "cpp",
+        "unordered_set": "cpp"
     }
 }
