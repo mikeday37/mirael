@@ -1,6 +1,7 @@
 #include "app.hpp"
 #include "debug.hpp"
 #include "box.hpp"
+#include "framelimiter.hpp"
 
 #include <exception>
 #include <string>
@@ -160,9 +161,13 @@ void App::MainLoop()
 	bool running = true;
 	SDL_Event e;
 	Box box = { 100, 100, 200, 150 };
+	FrameLimiter frameLimiter;
 
 	// main loop
 	while (running) {
+
+		// mark frame start time
+		frameLimiter.StartFrame();
 
 		// get all events for this frame
 		while (SDL_PollEvent(&e)) {
@@ -215,6 +220,13 @@ void App::MainLoop()
 		// render the frame
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+		// limit framerate only if vsync is off
+		if (vsyncMode_ == VsyncMode::Off) {
+			frameLimiter.EndFrame();
+		}
+
+		// swap buffers to display the frame
 		SDL_GL_SwapWindow(window_);
 	}
 }
