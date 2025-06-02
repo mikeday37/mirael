@@ -1,5 +1,6 @@
 #pragma once
 
+#include "boxapplet.hpp"
 #include "testapplet1.hpp"
 #include "testapplet2.hpp"
 
@@ -47,6 +48,7 @@ private:
 	void SetCurrentApplet(Applet *applet);
 
 	// supported applets
+	BoxApplet boxApplet_;
 	TestApplet1 testApplet1_;
 	TestApplet2 testApplet2_;
 };

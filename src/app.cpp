@@ -39,6 +39,7 @@ int App::Main(int argc, char *argv[])
 }
 
 App::App() :
+	boxApplet_(*this),
 	testApplet1_(*this),
 	testApplet2_(*this)
 {
@@ -115,6 +116,7 @@ void App::Startup()
 
 	// applet setup
 	RegisterApplets({
+		&boxApplet_,
 		&testApplet1_,
 		&testApplet2_
 	});
