@@ -243,9 +243,6 @@ void App::ShowControlsWindow()
 			}
 			ImGui::EndMenu();
 		}
-		if (currentApplet_) {
-			currentApplet_->OnShowMenu();
-		}
 		if (ImGui::BeginMenu("Applet")) {
 			for (auto applet : applets_) {
 				bool selected = (applet == currentApplet_);
@@ -254,6 +251,9 @@ void App::ShowControlsWindow()
 				}
 			}
 			ImGui::EndMenu();
+		}
+		if (currentApplet_) {
+			currentApplet_->OnShowMenu();
 		}
 		if (ImGui::BeginMenu("View")) {
 			if (ImGui::MenuItem("Fullscreen", nullptr, &fullscreen_)) {

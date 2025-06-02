@@ -18,10 +18,6 @@ public:
 	// required overrides
 	virtual std::string_view GetDisplayName() const = 0;
 
-	// overrides for adding to the ImGui aspects
-	virtual void AddMenu() {}
-	virtual void AddControls() {}
-
 	// overrides for applet lifecycle
 	virtual void OnStartup() {}
 	virtual void OnGainFocus() {}
