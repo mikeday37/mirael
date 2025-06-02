@@ -1,5 +1,7 @@
 #pragma once
 
+#include "territoriesapplet.hpp"
+#include "untangleapplet.hpp"
 #include "boxapplet.hpp"
 #include "testapplet1.hpp"
 #include "testapplet2.hpp"
@@ -57,6 +59,8 @@ private:
 	void SetCurrentApplet(Applet *applet);
 
 	// supported applets
+	TerritoriesApplet territoriesApplet_;
+	UntangleApplet untangleApplet_;
 	BoxApplet boxApplet_;
 	TestApplet1 testApplet1_;
 	TestApplet2 testApplet2_;

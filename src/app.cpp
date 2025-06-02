@@ -40,6 +40,8 @@ int App::Main(int argc, char *argv[])
 }
 
 App::App() :
+	territoriesApplet_(*this),
+	untangleApplet_(*this),
 	boxApplet_(*this),
 	testApplet1_(*this),
 	testApplet2_(*this)
@@ -115,6 +117,8 @@ void App::Startup()
 
 	// applet setup
 	RegisterApplets({
+		&territoriesApplet_,
+		&untangleApplet_,
 		&boxApplet_,
 		&testApplet1_,
 		&testApplet2_
