@@ -8,10 +8,6 @@ public:
 
 	std::string_view GetDisplayName() const override {return "Untangle";};
 
-	void HiThere();
-	void HelloThere();
-	void Salutations();
-
 private:
 
 };
