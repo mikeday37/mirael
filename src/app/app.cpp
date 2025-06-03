@@ -383,6 +383,12 @@ void App::ShowAboutWindow()
 			"Omar Cornut"
 		);
 
+		AttributionLine(
+			"GLM", "https://github.com/g-truc/glm",
+			"The Happy Bunny License or MIT License", "https://github.com/g-truc/glm/blob/2d4c4b4dd31fde06cfffad7915c2b3006402322f/copying.txt",
+			"G-Truc Creation"
+		);
+
 		ImGui::Text("");
 	}
 

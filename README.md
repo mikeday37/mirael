@@ -26,6 +26,7 @@ A program for visually exploring planar graph embeddings.
 ## License Attributions
 
 This project uses the following 3rd party libraries and acknowledges their licenses with thanks to their authors:
-- SDL2 - [zlib license](LICENSES/SDL2_LICENSE.txt) - Sam Lantinga
-- GLAD - [MIT license](LICENSES/GLAD_LICENSE.txt) - David Herberth
-- Dear ImGui - [MIT license](LICENSES/Dear_ImGui_LICENSE.txt) - Omar Cornut
+- SDL2 - [zlib License](LICENSES/SDL2_LICENSE.txt) - Sam Lantinga
+- GLAD - [MIT License](LICENSES/GLAD_LICENSE.txt) - David Herberth
+- Dear ImGui - [MIT License](LICENSES/Dear_ImGui_LICENSE.txt) - Omar Cornut
+- GLM - [The Happy Bunny License or MIT License](LICENSES/GLM_License.txt) - G-Truc Creation

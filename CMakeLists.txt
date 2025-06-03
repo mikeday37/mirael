@@ -25,7 +25,6 @@ set(IMGUI_SOURCES
 # GLAD source
 set(GLAD_SOURCE external/glad/src/glad.c)
 
-
 # === UI Object Library ===
 file(GLOB_RECURSE APP_SOURCES "src/app/*.cpp")
 
@@ -39,6 +38,7 @@ target_include_directories(app_obj
 		external/imgui
 		external/imgui/backends
 		external/glad/include
+		external/glm
 	PUBLIC
 		include
 )
