@@ -54,6 +54,7 @@ target_include_directories(mirael PRIVATE
 	external/imgui
 	external/imgui/backends
 	external/glad/include
+	external/glm
 )
 target_link_directories(mirael PRIVATE ${SDL2_LIB_DIR})
 target_link_libraries(mirael SDL2 SDL2main opengl32)

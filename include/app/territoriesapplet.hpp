@@ -1,6 +1,7 @@
 #pragma once
 
 #include "app/applet.hpp"
+#include "app/territoriesmap.hpp"
 
 #include <string>
 
@@ -23,5 +24,5 @@ public:
 
 
 private:
-
+	TerritoriesMap map_;
 };
