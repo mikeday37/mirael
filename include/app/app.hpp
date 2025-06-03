@@ -1,10 +1,10 @@
 #pragma once
 
-#include "ui/territoriesapplet.hpp"
-#include "ui/untangleapplet.hpp"
-#include "ui/boxapplet.hpp"
-#include "ui/testapplet1.hpp"
-#include "ui/testapplet2.hpp"
+#include "app/territoriesapplet.hpp"
+#include "app/untangleapplet.hpp"
+#include "app/boxapplet.hpp"
+#include "app/testapplet1.hpp"
+#include "app/testapplet2.hpp"
 
 #include <vector>
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ui/applet.hpp"
+#include "app/applet.hpp"
 
 class UntangleApplet : public Applet {
 public:

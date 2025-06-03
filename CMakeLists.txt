@@ -27,12 +27,12 @@ set(GLAD_SOURCE external/glad/src/glad.c)
 
 
 # === UI Object Library ===
-file(GLOB_RECURSE UI_SOURCES "src/ui/*.cpp")
+file(GLOB_RECURSE APP_SOURCES "src/app/*.cpp")
 
-add_library(ui_obj OBJECT ${UI_SOURCES})
+add_library(app_obj OBJECT ${APP_SOURCES})
 
-target_precompile_headers(ui_obj PRIVATE src/ui/ui_pch.hpp)
-target_include_directories(ui_obj
+target_precompile_headers(app_obj PRIVATE src/app/app_pch.hpp)
+target_include_directories(app_obj
 	PRIVATE
 		src
 		${SDL2_INCLUDE_DIR}
@@ -42,11 +42,11 @@ target_include_directories(ui_obj
 	PUBLIC
 		include
 )
-target_link_libraries(ui_obj PRIVATE SDL2 SDL2main opengl32)
+target_link_libraries(app_obj PRIVATE SDL2 SDL2main opengl32)
 
 
 # === Main Executable ===
-add_executable(mirael src/main.cpp $<TARGET_OBJECTS:ui_obj> ${IMGUI_SOURCES} ${GLAD_SOURCE})
+add_executable(mirael src/main.cpp $<TARGET_OBJECTS:app_obj> ${IMGUI_SOURCES} ${GLAD_SOURCE})
 
 target_include_directories(mirael PRIVATE
 	include

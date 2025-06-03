@@ -1,6 +1,6 @@
-#include "ui_pch.hpp"
+#include "app_pch.hpp"
 
-#include "ui/territoriesapplet.hpp"
+#include "app/territoriesapplet.hpp"
 
 void TerritoriesApplet::OnShowControls() {
 

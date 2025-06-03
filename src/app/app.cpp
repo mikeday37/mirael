@@ -1,9 +1,9 @@
-#include "ui_pch.hpp"
+#include "app_pch.hpp"
 
-#include "ui/app.hpp"
-#include "ui/debug.hpp"
-#include "ui/box.hpp"
-#include "ui/framelimiter.hpp"
+#include "app/app.hpp"
+#include "app/debug.hpp"
+#include "app/box.hpp"
+#include "app/framelimiter.hpp"
 
 #include <unordered_set>
 #include <ranges>

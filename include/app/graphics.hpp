@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ui/color.hpp"
-#include "ui/vector.hpp"
+#include "app/color.hpp"
+#include "app/vector.hpp"
 
 struct ImDrawList;
 

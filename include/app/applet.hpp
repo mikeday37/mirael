@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ui/graphics.hpp"
+#include "app/graphics.hpp"
 
 #include <string>
 

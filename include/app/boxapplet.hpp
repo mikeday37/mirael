@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ui/applet.hpp"
-#include "ui/box.hpp"
+#include "app/applet.hpp"
+#include "app/box.hpp"
 
 #include <string>
 

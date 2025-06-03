@@ -1,4 +1,4 @@
-#include "ui/color.hpp"
+#include "app/color.hpp"
 
 const Color Color::Transparent = {0.0f, 0.0f, 0.0f, 1.0f};
 const Color Color::Black       = {0.0f, 0.0f, 0.0f, 1.0f};

@@ -1,8 +1,8 @@
-#include "ui_pch.hpp"
+#include "app_pch.hpp"
 
-#include "ui/box.hpp"
-#include "ui/graphics.hpp"
-#include "ui/color.hpp"
+#include "app/box.hpp"
+#include "app/graphics.hpp"
+#include "app/color.hpp"
 
 Box::Box(int x, int y, int w, int h) {
 	rect_ = { x, y, w, h };
