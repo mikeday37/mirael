@@ -5,7 +5,7 @@
 #include "app/graphics.hpp"
 
 void TestApplet1::OnRenderBackground(Graphics &g) {
-    g.Rectangle({10.0f, 10.0f}, {20.f, 20.f}, 3.0f, Color::White, Color::Black);
+    g.Rectangle({10, 10}, {20, 20}, 3, Color::White, Color::Black);
 }
 
 void TestApplet1::OnShowMenu() {
