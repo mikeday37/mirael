@@ -9,6 +9,7 @@
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
+#include <limits>
 
 #include <SDL.h>
 #include "glad/glad.h"
