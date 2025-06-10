@@ -1,14 +1,13 @@
 #include "app_pch.hpp"
 
 #include "app/graphics.hpp"
-#include "app/vector.hpp"
 #include "app/color.hpp"
 
 Graphics::Graphics(ImDrawList *drawList) : drawList_(drawList)
 {
 }
 
-void Graphics::Line(Vector from, Vector to, float width, Color color)
+void Graphics::Line(glm::vec2 from, glm::vec2 to, float width, Color color)
 {
 	drawList_->AddLine(
 		ImVec2(from.x, from.y),
@@ -18,7 +17,7 @@ void Graphics::Line(Vector from, Vector to, float width, Color color)
 	);
 }
 
-void Graphics::Circle(Vector center, float radius, float lineWidth, Color fillColor, Color lineColor)
+void Graphics::Circle(glm::vec2 center, float radius, float lineWidth, Color fillColor, Color lineColor)
 {
 	if (fillColor.a > 0.0f) {
 		drawList_->AddCircleFilled(
@@ -37,7 +36,7 @@ void Graphics::Circle(Vector center, float radius, float lineWidth, Color fillCo
 	}
 }
 
-void Graphics::Rectangle(Vector from, Vector to, float lineWidth, Color fillColor, Color lineColor)
+void Graphics::Rectangle(glm::vec2 from, glm::vec2 to, float lineWidth, Color fillColor, Color lineColor)
 {
 	if (fillColor.a > 0.0f) {
 		drawList_->AddRectFilled(
