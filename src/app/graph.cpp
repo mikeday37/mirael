@@ -39,6 +39,16 @@ std::vector<Graph::Node> Graph::GetNodes() const
     return nodes;
 }
 
+void Graph::RepositionNode(int nodeId, glm::vec2 pos)
+{
+	assert(nodes_.contains(nodeId));
+
+	auto it = nodes_.find(nodeId);
+
+	it->second.x = pos.x;
+	it->second.y = pos.y;
+}
+
 void Graph::RemoveNode(int nodeId)
 {
 	assert(nodes_.contains(nodeId));

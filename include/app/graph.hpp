@@ -25,6 +25,7 @@ public:
 	int AddNode(glm::vec2 pos);
 	Node GetNode(int nodeId) const;
 	std::vector<Node> GetNodes() const;
+	void RepositionNode(int nodeId, glm::vec2 pos);
 	void RemoveNode(int nodeId);
 
 	int AddEdge(int nodeIdA, int nodeIdB);

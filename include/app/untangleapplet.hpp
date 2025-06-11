@@ -22,14 +22,14 @@ private:
 	float zoom_ = 1.0f;
 
 	// ui state
+	Graph graph_;
 	int selectedNodeId_ = 0;
 	int highlightedNodeId_ = 0;
 	int selectedEdgeId_ = 0;
 	int highlightedEdgeId_ = 0;
-	bool dragging_;
-	glm::vec2 dragStart_;
-	glm::vec2 mousePos_;
-	Graph graph;
+	bool dragging_ = false;
+	glm::vec2 dragOffset_;
+	glm::vec2 mousePos_ = {-1, -1};
 
 	// coordinate handling
 	glm::vec2 ToScreen(glm::vec2 worldPos); // TODO: make inline
@@ -48,10 +48,11 @@ private:
 	HitInfo HitTest(glm::vec2 screenPos);
 
 	// ui handling
-	void OnAdd(glm::vec2 pos);
-	void OnDelete(glm::vec2 pos);
-	void OnClick(glm::vec2 pos);
-	void OnDrag(glm::vec2 pos);
+	void OnAdd();
+	void OnDelete();
+	void OnClick();
+	void OnMove();
+	void OnEndClick();
 
 	// visual style
 	struct NodeStyle {
@@ -80,19 +81,19 @@ private:
 
 	GraphStyle style_ = {
 		{ // ---- normal ----
-			{10.0f, 2.0f, {1,1,1,1}, {0,0,0,1}}, // node
+			{40.0f, 6.0f, {1,1,1,1}, {0,0,0,1}}, // node
 			{2.0f, {0,0,0,1}} // edge
 		},
 		{ // ---- selected ----
-			{12.0f, 4.0f, {0,0,1,1}, {0,0,0.25f,1}}, // node
+			{46.0f, 12.0f, {0,0,1,1}, {0,0,0.25f,1}}, // node
 			{4.0f, {0,0,0.6f,1}} // edge
 		},
 		{ // ---- highlight ----
-			{11.0f, 3.0f, {0,1,0,1}, {0,0.25f,0,1}}, // node
+			{43.0f, 9.0f, {0,1,0,1}, {0,0.25f,0,1}}, // node
 			{3.0f, {0,0.6f,0,1}} // edge
 		},
 		{ // ---- highlightSelected ----
-			{13.0f, 5.0f, {0,1,1,1}, {0,0.25f,0.25f,1}}, // node
+			{49.0f, 15.0f, {0,1,1,1}, {0,0.25f,0.25f,1}}, // node
 			{5.0f, {0,0.6f,0.6f,1}} // edge
 		}
 	};
