@@ -2,7 +2,6 @@
 
 #include "app/app.hpp"
 #include "app/debug.hpp"
-#include "app/box.hpp"
 #include "app/framelimiter.hpp"
 
 #include <unordered_set>
@@ -36,10 +35,7 @@ int App::Main(int argc, char *argv[])
 
 App::App() :
 	territoriesApplet_(*this),
-	untangleApplet_(*this),
-	boxApplet_(*this),
-	testApplet1_(*this),
-	testApplet2_(*this)
+	untangleApplet_(*this)
 {
 }
 
@@ -113,13 +109,13 @@ void App::Startup()
 	// applet setup
 	RegisterApplets({
 		&territoriesApplet_,
-		&untangleApplet_,
-		&boxApplet_,
-		&testApplet1_,
-		&testApplet2_
+		&untangleApplet_
 	});
 	for (auto a : applets_)
 		a->OnStartup();
+
+	// default to untangle
+	SetCurrentApplet(&untangleApplet_);
 }
 
 void App::Shutdown()
@@ -159,7 +155,6 @@ void App::MainLoop()
 	ImGuiIO& io = ImGui::GetIO();
 	bool running = true;
 	SDL_Event e;
-	Box box = { 100, 100, 200, 150 };
 	FrameLimiter frameLimiter;
 
 	// main loop

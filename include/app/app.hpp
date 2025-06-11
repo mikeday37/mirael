@@ -2,9 +2,6 @@
 
 #include "app/territoriesapplet.hpp"
 #include "app/untangleapplet.hpp"
-#include "app/boxapplet.hpp"
-#include "app/testapplet1.hpp"
-#include "app/testapplet2.hpp"
 
 #include <vector>
 
@@ -63,7 +60,4 @@ private:
 	// supported applets
 	TerritoriesApplet territoriesApplet_;
 	UntangleApplet untangleApplet_;
-	BoxApplet boxApplet_;
-	TestApplet1 testApplet1_;
-	TestApplet2 testApplet2_;
 };
