@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "mirael_glm_ext.hpp"
+#include "traits.hpp"
 #include "vec2.hpp"
 
 class TerritoriesMap {

@@ -1,0 +1,110 @@
+#include "app_pch.hpp"
+
+#include "app/graph_generators.hpp"
+
+#include <ranges>
+#include <random>
+
+#include "imgui.h"
+
+void GenerateRandomGraphManipulation::OnShowControls() {
+	ImGui::SliderInt("Node Count", &nodeCount_, 1, 1000);
+	ImGui::SliderInt("Edge Count", &edgeCount_, 0, 10000);
+	ImGui::SliderInt("Max Edge Tries", &maxEdgeTries_, 0, 100);
+	ImGui::SliderFloat("Scale", &scale_, 0.001f, 1.0f);
+}
+
+void GenerateRandomGraphManipulation::ManipulateGraph(Graph &g) {
+
+	// this method will satisfy nodeCount_ and will make a good effort on edgeCount_
+	// when nearly saturated, though, it may create fewer edges than edgeCount_.
+	// It's not valuable to take this further and efficiently create any random graph
+	// with guaranteed edge count as this is really just for illustrative purposes.
+
+	g.Clear();
+
+	if (nodeCount_ < 1) {
+		return;
+	}
+
+	std::vector<int> nodeIds;
+	nodeIds.resize(nodeCount_);
+
+	std::mt19937 rng(std::random_device{}());
+
+	std::uniform_real_distribution<float> coordPicker(-1.0f * scale_, 1.0f * scale_);
+
+	for (int index : std::views::iota(0, nodeCount_)) {
+		auto nodeId = g.AddNode({coordPicker(rng), coordPicker(rng)});
+		assert(nodeId);
+		nodeIds[index] = nodeId;
+	}
+
+	// guard some special cases
+	if (edgeCount_ < 1) { // no edges requested
+		return;
+	} else if (nodeCount_ < 2) { // edges can't exist
+		return;
+	} else if (nodeCount_ == 2) { // there can be only one
+		g.AddEdge(nodeIds[0], nodeIds[1]);
+		return;
+	}
+	int maxEdgeCount = (nodeCount_ - 1) * nodeCount_ / 2;
+	if (edgeCount_ >= maxEdgeCount) { // complete graph, no need for randomness and retries
+		for (int indexA : std::views::iota(0, nodeCount_ - 1)) {
+			for (int indexB : std::views::iota(indexA + 1, nodeCount_)) {
+				g.AddEdge(nodeIds[indexA], nodeIds[indexB]);
+			}
+		}
+		return;
+	}
+
+	// for the multiple possible edges but not all case:
+	// we're guaranteeing indexA != indexB and that the distribution isn't skewed by that requirement
+
+	std::uniform_int_distribution<int> nodePickerA(0, nodeCount_ - 1);
+	std::uniform_int_distribution<int> nodePickerB(0, nodeCount_ - 2);
+
+	auto doWithMaxTries = [](int maxTries, auto&& func) -> bool {
+		for (int attempt : std::views::iota(0, maxTries)) {
+			if (func()) return true;
+		}
+		return false;
+	};
+
+	for (int _ : std::views::iota(0, edgeCount_)) {
+		int indexA = nodePickerA(rng);
+		int indexB = nodePickerB(rng);
+		if (indexB >= indexA) {
+			++indexB;
+		}
+		assert(indexA != indexB);
+		doWithMaxTries(maxEdgeTries_, [&g, &nodeIds, indexA, indexB]{
+			return g.AddEdge(nodeIds[indexA], nodeIds[indexB]);
+		});
+	}
+}
+
+void GenerateGridGraphManipulation::OnShowControls() {
+
+}
+
+void GenerateGridGraphManipulation::ManipulateGraph(Graph &g) {
+
+}
+
+void TangleGraphManipulation::OnShowControls() {
+
+}
+
+void TangleGraphManipulation::ManipulateGraph(Graph &g) {
+
+}
+
+void RemoveEdgesGraphManipulation::OnShowControls() {
+
+}
+
+void RemoveEdgesGraphManipulation::ManipulateGraph(Graph &g) {
+
+}

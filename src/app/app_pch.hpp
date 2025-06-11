@@ -10,6 +10,8 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <limits>
+#include <ranges>
+#include <random>
 
 #include <SDL.h>
 

@@ -1,7 +1,9 @@
 #pragma once
 
 #include "app/applet.hpp"
-#include "graph.hpp"
+#include "app/graph_generators.hpp"
+#include "app/graph.hpp"
+
 #include "vec2.hpp"
 #include "imgui.h"
 
@@ -21,8 +23,11 @@ private:
 	glm::vec2 pan_ = {0, 0};
 	float zoom_ = 1.0f;
 
-	// ui state
+	// graph
 	Graph graph_;
+	KnownGraphManipulations graphManipulations_;
+
+	// ui state
 	int selectedNodeId_ = 0;
 	int highlightedNodeId_ = 0;
 	int selectedEdgeId_ = 0;
@@ -95,7 +100,7 @@ private:
 		},
 		{ // ---- highlight ----
 			{43.0f, 9.0f, {0,1,0,1}, {0,0.25f,0,1}}, // node
-			{3.0f, {0.63f,0.1,0.63f,1}} // edge
+			{3.0f, {0.63f,1,0.63f,1}} // edge
 		},
 		{ // ---- highlightSelected ----
 			{49.0f, 15.0f, {0,1,1,1}, {0,0.25f,0.25f,1}}, // node

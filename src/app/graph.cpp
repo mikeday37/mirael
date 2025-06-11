@@ -7,6 +7,10 @@
 #include <limits>
 #include "vec2.hpp"
 
+inline std::pair<int, int> CanonicalEdge(int a, int b) {
+	return a < b ? std::make_pair(a, b) : std::make_pair(b, a);
+}
+
 int Graph::AddNode(glm::vec2 pos)
 {
 	assert(nextNodeId_ < std::numeric_limits<int>::max());
@@ -73,6 +77,7 @@ void Graph::RemoveNode(int nodeId)
 		assert(nodeEdges_[otherNodeId].contains(edgeId));
 
 		nodeEdges_[otherNodeId].erase(edgeId);
+		edgeSet_.erase(CanonicalEdge(nodeIdA, nodeIdB));
 		edges_.erase(edgeId);
 	}
 
@@ -83,16 +88,32 @@ void Graph::RemoveNode(int nodeId)
 
 int Graph::AddEdge(int nodeIdA, int nodeIdB)
 {
+	assert(nodeIdA != nodeIdB);
 	assert(nodes_.contains(nodeIdA));
 	assert(nodes_.contains(nodeIdB));
 
+	if (ContainsEdge(nodeIdA, nodeIdB)) {
+		return 0;
+	}
+
 	int edgeId = nextEdgeId_++;
 
-	edges_[edgeId] = {nodeIdA, nodeIdB};
+	auto edgeKey = CanonicalEdge(nodeIdA, nodeIdB);
+	edges_[edgeId] = edgeKey;
 	nodeEdges_[nodeIdA].emplace(edgeId);
 	nodeEdges_[nodeIdB].emplace(edgeId);
+	edgeSet_.emplace(edgeKey);
 
 	return edgeId;
+}
+
+bool Graph::ContainsEdge(int nodeIdA, int nodeIdB) const
+{
+	assert(nodeIdA != nodeIdB);
+	assert(nodes_.contains(nodeIdA));
+	assert(nodes_.contains(nodeIdB));
+
+	return edgeSet_.contains(CanonicalEdge(nodeIdA, nodeIdB));
 }
 
 Graph::Edge Graph::GetEdge(int edgeId) const
@@ -126,8 +147,21 @@ void Graph::RemoveEdge(int edgeId)
 	assert(nodes_.contains(nodePair.second));
 	assert(nodeEdges_[nodePair.first].contains(edgeId));
 	assert(nodeEdges_[nodePair.second].contains(edgeId));
+	assert(nodePair.first < nodePair.second);
 
 	nodeEdges_[nodePair.first].erase(edgeId);
 	nodeEdges_[nodePair.second].erase(edgeId);
+	edgeSet_.erase({nodePair.first, nodePair.second});
 	edges_.erase(edgeId);
+}
+
+void Graph::Clear()
+{
+	nodeEdges_.clear();
+	edges_.clear();
+	edgeSet_.clear();
+	nodes_.clear();
+
+	nextNodeId_ = 1;
+	nextEdgeId_ = 1;
 }

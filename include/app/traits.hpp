@@ -1,6 +1,8 @@
 #pragma once
 
 #include "vec2.hpp"
+#include <utility>
+#include <functional>
 
 struct Vec2Traits {
 	std::size_t operator()(const glm::ivec2 &v) const {
@@ -11,5 +13,11 @@ struct Vec2Traits {
 
 	bool operator()(const glm::ivec2 &a, const glm::ivec2 &b) const {
 		return a.x == b.x && a.y == b.y;
+	}
+};
+
+struct PairHash {
+	std::size_t operator()(const std::pair<int, int> &p) const {
+		return std::hash<int>{}(p.first) ^ (std::hash<int>{}(p.second) << 1);
 	}
 };
