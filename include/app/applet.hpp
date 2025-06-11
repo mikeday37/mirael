@@ -5,6 +5,7 @@
 #include <string>
 
 #include <SDL.h>
+#include "vec2.hpp"
 
 class App;
 
@@ -22,6 +23,8 @@ public:
 	// overrides for applet lifecycle
 	virtual void OnStartup() {}
 	virtual void OnGainFocus() {}
+	virtual void OnNewFrame() {}
+	virtual void OnEndFrame() {}
 	virtual void OnLoseFocus() {}
 	virtual void OnShutdown() {}
 
@@ -31,4 +34,7 @@ public:
 	virtual void OnRenderBackground(Graphics &g) {}
 	virtual void OnRenderForeground(Graphics &g) {}
 	virtual void OnEvent(const SDL_Event &e) {}
+
+	// utility
+	glm::vec2 GetWindowSize();
 };

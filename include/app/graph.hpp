@@ -23,10 +23,12 @@ public:
 	};
 
 	int AddNode(glm::vec2 pos);
+	Node GetNode(int nodeId) const;
 	std::vector<Node> GetNodes() const;
 	void RemoveNode(int nodeId);
 
 	int AddEdge(int nodeIdA, int nodeIdB);
+	Edge GetEdge(int edgeId) const;
 	std::vector<Edge> GetEdges() const;
 	std::vector<Edge> GetEdges(int nodeId) const;
 	void RemoveEdge(int edgeId);

@@ -2,7 +2,10 @@
 
 #include "app/graph.hpp"
 
+#include <map>
+#include <vector>
 #include <limits>
+#include "vec2.hpp"
 
 int Graph::AddNode(glm::vec2 pos)
 {
@@ -13,6 +16,15 @@ int Graph::AddNode(glm::vec2 pos)
 	nodeEdges_[nodeId];
 
 	return nodeId;
+}
+
+Graph::Node Graph::GetNode(int nodeId) const
+{
+	assert(nodes_.contains(nodeId));
+
+	auto it = nodes_.find(nodeId);
+
+	return {nodeId, it->second};
 }
 
 std::vector<Graph::Node> Graph::GetNodes() const
@@ -71,6 +83,15 @@ int Graph::AddEdge(int nodeIdA, int nodeIdB)
 	nodeEdges_[nodeIdB].emplace(edgeId);
 
 	return edgeId;
+}
+
+Graph::Edge Graph::GetEdge(int edgeId) const
+{
+    assert(edges_.contains(edgeId));
+
+	auto it = edges_.find(edgeId);
+
+	return {edgeId, it->second.first, it->second.second};
 }
 
 std::vector<Graph::Edge> Graph::GetEdges() const

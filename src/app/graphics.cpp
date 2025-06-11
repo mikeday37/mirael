@@ -31,7 +31,9 @@ void Graphics::Circle(glm::vec2 center, float radius, float lineWidth, Color fil
 		drawList_->AddCircle(
 			ImVec2(center.x, center.y),
 			radius,
-			ImGui::ColorConvertFloat4ToU32(ImVec4(lineColor.r, lineColor.g, lineColor.b, lineColor.a))
+			ImGui::ColorConvertFloat4ToU32(ImVec4(lineColor.r, lineColor.g, lineColor.b, lineColor.a)),
+			0,
+			lineWidth
 		);
 	}
 }

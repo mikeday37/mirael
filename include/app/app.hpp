@@ -15,6 +15,8 @@ class App {
 public:
 	[[nodiscard]] static int Main(int argc, char *argv[]);
 
+	inline SDL_Window *GetWindow() {return window_;}
+
 private:
 	App();
 	~App();

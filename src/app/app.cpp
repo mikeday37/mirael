@@ -168,6 +168,11 @@ void App::MainLoop()
 		// mark frame start time
 		frameLimiter.StartFrame();
 
+		// let the current applet handle frame beginning
+		if (currentApplet_) {
+			currentApplet_->OnNewFrame();
+		}
+
 		// get all events for this frame
 		while (SDL_PollEvent(&e)) {
 
@@ -219,6 +224,11 @@ void App::MainLoop()
 		// render the frame
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+		// let the current applet handle frame beginning
+		if (currentApplet_) {
+			currentApplet_->OnEndFrame();
+		}
 
 		// limit framerate only if vsync is off
 		if (vsyncMode_ == VsyncMode::Off) {
