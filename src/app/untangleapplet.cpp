@@ -36,7 +36,7 @@ void UntangleApplet::DrawNode(Graphics &g, const Graph::Node &node)
 {
 	auto pos = ToScreen(node.pos);
 	auto style = GetNodeStyle(node.id);
-	g.Circle(pos, style.radius, style.lineThickness, convert(style.fillColor), convert(style.lineColor));
+	g.Circle(pos, style.radius * style_.nodeScale, style.lineThickness * style_.nodeScale, convert(style.fillColor), convert(style.lineColor));
 }
 
 void UntangleApplet::DrawEdge(Graphics &g, const Graph::Edge &edge)
@@ -46,7 +46,7 @@ void UntangleApplet::DrawEdge(Graphics &g, const Graph::Edge &edge)
 	auto posA = ToScreen(nodeA.pos);
 	auto posB = ToScreen(nodeB.pos);
 	auto style = GetEdgeStyle(edge.id);
-	g.Line(posA, posB, style.lineThickness, convert(style.lineColor));
+	g.Line(posA, posB, style.lineThickness * style_.edgeScale, convert(style.lineColor));
 }
 
 void UntangleApplet::OnShowControls() {
@@ -58,18 +58,23 @@ void UntangleApplet::OnShowControls() {
 		}
 
 		if (ImGui::BeginTabItem("Style")) {
+			ImGui::SliderFloat("Node Scale", &style_.nodeScale, 0.0f, 2.0f, "%.3f");
+			ImGui::SliderFloat("Node Hit Test Padding", &style_.nodeHitTestPadding, 0.0f, 50.0f, "%.3f");
+			ImGui::SliderFloat("Edge Scale", &style_.edgeScale, 0.0f, 10.0f, "%.3f");
+			ImGui::SliderFloat("Edge Hit Test Padding", &style_.edgeHitTestPadding, 0.0f, 50.0f, "%.3f");
+
 			auto stateStyle = [this](const char *name, const char *suffix, GraphPartStyle &part) -> void {
 				if (ImGui::TreeNodeEx(name, ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_DrawLinesFull)) {
 					if (ImGui::TreeNodeEx(std::format("Node##{}", suffix).c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_DrawLinesFull)) {
 						ImGui::SliderFloat(std::format("Radius##{}", suffix).c_str(), &part.node.radius, 0.0f, 50.0f, "%.1f");
 						ImGui::SliderFloat(std::format("Line Thickness##{}", suffix).c_str(), &part.node.lineThickness, 0.0f, 20.0f, "%.1f");
-						ImGui::ColorEdit4(std::format("Fill Color##{}", suffix).c_str(), (float*)&part.node.fillColor);
-						ImGui::ColorEdit4(std::format("Line Color##{}", suffix).c_str(), (float*)&part.node.lineColor);
+						ImGui::ColorEdit4(std::format("Fill Color##{}", suffix).c_str(), (float*)&part.node.fillColor, ImGuiColorEditFlags_AlphaBar);
+						ImGui::ColorEdit4(std::format("Line Color##{}", suffix).c_str(), (float*)&part.node.lineColor, ImGuiColorEditFlags_AlphaBar);
 						ImGui::TreePop();
 					}
 					if (ImGui::TreeNodeEx(std::format("Edge##{}", suffix).c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_DrawLinesFull)) {
 						ImGui::SliderFloat(std::format("Line Thickness##{}", suffix).c_str(), &part.edge.lineThickness, 0.0f, 20.0f, "%.1f");
-						ImGui::ColorEdit4(std::format("Line Color##{}", suffix).c_str(), (float*)&part.edge.lineColor);
+						ImGui::ColorEdit4(std::format("Line Color##{}", suffix).c_str(), (float*)&part.edge.lineColor, ImGuiColorEditFlags_AlphaBar);
 						ImGui::TreePop();
 					}
 					ImGui::TreePop();
@@ -173,8 +178,8 @@ UntangleApplet::HitInfo UntangleApplet::HitTest(glm::vec2 screenPos) {
 	hit.nodeId = 0;
 	hit.edgeId = 0;
 
-	auto nodeHitRadiusNormal = style_.normal.node.radius + style_.normal.node.lineThickness / 2.0f;
-	auto nodeHitRadiusSelected = style_.selected.node.radius + style_.selected.node.lineThickness / 2.0f;
+	auto nodeHitRadiusNormal = (style_.normal.node.radius + style_.normal.node.lineThickness / 2.0f) * style_.nodeScale + style_.nodeHitTestPadding;
+	auto nodeHitRadiusSelected = (style_.selected.node.radius + style_.selected.node.lineThickness / 2.0f) * style_.nodeScale + style_.nodeHitTestPadding;
 
 	float closestPotentialNodeDist = 0;
 	for (auto node : graph_.GetNodes()) {

@@ -77,24 +77,29 @@ private:
 		GraphPartStyle selected;
 		GraphPartStyle highlight;
 		GraphPartStyle highlightSelected;
+
+		float nodeScale = 0.1f;
+		float nodeHitTestPadding = 15.0f;
+		float edgeScale = 1.0f;
+		float edgeHitTestPadding = 4.0f;
 	};
 
 	GraphStyle style_ = {
 		{ // ---- normal ----
 			{40.0f, 6.0f, {1,1,1,1}, {0,0,0,1}}, // node
-			{2.0f, {0,0,0,1}} // edge
+			{2.0f, {0.63f,0.63f,0.63f,1}} // edge
 		},
 		{ // ---- selected ----
 			{46.0f, 12.0f, {0,0,1,1}, {0,0,0.25f,1}}, // node
-			{4.0f, {0,0,0.6f,1}} // edge
+			{4.0f, {0.63f,0.63f,1.0,1}} // edge
 		},
 		{ // ---- highlight ----
 			{43.0f, 9.0f, {0,1,0,1}, {0,0.25f,0,1}}, // node
-			{3.0f, {0,0.6f,0,1}} // edge
+			{3.0f, {0.63f,0.1,0.63f,1}} // edge
 		},
 		{ // ---- highlightSelected ----
 			{49.0f, 15.0f, {0,1,1,1}, {0,0.25f,0.25f,1}}, // node
-			{5.0f, {0,0.6f,0.6f,1}} // edge
+			{5.0f, {0.63f,1,1,1}} // edge
 		}
 	};
 
