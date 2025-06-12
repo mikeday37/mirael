@@ -5,7 +5,7 @@
 #include <vector>
 #include <unordered_set>
 
-#include "traits.hpp"
+#include "utility.hpp"
 #include "vec2.hpp"
 
 class Graph {

@@ -52,13 +52,17 @@ public:
 	void OnShowControls() override;
 	void ManipulateGraph(Graph &g) override;
 
+private:
 	enum class Shape {
 		Random = 0,
 		Circle = 1
 	};
-
-private:
+	inline static constexpr const char* ShapeNames[] = {
+		"Random",
+		"Circle"
+	};
 	Shape shape_ = Shape::Circle;
+	float scale_ = 0.9f;
 };
 
 class RemoveEdgesGraphManipulation : public GraphManipulation {

@@ -8,8 +8,8 @@
 #include "imgui.h"
 
 void GenerateRandomGraphManipulation::OnShowControls() {
-	ImGui::SliderInt("Node Count", &nodeCount_, 1, 1000);
-	ImGui::SliderInt("Edge Count", &edgeCount_, 0, 10000);
+	ImGui::SliderInt("Node Count", &nodeCount_, 1, 100);
+	ImGui::SliderInt("Edge Count", &edgeCount_, 0, nodeCount_ * (nodeCount_ - 1) / 2);
 	ImGui::SliderInt("Max Edge Tries", &maxEdgeTries_, 0, 100);
 	ImGui::SliderFloat("Scale", &scale_, 0.001f, 1.0f);
 }
@@ -94,11 +94,44 @@ void GenerateGridGraphManipulation::ManipulateGraph(Graph &g) {
 }
 
 void TangleGraphManipulation::OnShowControls() {
-
+	int shapeIndex = static_cast<int>(shape_);
+	if (ImGui::Combo("Shape", &shapeIndex, ShapeNames, std::size(ShapeNames))){
+		shape_ = static_cast<Shape>(shapeIndex);
+	}
+	ImGui::SliderFloat("Scale", &scale_, 0.001f, 1.0f);
 }
 
 void TangleGraphManipulation::ManipulateGraph(Graph &g) {
+	std::mt19937 rng(std::random_device{}());
+	switch (shape_) {
+		case Shape::Random: {
+			std::uniform_real_distribution<float> coordPicker(-1.0f * scale_, 1.0f * scale_);
+			for (auto node : g.GetNodes()) {
+				g.RepositionNode(node.id, {coordPicker(rng), coordPicker(rng)});
+			}
+			break;
+		}
 
+		case Shape::Circle: {
+			auto nodes = g.GetNodes();
+			std::vector<int> nodeIndices;
+			auto size = static_cast<int>(nodes.size());
+			nodeIndices.reserve(size);
+			for (auto node : nodes) {
+				nodeIndices.push_back(node.id);
+			}
+			float thetaStep = glm::two_pi<float>() / static_cast<float>(size);
+			for (auto index : std::views::iota(0, size)) {
+				auto nodeId = RemoveRandomElement(nodeIndices, rng);
+				auto theta = index * thetaStep - glm::half_pi<float>();
+				g.RepositionNode(nodeId, {
+					glm::cos(theta) * scale_,
+					glm::sin(theta) * scale_
+				});
+			}
+			break;
+		}
+	}
 }
 
 void RemoveEdgesGraphManipulation::OnShowControls() {

@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "traits.hpp"
+#include "utility.hpp"
 #include "vec2.hpp"
 
 class TerritoriesMap {

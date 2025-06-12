@@ -3,6 +3,8 @@
 #include "vec2.hpp"
 #include <utility>
 #include <functional>
+#include <vector>
+#include <random>
 
 struct Vec2Traits {
 	std::size_t operator()(const glm::ivec2 &v) const {
@@ -21,3 +23,13 @@ struct PairHash {
 		return std::hash<int>{}(p.first) ^ (std::hash<int>{}(p.second) << 1);
 	}
 };
+
+template<typename T>
+T RemoveRandomElement(std::vector<T> &v, std::mt19937 &rng) {
+	std::uniform_int_distribution<size_t> distribution(0, v.size() - 1);
+	auto index = distribution(rng);
+	std::swap(v[index], v.back());
+	T value = std::move(v.back());
+	v.pop_back();
+	return value;
+}
