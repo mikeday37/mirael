@@ -157,12 +157,12 @@ void Graph::RemoveEdge(int edgeId)
 
 int Graph::GetNodeCount() const
 {
-    return nodes_.size();
+    return static_cast<int>(nodes_.size());
 }
 
 int Graph::GetEdgeCount() const
 {
-    return edges_.size();
+    return static_cast<int>(edges_.size());
 }
 
 void Graph::Clear()
@@ -173,5 +173,14 @@ void Graph::Clear()
 	nodes_.clear();
 
 	nextNodeId_ = 1;
+	nextEdgeId_ = 1;
+}
+
+void Graph::ClearEdges()
+{
+	nodeEdges_.clear();
+	edges_.clear();
+	edgeSet_.clear();
+
 	nextEdgeId_ = 1;
 }

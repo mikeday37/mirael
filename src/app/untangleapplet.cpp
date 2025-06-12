@@ -216,7 +216,21 @@ UntangleApplet::HitInfo UntangleApplet::HitTest(glm::vec2 screenPos) {
 		}
 	}
 
-	// TODO: line hits
+	auto edgeHitRadiusNormal = (style_.normal.edge.lineThickness / 2.0f) * style_.edgeScale + style_.edgeHitTestPadding;
+	auto edgeHitRadiusSelected = (style_.selected.edge.lineThickness / 2.0f) * style_.edgeScale + style_.edgeHitTestPadding;
+
+	float closestPotentialEdgeDist = 0;
+	for (auto edge : graph_.GetEdges()) {
+		auto dist = PointDistanceToLineSegment(screenPos,
+			ToScreen(graph_.GetNode(edge.nodeIdA).pos),
+			ToScreen(graph_.GetNode(edge.nodeIdB).pos)
+		);
+		auto hitRadius = edge.id == selectedEdgeId_ ? edgeHitRadiusSelected : edgeHitRadiusNormal;
+		if (dist <= hitRadius && (!hit.edgeId || dist < closestPotentialEdgeDist)) {
+			hit.edgeId = edge.id;
+			closestPotentialEdgeDist = dist;
+		}
+	}
 
 	return hit;
 }
@@ -262,13 +276,13 @@ void UntangleApplet::OnClick() {
 		selectedNodeId_ = hit.nodeId;
 	} else {
 		selectedNodeId_ = 0;
+		if (hit.edgeId) {
+			selectedEdgeId_ = hit.edgeId;
+		} else {
+			selectedEdgeId_ = 0;
+		}
 	}
 
-	if (hit.edgeId) {
-		selectedEdgeId_ = hit.edgeId;
-	} else {
-		selectedEdgeId_ = 0;
-	}
 
 	if (selectedNodeId_){
 		dragging_ = true;
@@ -287,14 +301,14 @@ void UntangleApplet::OnMove() {
 
 		if (hit.nodeId) {
 			highlightedNodeId_ = hit.nodeId;
+			highlightedEdgeId_ = 0;
 		} else {
 			highlightedNodeId_ = 0;
-		}
-
-		if (hit.edgeId) {
-			highlightedEdgeId_ = hit.edgeId;
-		} else {
-			highlightedEdgeId_ = 0;
+			if (hit.edgeId) {
+				highlightedEdgeId_ = hit.edgeId;
+			} else {
+				highlightedEdgeId_ = 0;
+			}
 		}
 	}
 }

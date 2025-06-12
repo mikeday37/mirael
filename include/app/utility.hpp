@@ -5,6 +5,7 @@
 #include <functional>
 #include <vector>
 #include <random>
+#include "glm.hpp"
 
 struct Vec2Traits {
 	std::size_t operator()(const glm::ivec2 &v) const {
@@ -33,3 +34,5 @@ T RemoveRandomElement(std::vector<T> &v, std::mt19937 &rng) {
 	v.pop_back();
 	return value;
 }
+
+float PointDistanceToLineSegment(const glm::vec2 &P, const glm::vec2 &A, const glm::vec2 &B);

@@ -65,22 +65,23 @@ private:
 	float scale_ = 0.9f;
 };
 
-class RemoveEdgesGraphManipulation : public GraphManipulation {
+class CullGraphManipulation : public GraphManipulation {
 public:
-	std::string_view GetDisplayName() const override {return "Remove Edges";}
+	std::string_view GetDisplayName() const override {return "Cull Nodes/Edges";}
 
 	void OnShowControls() override;
 	void ManipulateGraph(Graph &g) override;
 
 private:
-	float percentage_ = 0.1f;
+	float nodeFraction_ = 0;
+	float edgeFraction_ = 0.1f;
 };
 
 struct KnownGraphManipulations {
 	GenerateRandomGraphManipulation random;
 	GenerateGridGraphManipulation grid;
 	TangleGraphManipulation tangle;
-	RemoveEdgesGraphManipulation removeEdges;
+	CullGraphManipulation removeEdges;
 
 	std::vector<GraphManipulation *> GetAll() {return {
 		&random,

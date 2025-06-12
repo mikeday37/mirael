@@ -184,10 +184,40 @@ void TangleGraphManipulation::ManipulateGraph(Graph &g) {
 	}
 }
 
-void RemoveEdgesGraphManipulation::OnShowControls() {
-
+void CullGraphManipulation::OnShowControls() {
+	ImGui::SliderFloat("Node Fraction", &nodeFraction_, 0, 1);
+	ImGui::SliderFloat("Edge Fraction", &edgeFraction_, 0, 1);
 }
 
-void RemoveEdgesGraphManipulation::ManipulateGraph(Graph &g) {
+void CullGraphManipulation::ManipulateGraph(Graph &g) {
+	std::mt19937 rng(std::random_device{}());
+	auto cull = [&g, &rng](bool nodes, int count, float fraction, auto&& getFunc, auto&& removeFunc) {
+		using Item = std::ranges::range_value_t<std::invoke_result_t<decltype(getFunc)>>;
+		static_assert(requires(Item item) {item.id;}, "Item type returned by getFunc() must have an .id field.");
+		int num = static_cast<int>(std::round(count * fraction));
+		if (num <= 0) {
+			return;
+		} else if (num >= count) {
+			if (nodes) {
+				g.Clear();
+			} else {
+				g.ClearEdges();
+			}
+			return;
+		}
 
+		auto items = getFunc();
+		for (auto _ : std::views::iota(0, num)) {
+			auto item = RemoveRandomElement(items, rng);
+			removeFunc(item.id);
+		}
+	};
+	cull(true, g.GetNodeCount(), nodeFraction_,
+		[&g] {return g.GetNodes();},
+		[&g](int id) {g.RemoveNode(id);}
+	);
+	cull(false, g.GetEdgeCount(), edgeFraction_,
+		[&g] {return g.GetEdges();},
+		[&g](int id) {g.RemoveEdge(id);}
+	);
 }

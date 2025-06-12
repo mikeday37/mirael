@@ -39,6 +39,7 @@ public:
 	int GetEdgeCount() const;
 
 	void Clear();
+	void ClearEdges();
 
 private:
 	int nextNodeId_ = 1;
