@@ -155,6 +155,16 @@ void Graph::RemoveEdge(int edgeId)
 	edges_.erase(edgeId);
 }
 
+int Graph::GetNodeCount() const
+{
+    return nodes_.size();
+}
+
+int Graph::GetEdgeCount() const
+{
+    return edges_.size();
+}
+
 void Graph::Clear()
 {
 	nodeEdges_.clear();

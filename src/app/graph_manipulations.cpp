@@ -86,11 +86,61 @@ void GenerateRandomGraphManipulation::ManipulateGraph(Graph &g) {
 }
 
 void GenerateGridGraphManipulation::OnShowControls() {
-
+	ImGui::SliderInt("Width", &width_, 1, 100);
+	ImGui::SliderInt("Height", &height_, 1, 100);
+	ImGui::SliderFloat("Scale", &scale_, 0.001f, 1.0f);
+	ImGui::Checkbox("Include Edges", &includeEdges_);
 }
 
 void GenerateGridGraphManipulation::ManipulateGraph(Graph &g) {
+	g.Clear();
 
+	if (width_ < 0 || height_ < 0) {
+		return;
+	}
+
+	std::vector<int> nodeIds; // grid stored like screen pixels : left to right, top to bottom
+	nodeIds.reserve(width_ * height_);
+
+	auto lerp = [this](int v, int extent) -> float {
+		if (extent < 2) {
+			return 0;
+		} else {
+			return (2.0f / static_cast<float>(extent - 1) * v - 1.0f) * scale_;
+		}
+	};
+	for (auto y : std::views::iota(0, height_)) {
+		for (auto x : std::views::iota(0, width_)) {
+			nodeIds.push_back(g.AddNode({
+				lerp(x, width_),
+				lerp(y, height_)
+			}));
+		}
+	}
+
+	if (!includeEdges_) {
+		return;
+	}
+
+	auto nodeIdAt = [this, nodeIds](int x, int y) -> int {
+		assert(x >= 0);
+		assert(x < width_);
+		assert(y >= 0);
+		assert(y < height_);
+
+		return nodeIds[y * width_ + x];
+	};
+
+	for (auto y : std::views::iota(0, height_)) {
+		for (auto x : std::views::iota(0, width_)) {
+			if (x > 0) {
+				g.AddEdge(nodeIdAt(x, y), nodeIdAt(x - 1, y));
+			}
+			if (y > 0) {
+				g.AddEdge(nodeIdAt(x, y), nodeIdAt(x, y - 1));
+			}
+		}
+	}
 }
 
 void TangleGraphManipulation::OnShowControls() {

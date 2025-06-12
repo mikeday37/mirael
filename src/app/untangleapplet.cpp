@@ -138,6 +138,8 @@ void UntangleApplet::OnShowControls() {
 				showVar("dragOffset_.x", std::format("{:.4f}", dragOffset_.x).c_str());
 				showVar("dragOffset_.y", std::format("{:.4f}", dragOffset_.y).c_str());
 
+				showVar("Node count", std::format("{:d}", graph_.GetNodeCount()).c_str());
+				showVar("Edge count", std::format("{:d}", graph_.GetEdgeCount()).c_str());
 
 				ImGui::EndTable();
 			}

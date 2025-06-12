@@ -35,6 +35,9 @@ public:
 	std::vector<Edge> GetEdges(int nodeId) const;
 	void RemoveEdge(int edgeId);
 
+	int GetNodeCount() const;
+	int GetEdgeCount() const;
+
 	void Clear();
 
 private:
