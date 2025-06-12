@@ -54,6 +54,27 @@ void UntangleApplet::OnShowControls() {
 
 		if (ImGui::BeginTabItem("Settings")) {
 			ImGui::Checkbox("Auto-Size Window", &autoSize_);
+			if (ImGui::BeginTable("GraphManipulations", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchProp)) {
+				for (auto manipulation : graphManipulations_.GetAll()) {
+					ImGui::TableNextRow();
+					ImGui::TableNextColumn();
+					if (ImGui::Button(manipulation->GetDisplayName().data())) {
+						ClearGraphIndicators();
+						manipulation->ManipulateGraph(graph_);
+					}
+					ImGui::TableNextColumn();
+					ImGui::PushID(manipulation);
+					manipulation->OnShowControls();
+					ImGui::PopID();
+				}
+				ImGui::TableNextRow();
+				ImGui::TableNextColumn();
+				if (ImGui::Button("Clear")) {
+					ClearGraphIndicators();
+					graph_.Clear();
+				}
+				ImGui::EndTable();
+			}
 			ImGui::EndTabItem();
 		}
 
@@ -132,9 +153,11 @@ void UntangleApplet::OnEvent(const SDL_Event &e) {
 		case SDL_KEYDOWN:
 			switch (e.key.keysym.sym) {
 				case SDLK_a:
+				case SDLK_INSERT:
 					OnAdd();
 					break;
 				case SDLK_d:
+				case SDLK_DELETE:
 					OnDelete();
 					break;
 			}
@@ -293,4 +316,12 @@ UntangleApplet::EdgeStyle UntangleApplet::GetEdgeStyle(int edgeId)
 			(edgeId == highlightedEdgeId_ ? style_.highlightSelected : style_.selected) :
 			(edgeId == highlightedEdgeId_ ? style_.highlight : style_.normal)
 		).edge;
+}
+
+void UntangleApplet::ClearGraphIndicators()
+{
+	selectedNodeId_ = 0;
+	selectedEdgeId_ = 0;
+	highlightedNodeId_ = 0;
+	highlightedEdgeId_ = 0;
 }

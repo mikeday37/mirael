@@ -110,4 +110,5 @@ private:
 
 	NodeStyle GetNodeStyle(int nodeId);
 	EdgeStyle GetEdgeStyle(int edgeId);
+	void ClearGraphIndicators();
 };
