@@ -1,6 +1,6 @@
 #include "app_pch.hpp"
 
-#include "app/graph_generators.hpp"
+#include "app/graph_manipulations.hpp"
 
 #include <ranges>
 #include <random>
