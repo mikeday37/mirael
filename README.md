@@ -17,6 +17,7 @@ A program for visually exploring planar graph embeddings.
 - [OpenGL](https://www.opengl.org/)
   - [GLAD](https://github.com/Dav1dde/glad/tree/master?tab=readme-ov-file)
 - [Dear ImGui](https://github.com/ocornut/imgui)
+- [GLM](https://github.com/g-truc/glm)
 
 ### Future / Under Consideration
 - [nlohmann/json](https://github.com/nlohmann/json)
