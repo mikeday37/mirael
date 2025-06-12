@@ -23,6 +23,7 @@ A program for visually exploring planar graph embeddings.
 - [LodePNG](https://github.com/nothings/stb)
 - [stb_image_write](https://github.com/nothings/stb)
 - [CGAL](https://www.cgal.org/)
+- [EnTT](https://github.com/skypjack/entt?tab=readme-ov-file)
 
 ## License Attributions
 This project uses the following 3rd party libraries and acknowledges their licenses with thanks to their authors:

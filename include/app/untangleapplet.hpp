@@ -1,7 +1,7 @@
 #pragma once
 
 #include "app/applet.hpp"
-#include "app/graph_manipulations.hpp"
+#include "app/graph_manipulators.hpp"
 #include "app/graph.hpp"
 
 #include "vec2.hpp"
