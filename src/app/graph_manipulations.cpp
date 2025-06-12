@@ -7,14 +7,14 @@
 
 #include "imgui.h"
 
-void GenerateRandomGraphManipulation::OnShowControls() {
+void GenerateRandomGraphManipulator::OnShowControls() {
 	ImGui::SliderInt("Node Count", &nodeCount_, 1, 100);
 	ImGui::SliderInt("Edge Count", &edgeCount_, 0, nodeCount_ * (nodeCount_ - 1) / 2);
 	ImGui::SliderInt("Max Edge Tries", &maxEdgeTries_, 0, 100);
 	ImGui::SliderFloat("Scale", &scale_, 0.001f, 1.0f);
 }
 
-void GenerateRandomGraphManipulation::ManipulateGraph(Graph &g) {
+void GenerateRandomGraphManipulator::Manipulate(Graph &g) {
 
 	// this method will satisfy nodeCount_ and will make a good effort on edgeCount_
 	// when nearly saturated, though, it may create fewer edges than edgeCount_.
@@ -85,14 +85,14 @@ void GenerateRandomGraphManipulation::ManipulateGraph(Graph &g) {
 	}
 }
 
-void GenerateGridGraphManipulation::OnShowControls() {
+void GenerateGridGraphManipulator::OnShowControls() {
 	ImGui::SliderInt("Width", &width_, 1, 100);
 	ImGui::SliderInt("Height", &height_, 1, 100);
 	ImGui::SliderFloat("Scale", &scale_, 0.001f, 1.0f);
 	ImGui::Checkbox("Include Edges", &includeEdges_);
 }
 
-void GenerateGridGraphManipulation::ManipulateGraph(Graph &g) {
+void GenerateGridGraphManipulator::Manipulate(Graph &g) {
 	g.Clear();
 
 	if (width_ < 0 || height_ < 0) {
@@ -143,7 +143,7 @@ void GenerateGridGraphManipulation::ManipulateGraph(Graph &g) {
 	}
 }
 
-void TangleGraphManipulation::OnShowControls() {
+void TangleGraphManipulator::OnShowControls() {
 	int shapeIndex = static_cast<int>(shape_);
 	if (ImGui::Combo("Shape", &shapeIndex, ShapeNames, std::size(ShapeNames))){
 		shape_ = static_cast<Shape>(shapeIndex);
@@ -151,7 +151,7 @@ void TangleGraphManipulation::OnShowControls() {
 	ImGui::SliderFloat("Scale", &scale_, 0.001f, 1.0f);
 }
 
-void TangleGraphManipulation::ManipulateGraph(Graph &g) {
+void TangleGraphManipulator::Manipulate(Graph &g) {
 	std::mt19937 rng(std::random_device{}());
 	switch (shape_) {
 		case Shape::Random: {
@@ -184,12 +184,12 @@ void TangleGraphManipulation::ManipulateGraph(Graph &g) {
 	}
 }
 
-void CullGraphManipulation::OnShowControls() {
+void CullGraphManipulator::OnShowControls() {
 	ImGui::SliderFloat("Node Fraction", &nodeFraction_, 0, 1);
 	ImGui::SliderFloat("Edge Fraction", &edgeFraction_, 0, 1);
 }
 
-void CullGraphManipulation::ManipulateGraph(Graph &g) {
+void CullGraphManipulator::Manipulate(Graph &g) {
 	std::mt19937 rng(std::random_device{}());
 	auto cull = [&g, &rng](bool nodes, int count, float fraction, auto&& getFunc, auto&& removeFunc) {
 		using Item = std::ranges::range_value_t<std::invoke_result_t<decltype(getFunc)>>;

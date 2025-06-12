@@ -55,16 +55,16 @@ void UntangleApplet::OnShowControls() {
 		if (ImGui::BeginTabItem("Settings")) {
 			ImGui::Checkbox("Auto-Size Window", &autoSize_);
 			if (ImGui::BeginTable("GraphManipulations", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchProp)) {
-				for (auto manipulation : graphManipulations_.GetAll()) {
+				for (auto manipulator : graphManipulators_.GetAll()) {
 					ImGui::TableNextRow();
 					ImGui::TableNextColumn();
-					if (ImGui::Button(manipulation->GetDisplayName().data())) {
+					if (ImGui::Button(manipulator->GetDisplayName().data())) {
 						ClearGraphIndicators();
-						manipulation->ManipulateGraph(graph_);
+						manipulator->Manipulate(graph_);
 					}
 					ImGui::TableNextColumn();
-					ImGui::PushID(manipulation);
-					manipulation->OnShowControls();
+					ImGui::PushID(manipulator);
+					manipulator->OnShowControls();
 					ImGui::PopID();
 				}
 				ImGui::TableNextRow();

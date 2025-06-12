@@ -25,7 +25,7 @@ private:
 
 	// graph
 	Graph graph_;
-	KnownGraphManipulations graphManipulations_;
+	KnownGraphManipulators graphManipulators_;
 
 	// ui state
 	int selectedNodeId_ = 0;
