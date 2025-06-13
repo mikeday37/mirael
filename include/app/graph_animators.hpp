@@ -40,6 +40,8 @@ public:
 	using kilometers = float;
 
 private:
+	bool rotateClockwise_ = true; // false = counterclockwise
+
 	static constexpr kilograms earthMass = 5.972e24f;
 	kilograms massMin_ = 0;
 	kilograms massMax_ = 2 * earthMass;
@@ -52,9 +54,9 @@ private:
 
 	static constexpr seconds moonOrbitPeriod = 27.3f * 24 * 60 * 60; // 27.3 days
 	static constexpr seconds desiredPeriodAtPerimeter = 60.0f; // one revolution per minute at 1 world unit from origin
-	static constexpr seconds defaultTimeScale = desiredPeriodAtPerimeter / moonOrbitPeriod;
-	seconds minTimeScale_ = 0;
-	seconds maxTimeScale_ = 2 * defaultTimeScale;
+	static constexpr seconds defaultTimeScale = moonOrbitPeriod / desiredPeriodAtPerimeter;
+	seconds timeScaleMin_ = 0;
+	seconds timeScaleMax_ = 2 * defaultTimeScale;
 	seconds timeScale_ = defaultTimeScale;
 };
 

@@ -79,12 +79,14 @@ void UntangleApplet::OnShowControls() {
 				ImGui::TreePop();
 			}
 			if (ImGui::TreeNodeEx("Graph Animators", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_DrawLinesFull)) {
-				if (ImGui::Button("Play ▶")) {
-					Play();
-				}
-				ImGui::SameLine();
-				if (ImGui::Button("Pause ⏸")) {
-					Pause();
+				if (playingAnimation_) {
+					if (ImGui::Button("Pause")) {
+						Pause();
+					}
+				} else {
+					if (ImGui::Button("Play")) {
+						Play();
+					}
 				}
 				if (ImGui::BeginTable("##GraphAnimators", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchProp)) {
 					for (auto animator : graphAnimators_.GetAll()) {
@@ -230,11 +232,9 @@ void UntangleApplet::OnEvent(const SDL_Event &e) {
 
 void UntangleApplet::OnNewFrame()
 {
-	if (!playingAnimation_) {
+	if (!currentAnimator_ || !playingAnimation_) {
 		return;
 	}
-
-	assert(currentAnimator_);
 
 	auto [worldTime, deltaTime] = animationTimer_.Tick();
 	currentAnimator_->Animate(graph_, worldTime, deltaTime);
