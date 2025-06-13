@@ -3,5 +3,5 @@
 int successor(int a) {return a + 1;}
 
 TEST_CASE( "We can add!", "[sanity]" ) {
-	REQUIRE( successor(1) == 3);
+	REQUIRE( successor(1) == 2);
 }
