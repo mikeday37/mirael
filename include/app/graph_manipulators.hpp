@@ -79,12 +79,12 @@ struct KnownGraphManipulators {
 	GenerateRandomGraphManipulator random;
 	GenerateGridGraphManipulator grid;
 	TangleGraphManipulator tangle;
-	CullGraphManipulator removeEdges;
+	CullGraphManipulator cull;
 
 	std::vector<GraphManipulator *> GetAll() {return {
 		&random,
 		&grid,
 		&tangle,
-		&removeEdges,
+		&cull,
 	};}
 };
