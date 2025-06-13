@@ -25,6 +25,7 @@ set(IMGUI_SOURCES
 # GLAD source
 set(GLAD_SOURCE external/glad/src/glad.c)
 
+
 # === UI Object Library ===
 file(GLOB_RECURSE APP_SOURCES "src/app/*.cpp")
 
@@ -69,3 +70,22 @@ if(EXISTS ${SDL2_DLL})
 else()
 	message(FATAL_ERROR "SDL2.dll not found in ${SDL2_LIB_DIR}")
 endif()
+
+
+# === Unit Testing ===
+file(GLOB_RECURSE MIRAEL_TEST_SOURCES "tests/*.cpp")
+
+list(APPEND CMAKE_PREFIX_PATH "D:/dev/packages/Catch2_v3_2025_06_13_3013cb89")
+find_package(Catch2 3 REQUIRED)
+
+add_executable(mirael_tests
+    ${MIRAEL_TEST_SOURCES}
+)
+
+target_link_libraries(mirael_tests PRIVATE Catch2::Catch2WithMain)
+
+enable_testing()
+include(CTest)
+include(Catch)
+
+catch_discover_tests(mirael_tests)

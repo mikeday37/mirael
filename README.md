@@ -18,6 +18,7 @@ A program for visually exploring planar graph embeddings.
   - [GLAD](https://github.com/Dav1dde/glad/tree/master?tab=readme-ov-file)
 - [Dear ImGui](https://github.com/ocornut/imgui)
 - [GLM](https://github.com/g-truc/glm)
+- [Catch2](https://github.com/catchorg/Catch2)
 
 ### Future / Under Consideration
 - [nlohmann/json](https://github.com/nlohmann/json)
@@ -32,3 +33,4 @@ This project uses the following 3rd party libraries and acknowledges their licen
 - GLAD - [MIT License](LICENSES/GLAD_LICENSE.txt) - David Herberth
 - Dear ImGui - [MIT License](LICENSES/Dear_ImGui_LICENSE.txt) - Omar Cornut
 - GLM - [The Happy Bunny License or MIT License](LICENSES/GLM_License.txt) - G-Truc Creation
+- Catch2 - [Boost Software Licence](LICENSES/Catch2_LICENSE.txt) - Martin Hořeňovský, Phil Nash, and Contributors

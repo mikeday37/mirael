@@ -394,6 +394,12 @@ void App::ShowAboutWindow()
 			"G-Truc Creation"
 		);
 
+		AttributionLine(
+			"Catch2", "https://github.com/catchorg/Catch2",
+			"Boost Software License", "https://github.com/catchorg/Catch2/blob/3013cb897b5706e8532507cb2b6ac33e1fc35d93/LICENSE.txt",
+			"Martin Hořeňovský, Phil Nash, and Contributors"
+		);
+
 		ImGui::Text("");
 	}
 
