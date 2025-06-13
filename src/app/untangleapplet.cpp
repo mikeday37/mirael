@@ -54,26 +54,53 @@ void UntangleApplet::OnShowControls() {
 
 		if (ImGui::BeginTabItem("Settings")) {
 			ImGui::Checkbox("Auto-Size Window", &autoSize_);
-			if (ImGui::BeginTable("GraphManipulations", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchProp)) {
-				for (auto manipulator : graphManipulators_.GetAll()) {
+			if (ImGui::TreeNodeEx("Graph Manipulators", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_DrawLinesFull)) {
+				if (ImGui::BeginTable("##GraphManipulators", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchProp)) {
+					for (auto manipulator : graphManipulators_.GetAll()) {
+						ImGui::TableNextRow();
+						ImGui::TableNextColumn();
+						if (ImGui::Button(manipulator->GetDisplayName().data())) {
+							ClearGraphIndicators();
+							manipulator->Manipulate(graph_);
+						}
+						ImGui::TableNextColumn();
+						ImGui::PushID(manipulator);
+						manipulator->OnShowControls();
+						ImGui::PopID();
+					}
 					ImGui::TableNextRow();
 					ImGui::TableNextColumn();
-					if (ImGui::Button(manipulator->GetDisplayName().data())) {
+					if (ImGui::Button("Clear")) {
 						ClearGraphIndicators();
-						manipulator->Manipulate(graph_);
+						graph_.Clear();
 					}
-					ImGui::TableNextColumn();
-					ImGui::PushID(manipulator);
-					manipulator->OnShowControls();
-					ImGui::PopID();
+					ImGui::EndTable();
 				}
-				ImGui::TableNextRow();
-				ImGui::TableNextColumn();
-				if (ImGui::Button("Clear")) {
-					ClearGraphIndicators();
-					graph_.Clear();
+				ImGui::TreePop();
+			}
+			if (ImGui::TreeNodeEx("Graph Animators", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_DrawLinesFull)) {
+				if (ImGui::Button("Play ▶")) {
+					Play();
 				}
-				ImGui::EndTable();
+				ImGui::SameLine();
+				if (ImGui::Button("Pause ⏸")) {
+					Pause();
+				}
+				if (ImGui::BeginTable("##GraphAnimators", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchProp)) {
+					for (auto animator : graphAnimators_.GetAll()) {
+						ImGui::TableNextRow();
+						ImGui::TableNextColumn();
+						if (ImGui::Button(animator->GetDisplayName().data())) {
+							SetCurrentAnimator(animator);
+						}
+						ImGui::TableNextColumn();
+						ImGui::PushID(animator);
+						animator->OnShowControls();
+						ImGui::PopID();
+					}
+					ImGui::EndTable();
+				}
+				ImGui::TreePop();
 			}
 			ImGui::EndTabItem();
 		}
@@ -162,6 +189,18 @@ void UntangleApplet::OnEvent(const SDL_Event &e) {
 				case SDLK_DELETE:
 					OnDelete();
 					break;
+
+				case SDLK_SPACE:
+					if (!currentAnimator_) {
+						break;
+					};
+
+					if (playingAnimation_) {
+						Pause();
+					} else {
+						Play();
+					}
+					break;
 			}
 			break;
 
@@ -187,6 +226,39 @@ void UntangleApplet::OnEvent(const SDL_Event &e) {
 			}
 			break;
 	}
+}
+
+void UntangleApplet::OnNewFrame()
+{
+	if (!playingAnimation_) {
+		return;
+	}
+
+	assert(currentAnimator_);
+
+	auto [worldTime, deltaTime] = animationTimer_.Tick();
+	currentAnimator_->Animate(graph_, worldTime, deltaTime);
+}
+
+void UntangleApplet::SetCurrentAnimator(GraphAnimator * animator)
+{
+	ClearGraphIndicators();
+	currentAnimator_ = animator;
+	playingAnimation_ = true;
+	animationTimer_.Reset();
+}
+
+void UntangleApplet::Play()
+{
+	animationTimer_.Resume();
+	ClearGraphIndicators();
+	playingAnimation_ = true;
+}
+
+void UntangleApplet::Pause()
+{
+	animationTimer_.Pause();
+	playingAnimation_ = false;
 }
 
 glm::vec2 UntangleApplet::ToScreen(glm::vec2 worldPos) {

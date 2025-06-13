@@ -2,7 +2,9 @@
 
 #include "app/applet.hpp"
 #include "app/graph_manipulators.hpp"
+#include "app/graph_animators.hpp"
 #include "app/graph.hpp"
+#include "app/simulation_timer.hpp"
 
 #include "vec2.hpp"
 #include "imgui.h"
@@ -16,6 +18,7 @@ public:
 	void OnRenderBackground(Graphics &g) override;
 	void OnShowControls() override;
 	void OnEvent(const SDL_Event &e) override;
+	void OnNewFrame() override;
 
 private:
 	// controls
@@ -26,6 +29,15 @@ private:
 	// graph
 	Graph graph_;
 	KnownGraphManipulators graphManipulators_;
+
+	// animation
+	KnownGraphAnimators graphAnimators_;
+	bool playingAnimation_ = false;
+	GraphAnimator * currentAnimator_ = nullptr;
+	SimulationTimer animationTimer_;
+	void SetCurrentAnimator(GraphAnimator *animator);
+	void Play();
+	void Pause();
 
 	// ui state
 	int selectedNodeId_ = 0;
@@ -92,7 +104,7 @@ private:
 	GraphStyle style_ = {
 		{ // ---- normal ----
 			{40.0f, 6.0f, {1,1,1,1}, {0,0,0,1}}, // node
-			{2.0f, {0.63f,0.63f,0.63f,1}} // edge
+			{2.0f, {1, 0.635f, 0.161f, 0.761f}} // edge
 		},
 		{ // ---- selected ----
 			{46.0f, 12.0f, {0,0,1,1}, {0,0,0.25f,1}}, // node
