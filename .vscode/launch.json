@@ -11,6 +11,18 @@
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "preLaunchTask": "CMake: Build"
-    }
+    },
+	{
+		"name": "Debug Mirael Tests",
+		"type": "cppvsdbg",
+		"request": "launch",
+		"program": "${workspaceFolder}/out/build/MSVC_x64/Debug/mirael_tests.exe",
+		"args": [],
+		"stopAtEntry": false,
+		"cwd": "${workspaceFolder}",
+		"console": "integratedTerminal",
+		"symbolSearchPath": "",
+      "preLaunchTask": "CMake: Build"
+	}
   ]
 }

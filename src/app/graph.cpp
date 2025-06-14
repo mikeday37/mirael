@@ -22,6 +22,11 @@ int Graph::AddNode(glm::vec2 pos)
 	return nodeId;
 }
 
+bool Graph::ContainsNode(int nodeId) const
+{
+    return nodes_.contains(nodeId);
+}
+
 Graph::Node Graph::GetNode(int nodeId) const
 {
 	assert(nodes_.contains(nodeId));
@@ -107,11 +112,14 @@ int Graph::AddEdge(int nodeIdA, int nodeIdB)
 	return edgeId;
 }
 
+bool Graph::ContainsEdge(int edgeId) const
+{
+    return edges_.contains(edgeId);
+}
+
 bool Graph::ContainsEdge(int nodeIdA, int nodeIdB) const
 {
 	assert(nodeIdA != nodeIdB);
-	assert(nodes_.contains(nodeIdA));
-	assert(nodes_.contains(nodeIdB));
 
 	return edgeSet_.contains(CanonicalEdge(nodeIdA, nodeIdB));
 }
@@ -132,6 +140,29 @@ std::vector<Graph::Edge> Graph::GetEdges() const
 
 	for (const auto &[id, nodes] : edges_) {
 		edges.emplace_back(id, nodes.first, nodes.second);
+	}
+
+    return edges;
+}
+
+std::vector<Graph::Edge> Graph::GetEdges(int nodeId) const
+{
+	assert(nodes_.contains(nodeId));
+
+	std::vector<Graph::Edge> edges;
+
+	auto edgesIt = nodeEdges_.find(nodeId);
+	if (edgesIt == nodeEdges_.end()) {
+		return edges;
+	}
+
+	auto nodeEdgeIds = edgesIt->second;
+
+	edges.reserve(nodeEdgeIds.size());
+
+	for (const auto edgeId : nodeEdgeIds) {
+		auto& edge = *edges_.find(edgeId);
+		edges.emplace_back(edgeId, edge.second.first, edge.second.second);
 	}
 
     return edges;
@@ -163,6 +194,28 @@ int Graph::GetNodeCount() const
 int Graph::GetEdgeCount() const
 {
     return static_cast<int>(edges_.size());
+}
+
+bool Graph::HasNodes() const
+{
+    return !nodes_.empty();
+}
+
+bool Graph::NodeHasEdges(int nodeId) const
+{
+	assert(nodes_.contains(nodeId));
+
+    return nodeEdges_.contains(nodeId) && !nodeEdges_.find(nodeId)->second.empty();
+}
+
+bool Graph::HasEdges() const
+{
+    return !edges_.empty();
+}
+
+bool Graph::IsEmpty() const
+{
+    return nodes_.empty() && edges_.empty();
 }
 
 void Graph::Clear()

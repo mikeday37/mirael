@@ -23,12 +23,14 @@ public:
 	};
 
 	int AddNode(glm::vec2 pos);
+	bool ContainsNode(int nodeId) const;
 	Node GetNode(int nodeId) const;
 	std::vector<Node> GetNodes() const;
 	void RepositionNode(int nodeId, glm::vec2 pos);
 	void RemoveNode(int nodeId);
 
 	int AddEdge(int nodeIdA, int nodeIdB);
+	bool ContainsEdge(int edgeId) const;
 	bool ContainsEdge(int nodeIdA, int nodeIdB) const;
 	Edge GetEdge(int edgeId) const;
 	std::vector<Edge> GetEdges() const;
@@ -37,6 +39,11 @@ public:
 
 	int GetNodeCount() const;
 	int GetEdgeCount() const;
+
+	bool HasNodes() const;
+	bool NodeHasEdges(int nodeId) const;
+	bool HasEdges() const;
+	bool IsEmpty() const;
 
 	void Clear();
 	void ClearEdges();

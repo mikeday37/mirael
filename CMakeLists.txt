@@ -50,28 +50,28 @@ set (APP_OBJ_INCLUDE_DIRS
 		${GLM_INCLUDE_DIR}
 )
 
-add_library(app_obj OBJECT ${APP_SOURCES})
+add_library(app_lib STATIC ${APP_SOURCES})
 
-target_precompile_headers(app_obj PRIVATE src/app/app_pch.hpp)
-target_include_directories(app_obj
+target_precompile_headers(app_lib PRIVATE src/app/app_pch.hpp)
+target_include_directories(app_lib
 	PRIVATE
 		src
 		${APP_OBJ_INCLUDE_DIRS}
 	PUBLIC
 		include
 )
-target_link_libraries(app_obj PRIVATE SDL2 SDL2main opengl32)
+target_link_libraries(app_lib PRIVATE SDL2 SDL2main opengl32)
 
 
 # === Main Executable ===
-add_executable(mirael src/main.cpp $<TARGET_OBJECTS:app_obj> ${IMGUI_SOURCES} ${GLAD_SOURCE})
+add_executable(mirael src/main.cpp ${IMGUI_SOURCES} ${GLAD_SOURCE})
 
 target_include_directories(mirael PRIVATE
 	include
 	${APP_OBJ_INCLUDE_DIRS}
 )
 target_link_directories(mirael PRIVATE ${SDL2_LIB_DIR})
-target_link_libraries(mirael SDL2 SDL2main opengl32)
+target_link_libraries(mirael app_lib)
 
 
 # === Post-Build ===
@@ -99,7 +99,8 @@ target_include_directories(mirael_tests PRIVATE
 	include
 	${APP_OBJ_INCLUDE_DIRS}
 )
-target_link_libraries(mirael_tests PRIVATE Catch2::Catch2WithMain)
+target_link_directories(mirael_tests PRIVATE ${SDL2_LIB_DIR})
+target_link_libraries(mirael_tests PRIVATE Catch2::Catch2WithMain app_lib)
 
 enable_testing()
 include(CTest)
