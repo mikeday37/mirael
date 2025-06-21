@@ -1,0 +1,39 @@
+name: Mirael CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSVC Dev Cmd
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure Debug
+        run: cmake --preset debug
+        
+      - name: Configure Release
+        run: cmake --preset release
+        
+      - name: Build Debug
+        run: cmake --build --preset debug
+
+      - name: Build Release
+        run: cmake --build --preset release
+
+      - name: Run Debug Unit Tests
+        run: out/build/debug/mirael_tests.exe
+
+      - name: Run Release Unit Tests
+        run: out/build/release/mirael_tests.exe
+
+      - name: Check Code Format
+        run: cmake --build --preset debug --target clang_format_check
