@@ -1,0 +1,72 @@
+{
+    "version": 4,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 21
+    },
+    "configurePresets": [
+        {
+            "name": "debug",
+            "displayName": "Debug",
+            "description": "Debug build using Ninja",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "installDir": "${sourceDir}/out/install/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            },
+            "environment": {
+                "MIRAEL_BUILD_PRESET": "Debug"
+            }
+        },
+        {
+            "name": "release",
+            "displayName": "Release",
+            "description": "Release build using Ninja",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "installDir": "${sourceDir}/out/install/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            },
+            "environment": {
+                "MIRAEL_BUILD_PRESET": "Release"
+            }
+        },
+        {
+            "name": "lint",
+            "displayName": "Lint",
+            "description": "Lint build using Ninja",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/out/lint",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "CMAKE_DISABLE_PRECOMPILE_HEADERS": "ON",
+                "MIRAEL_DISABLE_INSTALL": "ON"
+            },
+            "environment": {
+                "MIRAEL_BUILD_PRESET": "Lint"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "debug",
+            "configurePreset": "debug",
+            "inheritConfigureEnvironment": true
+        },
+        {
+            "name": "release",
+            "configurePreset": "release",
+            "inheritConfigureEnvironment": true
+        },
+        {
+            "name": "lint",
+            "configurePreset": "lint",
+            "inheritConfigureEnvironment": true
+        }
+    ]
+}

@@ -1,0 +1,20 @@
+#pragma once
+
+#include "glad/glad.h"
+#include "glm.hpp"
+#include "gtc/matrix_transform.hpp"
+#include "gtc/type_ptr.hpp"
+#include "imgui.h"
+#include <array>
+#include <exception>
+#include <format>
+#include <limits>
+#include <map>
+#include <random>
+#include <ranges>
+#include <SDL.h>
+#include <set>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>

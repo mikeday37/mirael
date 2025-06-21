@@ -1,0 +1,30 @@
+Checks: >
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  clang-analyzer-core.*,
+  clang-analyzer-deadcode.*,
+  cppcoreguidelines-owning-memory,
+  performance-*
+
+#
+# resolving [bugprone-easily-swappable-parameters] would lower signal to noise in this repo.
+#
+
+# Consider the following commented-out options as mirael grows:
+#
+#  llvm-*,
+#  clang-analyzer-*,
+#  modernize-*,
+#  -readability-else-after-return,
+#  -llvm-else-after-return,
+#  -modernize-use-trailing-return-type
+
+#CheckOptions:
+#  - key: modernize-use-nullptr.NullMacros
+#    value: "NULL"
+#  - key: modernize-use-nullptr.IgnoreMacros
+#    value: "false"
+
+WarningsAsErrors: "*"
+HeaderFilterRegex: '^(include/app/.+\.hpp|tests/.+\.hpp)$'
+FormatStyle: file

@@ -1,0 +1,21 @@
+{
+    "cmake.useCMakePresets": "always",
+    "cmake.options.statusBarVisibility": "hidden",
+    "cmake.options.advanced": {
+        "configurePreset": {
+            "statusBarVisibility": "compact",
+        }
+    },
+    "C_Cpp.clang_format_style": "file",
+    "C_Cpp.clang_format_fallbackStyle": "LLVM",
+    "editor.insertSpaces": true,
+    "editor.tabSize": 4,
+    "editor.formatOnPaste": false,
+    "editor.formatOnType": false,
+    "editor.formatOnSave": true,
+    "testMate.cpp.test.executables": "${workspaceFolder}/out/build/*/mirael_tests.exe",
+    "files.associations": {
+        ".clang-tidy": "yaml",
+        ".clang-format": "yaml"
+    },
+}
