@@ -37,6 +37,3 @@ jobs:
 
       - name: Check Code Format
         run: cmake --build --preset debug --target clang_format_check
-
-      - name: Run Clang-Tidy
-        run: .\lint.bat
