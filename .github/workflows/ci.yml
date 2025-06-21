@@ -17,10 +17,16 @@ jobs:
       - name: Setup MSVC Dev Cmd
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Configure & Build Debug
+      - name: Configure Debug
+        run: cmake --preset debug
+        
+      - name: Configure Release
+        run: cmake --preset release
+        
+      - name: Build Debug
         run: cmake --build --preset debug
 
-      - name: Configure & Build Release
+      - name: Build Release
         run: cmake --build --preset release
 
       - name: Run Debug Unit Tests
