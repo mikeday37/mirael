@@ -10,9 +10,9 @@ inline std::pair<int, int> CanonicalEdge(int a, int b) { return a < b ? std::mak
 
 int Graph::AddNode(glm::vec2 pos)
 {
-    assert(nextNodeId_ < std::numeric_limits<int>::max());
+    assert(nextId_ < std::numeric_limits<int>::max());
 
-    int nodeId = nextNodeId_++;
+    int nodeId = nextId_++;
     nodes_[nodeId] = pos;
     nodeEdges_[nodeId];
 
@@ -95,7 +95,7 @@ int Graph::AddEdge(int nodeIdA, int nodeIdB)
         return 0;
     }
 
-    int edgeId = nextEdgeId_++;
+    int edgeId = nextId_++;
 
     auto edgeKey = CanonicalEdge(nodeIdA, nodeIdB);
     edges_[edgeId] = edgeKey;
@@ -201,8 +201,7 @@ void Graph::Clear()
     edgeSet_.clear();
     nodes_.clear();
 
-    nextNodeId_ = 1;
-    nextEdgeId_ = 1;
+    nextId_ = 1;
 }
 
 void Graph::ClearEdges()
@@ -211,5 +210,7 @@ void Graph::ClearEdges()
     edges_.clear();
     edgeSet_.clear();
 
-    nextEdgeId_ = 1;
+    if (nodes_.empty()) {
+        nextId_ = 1;
+    }
 }
