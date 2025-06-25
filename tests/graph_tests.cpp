@@ -34,6 +34,14 @@ TEST_CASE("basic graph creation and manipulation")
 {
     Graph g;
 
+    // add some nodes to increase node ids out of probable ambiguity with edge ids
+    // (this is not required behavior, but is a harmless improvement to this test case,
+    // even if the behavior changes -- where it matters we'll use a handy lambda to
+    // remove them from the test section)
+    auto paddingNodeId1 = g.AddNode({-10, 10}); // not using constants here as they are throwaway values
+    auto paddingNodeId2 = g.AddNode({-11, 11});
+
+    // now for the objects we care about
     auto nodeId1 = g.AddNode(k_node1_pos);
     auto nodeId2 = g.AddNode(k_node2_pos);
     auto edgeId = g.AddEdge(nodeId1, nodeId2);
@@ -41,6 +49,10 @@ TEST_CASE("basic graph creation and manipulation")
     auto node1 = g.GetNode(nodeId1);
     auto node2 = g.GetNode(nodeId2);
     auto edge = g.GetEdge(edgeId);
+
+    // now that the objects are established, remove the padding nodes
+    g.RemoveNode(paddingNodeId1);
+    g.RemoveNode(paddingNodeId2);
 
     SECTION("node/edge id separation")
     {
