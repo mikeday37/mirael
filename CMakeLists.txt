@@ -41,29 +41,34 @@ set(GLM_INCLUDE_DIR
 
 # === SDL2 ===
 
-include(FetchContent)
+if(WIN32)
+	include(FetchContent)
 
-# Set minimal SDL2 features for OpenGL + ImGui GUI only
-set(SDL_SHARED OFF CACHE BOOL "" FORCE)
-set(SDL_STATIC ON CACHE BOOL "" FORCE)
-set(SDL_TEST OFF CACHE BOOL "" FORCE)
-set(SDL_AUDIO OFF CACHE BOOL "" FORCE)
-set(SDL_JOYSTICK OFF CACHE BOOL "" FORCE)
-set(SDL_HAPTIC OFF CACHE BOOL "" FORCE)
-set(SDL_POWER OFF CACHE BOOL "" FORCE)
-set(SDL_FILESYSTEM OFF CACHE BOOL "" FORCE)
-set(SDL_THREADS ON CACHE BOOL "" FORCE)
-set(SDL_TIMERS ON CACHE BOOL "" FORCE)       # Needed for ImGui/SDL2 backend
-set(SDL_VIDEO ON CACHE BOOL "" FORCE)        # Needed for OpenGL windowing
-set(SDL_RENDER OFF CACHE BOOL "" FORCE)      # ImGui uses OpenGL directly
+	# Set minimal SDL2 features for OpenGL + ImGui GUI only
+	set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+	set(SDL_STATIC ON CACHE BOOL "" FORCE)
+	set(SDL_TEST OFF CACHE BOOL "" FORCE)
+	set(SDL_AUDIO OFF CACHE BOOL "" FORCE)
+	set(SDL_JOYSTICK OFF CACHE BOOL "" FORCE)
+	set(SDL_HAPTIC OFF CACHE BOOL "" FORCE)
+	set(SDL_POWER OFF CACHE BOOL "" FORCE)
+	set(SDL_FILESYSTEM OFF CACHE BOOL "" FORCE)
+	set(SDL_THREADS ON CACHE BOOL "" FORCE)
+	set(SDL_TIMERS ON CACHE BOOL "" FORCE)       # Needed for ImGui/SDL2 backend
+	set(SDL_VIDEO ON CACHE BOOL "" FORCE)        # Needed for OpenGL windowing
+	set(SDL_RENDER OFF CACHE BOOL "" FORCE)      # ImGui uses OpenGL directly
 
-FetchContent_Declare(
-  SDL2
-  GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
-  GIT_TAG release-2.32.8  # Lock to a specific release
-)
+	FetchContent_Declare(
+	  SDL2
+	  GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+	  GIT_TAG release-2.32.8  # Lock to a specific release
+	)
 
-FetchContent_MakeAvailable(SDL2)
+	FetchContent_MakeAvailable(SDL2)
+else()
+	# SDL2 doesn't work well with FetchContent on Linux
+	find_package(SDL2 REQUIRED)
+endif()
 
 
 # === Externals Library ===
@@ -78,12 +83,23 @@ target_include_directories(externals_lib
         ${IMGUI_INCLUDE_DIRS}
         ${GLAD_INCLUDE_DIR}
         ${GLM_INCLUDE_DIR}
-        $<TARGET_PROPERTY:SDL2::SDL2,INTERFACE_INCLUDE_DIRECTORIES>
+        $<IF:$<BOOL:WIN32>,$<TARGET_PROPERTY:SDL2::SDL2,INTERFACE_INCLUDE_DIRECTORIES>,/usr/include/SDL2>
 )
-target_link_libraries(externals_lib
-    PRIVATE
-        opengl32
-)
+
+if(WIN32)
+	target_link_libraries(externals_lib
+	    PRIVATE
+	        opengl32
+	)
+else()
+	target_link_libraries(externals_lib
+	    PRIVATE
+	        GL
+	        m
+	        dl
+	        pthread
+	)
+endif()
 
 
 # === App Library ===
