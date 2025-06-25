@@ -342,19 +342,19 @@ void App::ShowAboutWindow()
 {
     if (ImGui::Begin("About Mirael", &showAbout_, ImGuiWindowFlags_AlwaysAutoResize)) {
 
-        ImGui::Text("");
+        ImGui::Text(" ");
         ImGui::Text("(c) 2025 Mike Day");
-        ImGui::Text("");
+        ImGui::Text(" ");
         ImGui::Separator();
-        ImGui::Text("");
+        ImGui::Text(" ");
         ImGui::Text("A modern C++ playground for experimenting with algorithms");
         ImGui::Text("and real-time visualizations.");
-        ImGui::Text("");
+        ImGui::Text(" ");
         ImGui::Separator();
-        ImGui::Text("");
+        ImGui::Text(" ");
         ImGui::Text("This project uses the following 3rd party libraries and");
         ImGui::Text("acknowledges their licenses with thanks to their authors:");
-        ImGui::Text("");
+        ImGui::Text(" ");
 
         AttributionLine("SDL2", "https://wiki.libsdl.org/SDL2/FrontPage", "zlib license",
                         "https://github.com/libsdl-org/SDL/blob/"
@@ -379,14 +379,14 @@ void App::ShowAboutWindow()
                         "3013cb897b5706e8532507cb2b6ac33e1fc35d93/LICENSE.txt",
                         "Martin Hořeňovský, Phil Nash, and Contributors");
 
-        ImGui::Text("");
+        ImGui::Text(" ");
         ImGui::Separator();
-        ImGui::Text("");
+        ImGui::Text(" ");
 
         for (auto &infoLine : GetBuildInfo())
             ImGui::Text("%s", infoLine);
 
-        ImGui::Text("");
+        ImGui::Text(" ");
     }
 
     ImGui::End();

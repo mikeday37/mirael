@@ -30,4 +30,4 @@ Use the Command Palette (`Ctrl+Shift+P`) to run CMake tasks.
 
 You need to have MSVC installed — typically via the **Community Edition of Visual Studio** with the **Desktop development with C++** workload.
 
-Also: **Launch VS Code via a Developer Command Prompt**, such as "**x64 Native Tools Command Prompt for VS 2022**".  This helps ensure your environment variables are correctly configured for that **CMake** can detect and use MSVC.
+Also: **Launch VS Code via a Developer Command Prompt**, such as "**x64 Native Tools Command Prompt for VS 2022**".  This helps ensure your environment variables are correctly configured so that **CMake** can detect and use MSVC.
