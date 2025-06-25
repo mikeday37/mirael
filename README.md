@@ -58,9 +58,6 @@ The architecture of Mirael will be expanded to run Sim classes on a background t
 2. Multithreaded, Extensible Sim Engine
 3. Untangle Physics Simulation
 4. Python Scripting
-5. Clang Support
-6. Linux Support
-7. GCC Support
 
 ## Contributing
 
