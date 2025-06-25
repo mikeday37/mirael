@@ -66,8 +66,6 @@ The architecture of Mirael will be expanded to run Sim classes on a background t
 
 Pull Requests should be limited to scaffolding improvements and bugfixes.  New Applets should remain in your fork, unless you want to share a really good tutorial Applet, demo showcase Applet, or other Applet of general usefulness to Mirael users.
 
-If you are interested in Mirael but do not develop on Windows with MSVC, I would love to collaborate with you on accelerating the planned support goals.  To start that process, open an Issue.
-
 ## Tech stack
 
 ### Tools:
@@ -77,7 +75,7 @@ If you are interested in Mirael but do not develop on Windows with MSVC, I would
 |IDE|[VS Code](https://code.visualstudio.com/docs)|
 |Language|[C++20](https://en.cppreference.com/w/cpp/20)|
 |Operating System|[Windows](https://learn.microsoft.com/en-us/windows/)<br>(support for Linux is planned)|
-|Compiler|[MSVC](https://learn.microsoft.com/en-us/cpp/?view=msvc-170)<br>(support for Clang and GCC is planned)|
+|Compiler|[Clang](https://clang.llvm.org/get_started.html)<br>[MSVC](https://learn.microsoft.com/en-us/cpp/?view=msvc-170)|
 |Build|[CMake](https://cmake.org/documentation/) + [Ninja](https://github.com/ninja-build/ninja#readme)|
 |Code Styling|[clang-format](https://clang.llvm.org/docs/ClangFormat.html)|
 |Linter|[clang-tidy](https://clang.llvm.org/extra/clang-tidy/)|
