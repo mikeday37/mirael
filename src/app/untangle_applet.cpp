@@ -31,7 +31,7 @@ void UntangleApplet::OnRenderBackground(Graphics &g)
     }
 }
 
-void UntangleApplet::DrawNode(Graphics &g, const Graph::Node &node)
+void UntangleApplet::DrawNode(Graphics &g, const UndirectedGraph<>::Node &node)
 {
     auto pos = ToScreen(node.pos);
     auto style = GetNodeStyle(node.id);
@@ -39,7 +39,7 @@ void UntangleApplet::DrawNode(Graphics &g, const Graph::Node &node)
              convert(style.lineColor));
 }
 
-void UntangleApplet::DrawEdge(Graphics &g, const Graph::Edge &edge)
+void UntangleApplet::DrawEdge(Graphics &g, const UndirectedGraph<>::Edge &edge)
 {
     auto nodeA = graph_.GetNode(edge.nodeIdA);
     auto nodeB = graph_.GetNode(edge.nodeIdB);

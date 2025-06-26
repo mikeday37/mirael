@@ -16,6 +16,7 @@
     "testMate.cpp.test.executables": "${workspaceFolder}/out/build/*/mirael_tests.exe",
     "files.associations": {
         ".clang-tidy": "yaml",
-        ".clang-format": "yaml"
+        ".clang-format": "yaml",
+        "*.tpp": "cpp"
     },
 }

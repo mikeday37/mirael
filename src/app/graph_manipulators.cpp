@@ -13,7 +13,7 @@ void GenerateRandomGraphManipulator::OnShowControls()
     ImGui::SliderFloat("Scale", &scale_, 0.001f, 1.0f);
 }
 
-void GenerateRandomGraphManipulator::Manipulate(Graph &g)
+void GenerateRandomGraphManipulator::Manipulate(UndirectedGraph<> &g)
 {
 
     // this method will satisfy nodeCount_ and will make a good effort on edgeCount_
@@ -94,7 +94,7 @@ void GenerateGridGraphManipulator::OnShowControls()
     ImGui::Checkbox("Include Edges", &includeEdges_);
 }
 
-void GenerateGridGraphManipulator::Manipulate(Graph &g)
+void GenerateGridGraphManipulator::Manipulate(UndirectedGraph<> &g)
 {
     g.Clear();
 
@@ -152,7 +152,7 @@ void TangleGraphManipulator::OnShowControls()
     ImGui::SliderFloat("Scale", &scale_, 0.001f, 1.0f);
 }
 
-void TangleGraphManipulator::Manipulate(Graph &g)
+void TangleGraphManipulator::Manipulate(UndirectedGraph<> &g)
 {
     std::mt19937 rng(std::random_device{}());
     switch (shape_) {
@@ -189,7 +189,7 @@ void CullGraphManipulator::OnShowControls()
     ImGui::SliderFloat("Edge Fraction", &edgeFraction_, 0, 1);
 }
 
-void CullGraphManipulator::Manipulate(Graph &g)
+void CullGraphManipulator::Manipulate(UndirectedGraph<> &g)
 {
     std::mt19937 rng(std::random_device{}());
     auto cull = [&g, &rng](bool nodes, int count, float fraction, auto &&getFunc, auto &&removeFunc) {

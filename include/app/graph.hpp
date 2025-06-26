@@ -3,11 +3,14 @@
 #include "app/utility.hpp"
 #include "vec2.hpp"
 #include <map>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
-class Graph
+enum class GraphType { Directed, Undirected };
+
+template <GraphType TType, typename TNode, typename TEdge> class Graph
 {
 public:
     struct Node {
@@ -52,8 +55,19 @@ private:
     std::map<int, glm::vec2> nodes_;
 
     int nextEdgeId_ = 1;
-    std::map<int, std::pair<int, int>> edges_;                  // edge id to node ids {a, b}
+    std::unordered_map<int, std::pair<int, int>> edges_;        // edge id to node ids {a, b}
     std::unordered_set<std::pair<int, int>, PairHash> edgeSet_; // contains {a,b} where a < b for every edge
-    std::map<int, std::unordered_set<int>>
+    std::unordered_map<int, std::unordered_set<int>>
         nodeEdges_; // node id to set of edge id, for both ends (has every edge twice)
 };
+
+struct Empty {
+};
+
+template <typename TNode = Empty, typename TEdge = Empty>
+using DirectedGraph = Graph<GraphType::Directed, TNode, TEdge>;
+
+template <typename TNode = Empty, typename TEdge = Empty>
+using UndirectedGraph = Graph<GraphType::Undirected, TNode, TEdge>;
+
+#include "app/graph.tpp"

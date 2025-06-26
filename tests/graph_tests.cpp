@@ -3,7 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <ranges>
 
-bool CheckEdgeMatch(Graph::Edge edge, int nodeIdA, int nodeIdB)
+bool CheckEdgeMatch(UndirectedGraph<>::Edge edge, int nodeIdA, int nodeIdB)
 {
     return (edge.nodeIdA == nodeIdA && edge.nodeIdB == nodeIdB) || (edge.nodeIdA == nodeIdB && edge.nodeIdB == nodeIdA);
 }
@@ -13,7 +13,7 @@ constexpr glm::vec2 k_node2_pos{2, -2222};
 
 TEST_CASE("empty graph returns expected values")
 {
-    Graph g;
+    UndirectedGraph<> g;
 
     REQUIRE(g.IsEmpty());
     REQUIRE(!g.HasNodes());
@@ -32,7 +32,7 @@ TEST_CASE("empty graph returns expected values")
 
 TEST_CASE("basic graph creation and manipulation")
 {
-    Graph g;
+    UndirectedGraph<> g;
 
     // add some nodes to increase node ids out of probable ambiguity with edge ids
     // (this is not required behavior, but is a harmless improvement to this test case,

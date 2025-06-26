@@ -1,4 +1,4 @@
-#include "app_pch.hpp"
+#pragma once
 
 #include "app/graph.hpp"
 #include "vec2.hpp"
@@ -8,7 +8,7 @@
 
 inline std::pair<int, int> CanonicalEdge(int a, int b) { return a < b ? std::make_pair(a, b) : std::make_pair(b, a); }
 
-int Graph::AddNode(glm::vec2 pos)
+template <GraphType TType, typename TNode, typename TEdge> int Graph<TType, TNode, TEdge>::AddNode(glm::vec2 pos)
 {
     assert(nextNodeId_ < std::numeric_limits<int>::max());
 
@@ -19,9 +19,14 @@ int Graph::AddNode(glm::vec2 pos)
     return nodeId;
 }
 
-bool Graph::ContainsNode(int nodeId) const { return nodes_.contains(nodeId); }
+template <GraphType TType, typename TNode, typename TEdge>
+bool Graph<TType, TNode, TEdge>::ContainsNode(int nodeId) const
+{
+    return nodes_.contains(nodeId);
+}
 
-Graph::Node Graph::GetNode(int nodeId) const
+template <GraphType TType, typename TNode, typename TEdge>
+Graph<TType, TNode, TEdge>::Node Graph<TType, TNode, TEdge>::GetNode(int nodeId) const
 {
     assert(nodes_.contains(nodeId));
 
@@ -30,9 +35,10 @@ Graph::Node Graph::GetNode(int nodeId) const
     return {nodeId, it->second};
 }
 
-std::vector<Graph::Node> Graph::GetNodes() const
+template <GraphType TType, typename TNode, typename TEdge>
+std::vector<typename Graph<TType, TNode, TEdge>::Node> Graph<TType, TNode, TEdge>::GetNodes() const
 {
-    std::vector<Graph::Node> nodes;
+    std::vector<Graph<TType, TNode, TEdge>::Node> nodes;
     nodes.reserve(nodes_.size());
 
     for (const auto &[id, pos] : nodes_) {
@@ -42,7 +48,8 @@ std::vector<Graph::Node> Graph::GetNodes() const
     return nodes;
 }
 
-void Graph::RepositionNode(int nodeId, glm::vec2 pos)
+template <GraphType TType, typename TNode, typename TEdge>
+void Graph<TType, TNode, TEdge>::RepositionNode(int nodeId, glm::vec2 pos)
 {
     assert(nodes_.contains(nodeId));
 
@@ -52,7 +59,7 @@ void Graph::RepositionNode(int nodeId, glm::vec2 pos)
     it->second.y = pos.y;
 }
 
-void Graph::RemoveNode(int nodeId)
+template <GraphType TType, typename TNode, typename TEdge> void Graph<TType, TNode, TEdge>::RemoveNode(int nodeId)
 {
     assert(nodes_.contains(nodeId));
     assert(nodeEdges_.contains(nodeId));
@@ -85,7 +92,8 @@ void Graph::RemoveNode(int nodeId)
     nodes_.erase(nodeId);
 }
 
-int Graph::AddEdge(int nodeIdA, int nodeIdB)
+template <GraphType TType, typename TNode, typename TEdge>
+int Graph<TType, TNode, TEdge>::AddEdge(int nodeIdA, int nodeIdB)
 {
     assert(nodeIdA != nodeIdB);
     assert(nodes_.contains(nodeIdA));
@@ -106,16 +114,22 @@ int Graph::AddEdge(int nodeIdA, int nodeIdB)
     return edgeId;
 }
 
-bool Graph::ContainsEdge(int edgeId) const { return edges_.contains(edgeId); }
+template <GraphType TType, typename TNode, typename TEdge>
+bool Graph<TType, TNode, TEdge>::ContainsEdge(int edgeId) const
+{
+    return edges_.contains(edgeId);
+}
 
-bool Graph::ContainsEdge(int nodeIdA, int nodeIdB) const
+template <GraphType TType, typename TNode, typename TEdge>
+bool Graph<TType, TNode, TEdge>::ContainsEdge(int nodeIdA, int nodeIdB) const
 {
     assert(nodeIdA != nodeIdB);
 
     return edgeSet_.contains(CanonicalEdge(nodeIdA, nodeIdB));
 }
 
-Graph::Edge Graph::GetEdge(int edgeId) const
+template <GraphType TType, typename TNode, typename TEdge>
+Graph<TType, TNode, TEdge>::Edge Graph<TType, TNode, TEdge>::GetEdge(int edgeId) const
 {
     assert(edges_.contains(edgeId));
 
@@ -124,9 +138,10 @@ Graph::Edge Graph::GetEdge(int edgeId) const
     return {edgeId, it->second.first, it->second.second};
 }
 
-std::vector<Graph::Edge> Graph::GetEdges() const
+template <GraphType TType, typename TNode, typename TEdge>
+std::vector<typename Graph<TType, TNode, TEdge>::Edge> Graph<TType, TNode, TEdge>::GetEdges() const
 {
-    std::vector<Graph::Edge> edges;
+    std::vector<Graph<TType, TNode, TEdge>::Edge> edges;
     edges.reserve(edges_.size());
 
     for (const auto &[id, nodes] : edges_) {
@@ -136,11 +151,12 @@ std::vector<Graph::Edge> Graph::GetEdges() const
     return edges;
 }
 
-std::vector<Graph::Edge> Graph::GetEdges(int nodeId) const
+template <GraphType TType, typename TNode, typename TEdge>
+std::vector<typename Graph<TType, TNode, TEdge>::Edge> Graph<TType, TNode, TEdge>::GetEdges(int nodeId) const
 {
     assert(nodes_.contains(nodeId));
 
-    std::vector<Graph::Edge> edges;
+    std::vector<Graph<TType, TNode, TEdge>::Edge> edges;
 
     auto edgesIt = nodeEdges_.find(nodeId);
     if (edgesIt == nodeEdges_.end()) {
@@ -159,7 +175,7 @@ std::vector<Graph::Edge> Graph::GetEdges(int nodeId) const
     return edges;
 }
 
-void Graph::RemoveEdge(int edgeId)
+template <GraphType TType, typename TNode, typename TEdge> void Graph<TType, TNode, TEdge>::RemoveEdge(int edgeId)
 {
     assert(edges_.contains(edgeId));
 
@@ -177,24 +193,40 @@ void Graph::RemoveEdge(int edgeId)
     edges_.erase(edgeId);
 }
 
-int Graph::GetNodeCount() const { return static_cast<int>(nodes_.size()); }
+template <GraphType TType, typename TNode, typename TEdge> int Graph<TType, TNode, TEdge>::GetNodeCount() const
+{
+    return static_cast<int>(nodes_.size());
+}
 
-int Graph::GetEdgeCount() const { return static_cast<int>(edges_.size()); }
+template <GraphType TType, typename TNode, typename TEdge> int Graph<TType, TNode, TEdge>::GetEdgeCount() const
+{
+    return static_cast<int>(edges_.size());
+}
 
-bool Graph::HasNodes() const { return !nodes_.empty(); }
+template <GraphType TType, typename TNode, typename TEdge> bool Graph<TType, TNode, TEdge>::HasNodes() const
+{
+    return !nodes_.empty();
+}
 
-bool Graph::NodeHasEdges(int nodeId) const
+template <GraphType TType, typename TNode, typename TEdge>
+bool Graph<TType, TNode, TEdge>::NodeHasEdges(int nodeId) const
 {
     assert(nodes_.contains(nodeId));
 
     return nodeEdges_.contains(nodeId) && !nodeEdges_.find(nodeId)->second.empty();
 }
 
-bool Graph::HasEdges() const { return !edges_.empty(); }
+template <GraphType TType, typename TNode, typename TEdge> bool Graph<TType, TNode, TEdge>::HasEdges() const
+{
+    return !edges_.empty();
+}
 
-bool Graph::IsEmpty() const { return nodes_.empty() && edges_.empty(); }
+template <GraphType TType, typename TNode, typename TEdge> bool Graph<TType, TNode, TEdge>::IsEmpty() const
+{
+    return nodes_.empty() && edges_.empty();
+}
 
-void Graph::Clear()
+template <GraphType TType, typename TNode, typename TEdge> void Graph<TType, TNode, TEdge>::Clear()
 {
     nodeEdges_.clear();
     edges_.clear();
@@ -205,7 +237,7 @@ void Graph::Clear()
     nextEdgeId_ = 1;
 }
 
-void Graph::ClearEdges()
+template <GraphType TType, typename TNode, typename TEdge> void Graph<TType, TNode, TEdge>::ClearEdges()
 {
     nodeEdges_.clear();
     edges_.clear();
