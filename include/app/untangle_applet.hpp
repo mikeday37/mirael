@@ -1,6 +1,7 @@
 #pragma once
 
 #include "app/applet.hpp"
+#include "app/applet_graph_types.hpp"
 #include "app/graph.hpp"
 #include "app/graph_animators.hpp"
 #include "app/graph_manipulators.hpp"
@@ -27,7 +28,7 @@ private:
     float zoom_ = 1.0f;
 
     // graph
-    UndirectedGraph<> graph_;
+    UntangleAppletGraph graph_;
     KnownGraphManipulators graphManipulators_;
 
     // animation
@@ -53,8 +54,8 @@ private:
     glm::vec2 ToWorld(glm::vec2 screenPos);
 
     // drawing helpers
-    void DrawNode(Graphics &g, const UndirectedGraph<>::Node &node);
-    void DrawEdge(Graphics &g, const UndirectedGraph<>::Edge &edge);
+    void DrawNode(Graphics &g, const UntangleAppletGraph::Node &node);
+    void DrawEdge(Graphics &g, const UntangleAppletGraph::Edge &edge);
 
     // hit testing
     struct HitInfo {

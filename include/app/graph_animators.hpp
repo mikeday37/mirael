@@ -1,5 +1,6 @@
 #pragma once
 
+#include "app/applet_graph_types.hpp"
 #include "app/graph.hpp"
 #include <string>
 
@@ -12,7 +13,7 @@ public:
     virtual void OnShowControls() {};
 
     using seconds = float;
-    virtual void Animate(UndirectedGraph<> &g, seconds worldTime, seconds deltaTime) = 0;
+    virtual void Animate(UntangleAppletGraph &g, seconds worldTime, seconds deltaTime) = 0;
 };
 
 class JitterGraphAnimator : public GraphAnimator
@@ -21,7 +22,7 @@ public:
     const char *GetDisplayName() const override { return "Jitter"; };
     void OnShowControls() override;
 
-    void Animate(UndirectedGraph<> &g, seconds worldTime, seconds deltaTime) override;
+    void Animate(UntangleAppletGraph &g, seconds worldTime, seconds deltaTime) override;
 
 private:
     std::mt19937 rng_{std::random_device{}()};
@@ -37,7 +38,7 @@ public:
     const char *GetDisplayName() const override { return "Orbit"; };
     void OnShowControls() override;
 
-    void Animate(UndirectedGraph<> &g, seconds worldTime, seconds deltaTime) override;
+    void Animate(UntangleAppletGraph &g, seconds worldTime, seconds deltaTime) override;
 
     using kilograms = float;
     using kilometers = float;

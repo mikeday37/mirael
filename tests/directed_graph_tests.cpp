@@ -1,14 +1,15 @@
 #include "app/graph.hpp"
 
+#include "app/applet_graph_types.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <ranges>
 
-bool CheckDirectedEdgeMatch(DirectedGraph<>::Edge edge, int nodeIdA, int nodeIdB)
+bool CheckDirectedEdgeMatch(FractalAppletGraph::Edge edge, int nodeIdA, int nodeIdB)
 {
     return edge.nodeIdA == nodeIdA && edge.nodeIdB == nodeIdB;
 }
 
-bool EdgeVectorContainsEdge(std::vector<typename DirectedGraph<>::Edge> edgeVector, int nodeIdA, int nodeIdB)
+bool EdgeVectorContainsEdge(std::vector<typename FractalAppletGraph::Edge> edgeVector, int nodeIdA, int nodeIdB)
 {
     for (const auto &edge : edgeVector) {
         if (CheckDirectedEdgeMatch(edge, nodeIdA, nodeIdB)) {
@@ -19,7 +20,7 @@ bool EdgeVectorContainsEdge(std::vector<typename DirectedGraph<>::Edge> edgeVect
     return false;
 }
 
-bool EdgeVectorContainsEdgeId(std::vector<typename DirectedGraph<>::Edge> edgeVector, int edgeId)
+bool EdgeVectorContainsEdgeId(std::vector<typename FractalAppletGraph::Edge> edgeVector, int edgeId)
 {
     for (const auto &edge : edgeVector) {
         if (edge.id == edgeId) {
@@ -35,7 +36,7 @@ constexpr glm::vec2 k_node2_pos{2, -2222};
 
 TEST_CASE("Directed: Empty graph returns expected values")
 {
-    DirectedGraph<> g;
+    FractalAppletGraph g;
 
     CHECK(g.IsEmpty());
     CHECK(!g.HasNodes());
@@ -54,7 +55,7 @@ TEST_CASE("Directed: Empty graph returns expected values")
 
 TEST_CASE("Directed: Basic graph creation and manipulation")
 {
-    DirectedGraph<> g;
+    FractalAppletGraph g;
 
     // now for the objects we care about
     auto nodeId1 = g.AddNode(k_node1_pos);

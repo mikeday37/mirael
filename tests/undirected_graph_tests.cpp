@@ -1,9 +1,10 @@
 #include "app/graph.hpp"
 
+#include "app/applet_graph_types.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <ranges>
 
-bool CheckUndirectedEdgeMatch(UndirectedGraph<>::Edge edge, int nodeIdA, int nodeIdB)
+bool CheckUndirectedEdgeMatch(UntangleAppletGraph::Edge edge, int nodeIdA, int nodeIdB)
 {
     return (edge.nodeIdA == nodeIdA && edge.nodeIdB == nodeIdB) || (edge.nodeIdA == nodeIdB && edge.nodeIdB == nodeIdA);
 }
@@ -13,7 +14,7 @@ constexpr glm::vec2 k_node2_pos{2, -2222};
 
 TEST_CASE("Undirected: Empty graph returns expected values")
 {
-    UndirectedGraph<> g;
+    UntangleAppletGraph g;
 
     REQUIRE(g.IsEmpty());
     REQUIRE(!g.HasNodes());
@@ -32,7 +33,7 @@ TEST_CASE("Undirected: Empty graph returns expected values")
 
 TEST_CASE("Undirected: Basic graph creation and manipulation")
 {
-    UndirectedGraph<> g;
+    UntangleAppletGraph g;
 
     // now for the objects we care about
     auto nodeId1 = g.AddNode(k_node1_pos);

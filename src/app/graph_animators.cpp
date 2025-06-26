@@ -11,7 +11,7 @@ void JitterGraphAnimator::OnShowControls()
     ImGui::SliderFloat("Vertical Scale", &verticalScale_, 0, 1);
 }
 
-void JitterGraphAnimator::Animate(UndirectedGraph<> &g, seconds worldTime, seconds deltaTime)
+void JitterGraphAnimator::Animate(UntangleAppletGraph &g, seconds worldTime, seconds deltaTime)
 {
     unused(worldTime, deltaTime);
 
@@ -49,7 +49,7 @@ void OrbitGraphAnimator::OnShowControls()
     ImGui::SliderFloat("Time Scale", &timeScale_, timeScaleMin_, timeScaleMax_, "%.3f");
 }
 
-void OrbitGraphAnimator::Animate(UndirectedGraph<> &g, seconds worldTime, seconds deltaTime)
+void OrbitGraphAnimator::Animate(UntangleAppletGraph &g, seconds worldTime, seconds deltaTime)
 {
     unused(worldTime);
 

@@ -1,5 +1,6 @@
 #include "app_pch.hpp"
 
+#include "app/applet_graph_types.hpp"
 #include "app/graph_manipulators.hpp"
 #include "imgui.h"
 #include <random>
@@ -13,7 +14,7 @@ void GenerateRandomGraphManipulator::OnShowControls()
     ImGui::SliderFloat("Scale", &scale_, 0.001f, 1.0f);
 }
 
-void GenerateRandomGraphManipulator::Manipulate(UndirectedGraph<> &g)
+void GenerateRandomGraphManipulator::Manipulate(UntangleAppletGraph &g)
 {
 
     // this method will satisfy nodeCount_ and will make a good effort on edgeCount_
@@ -94,7 +95,7 @@ void GenerateGridGraphManipulator::OnShowControls()
     ImGui::Checkbox("Include Edges", &includeEdges_);
 }
 
-void GenerateGridGraphManipulator::Manipulate(UndirectedGraph<> &g)
+void GenerateGridGraphManipulator::Manipulate(UntangleAppletGraph &g)
 {
     g.Clear();
 
@@ -152,7 +153,7 @@ void TangleGraphManipulator::OnShowControls()
     ImGui::SliderFloat("Scale", &scale_, 0.001f, 1.0f);
 }
 
-void TangleGraphManipulator::Manipulate(UndirectedGraph<> &g)
+void TangleGraphManipulator::Manipulate(UntangleAppletGraph &g)
 {
     std::mt19937 rng(std::random_device{}());
     switch (shape_) {
@@ -189,7 +190,7 @@ void CullGraphManipulator::OnShowControls()
     ImGui::SliderFloat("Edge Fraction", &edgeFraction_, 0, 1);
 }
 
-void CullGraphManipulator::Manipulate(UndirectedGraph<> &g)
+void CullGraphManipulator::Manipulate(UntangleAppletGraph &g)
 {
     std::mt19937 rng(std::random_device{}());
     auto cull = [&g, &rng](bool nodes, int count, float fraction, auto &&getFunc, auto &&removeFunc) {

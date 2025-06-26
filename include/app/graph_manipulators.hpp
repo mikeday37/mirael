@@ -1,5 +1,6 @@
 #pragma once
 
+#include "app/applet_graph_types.hpp"
 #include "app/graph.hpp"
 #include <string>
 #include <vector>
@@ -12,7 +13,7 @@ public:
     virtual const char *GetDisplayName() const = 0;
     virtual void OnShowControls() {}
 
-    virtual void Manipulate(UndirectedGraph<> &g) = 0;
+    virtual void Manipulate(UntangleAppletGraph &g) = 0;
 };
 
 class GenerateRandomGraphManipulator : public GraphManipulator
@@ -21,7 +22,7 @@ public:
     const char *GetDisplayName() const override { return "Generate Random"; }
     void OnShowControls() override;
 
-    void Manipulate(UndirectedGraph<> &g) override;
+    void Manipulate(UntangleAppletGraph &g) override;
 
 private:
     int nodeCount_ = 10;
@@ -36,7 +37,7 @@ public:
     const char *GetDisplayName() const override { return "Generate Grid"; }
     void OnShowControls() override;
 
-    void Manipulate(UndirectedGraph<> &g) override;
+    void Manipulate(UntangleAppletGraph &g) override;
 
 private:
     int width_ = 10;
@@ -51,7 +52,7 @@ public:
     const char *GetDisplayName() const override { return "Tangle"; };
     void OnShowControls() override;
 
-    void Manipulate(UndirectedGraph<> &g) override;
+    void Manipulate(UntangleAppletGraph &g) override;
 
 private:
     enum class Shape { Random = 0, Circle = 1 };
@@ -66,7 +67,7 @@ public:
     const char *GetDisplayName() const override { return "Cull Nodes/Edges"; }
     void OnShowControls() override;
 
-    void Manipulate(UndirectedGraph<> &g) override;
+    void Manipulate(UntangleAppletGraph &g) override;
 
 private:
     float nodeFraction_ = 0;
