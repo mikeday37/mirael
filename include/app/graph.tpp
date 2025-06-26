@@ -6,7 +6,15 @@
 #include <map>
 #include <vector>
 
-inline std::pair<int, int> CanonicalEdge(int a, int b) { return a < b ? std::make_pair(a, b) : std::make_pair(b, a); }
+template <GraphType TType, typename TNode, typename TEdge>
+inline std::pair<int, int> Graph<TType, TNode, TEdge>::CanonicalEdge(int a, int b) const
+{
+    if constexpr (TType == GraphType::Undirected) {
+        return a < b ? std::make_pair(a, b) : std::make_pair(b, a);
+    } else {
+        return std::make_pair(a, b);
+    }
+}
 
 template <GraphType TType, typename TNode, typename TEdge> int Graph<TType, TNode, TEdge>::AddNode(glm::vec2 pos)
 {

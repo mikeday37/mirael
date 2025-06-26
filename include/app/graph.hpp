@@ -12,6 +12,9 @@ enum class GraphType { Directed, Undirected };
 
 template <GraphType TType, typename TNode, typename TEdge> class Graph
 {
+    static_assert(TType == GraphType::Directed || TType == GraphType::Undirected,
+                  "TType must be either GraphType::Undirected or GraphType::Directed");
+
 public:
     struct Node {
         int id;
@@ -57,6 +60,8 @@ public:
     void ClearEdges();
 
 private:
+    std::pair<int, int> CanonicalEdge(int a, int b) const;
+
     int nextId_ = 1;
     std::map<int, glm::vec2> nodes_;
 
