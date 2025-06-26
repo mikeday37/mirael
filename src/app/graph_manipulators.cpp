@@ -82,7 +82,7 @@ void GenerateRandomGraphManipulator::Manipulate(UndirectedGraph<> &g)
         }
         assert(indexA != indexB);
         doWithMaxTries(maxEdgeTries_,
-                       [&g, &nodeIds, indexA, indexB] { return g.AddEdge(nodeIds[indexA], nodeIds[indexB]); });
+                       [&g, &nodeIds, indexA, indexB] { return g.AddEdge(nodeIds[indexA], nodeIds[indexB]).added; });
     }
 }
 

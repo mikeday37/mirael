@@ -3,7 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <ranges>
 
-bool CheckEdgeMatch(UndirectedGraph<>::Edge edge, int nodeIdA, int nodeIdB)
+bool CheckUndirectedEdgeMatch(UndirectedGraph<>::Edge edge, int nodeIdA, int nodeIdB)
 {
     return (edge.nodeIdA == nodeIdA && edge.nodeIdB == nodeIdB) || (edge.nodeIdA == nodeIdB && edge.nodeIdB == nodeIdA);
 }
@@ -11,7 +11,7 @@ bool CheckEdgeMatch(UndirectedGraph<>::Edge edge, int nodeIdA, int nodeIdB)
 constexpr glm::vec2 k_node1_pos{1, -111};
 constexpr glm::vec2 k_node2_pos{2, -2222};
 
-TEST_CASE("empty graph returns expected values")
+TEST_CASE("Undirected: Empty graph returns expected values")
 {
     UndirectedGraph<> g;
 
@@ -30,14 +30,14 @@ TEST_CASE("empty graph returns expected values")
     REQUIRE(g.ContainsEdge(1, 2) == false);
 }
 
-TEST_CASE("basic graph creation and manipulation")
+TEST_CASE("Undirected: Basic graph creation and manipulation")
 {
     UndirectedGraph<> g;
 
     // now for the objects we care about
     auto nodeId1 = g.AddNode(k_node1_pos);
     auto nodeId2 = g.AddNode(k_node2_pos);
-    auto edgeId = g.AddEdge(nodeId1, nodeId2);
+    auto edgeId = g.AddEdge(nodeId1, nodeId2).id;
 
     auto node1 = g.GetNode(nodeId1);
     auto node2 = g.GetNode(nodeId2);
@@ -60,7 +60,7 @@ TEST_CASE("basic graph creation and manipulation")
     SECTION("ids for the same type of object do not conflict")
     {
         auto nodeId3 = g.AddNode({0, 0});
-        auto edgeId2 = g.AddEdge(nodeId1, nodeId3);
+        auto edgeId2 = g.AddEdge(nodeId1, nodeId3).id;
 
         REQUIRE(nodeId1 != nodeId2);
         REQUIRE(nodeId2 != nodeId3);
@@ -96,14 +96,14 @@ TEST_CASE("basic graph creation and manipulation")
         REQUIRE(node1.pos == k_node1_pos);
         REQUIRE(node2.pos == k_node2_pos);
 
-        REQUIRE(CheckEdgeMatch(edge, nodeId1, nodeId2));
+        REQUIRE(CheckUndirectedEdgeMatch(edge, nodeId1, nodeId2));
 
         REQUIRE(g.NodeHasEdges(nodeId1));
         REQUIRE(g.NodeHasEdges(nodeId2));
         REQUIRE(g.GetEdges(nodeId1).size() == 1);
         REQUIRE(g.GetEdges(nodeId2).size() == 1);
-        REQUIRE(CheckEdgeMatch(g.GetEdges(nodeId1)[0], nodeId1, nodeId2));
-        REQUIRE(CheckEdgeMatch(g.GetEdges(nodeId2)[0], nodeId1, nodeId2));
+        REQUIRE(CheckUndirectedEdgeMatch(g.GetEdges(nodeId1)[0], nodeId1, nodeId2));
+        REQUIRE(CheckUndirectedEdgeMatch(g.GetEdges(nodeId2)[0], nodeId1, nodeId2));
         REQUIRE(g.GetEdges(nodeId1)[0].id == edgeId);
         REQUIRE(g.GetEdges(nodeId2)[0].id == edgeId);
     }
@@ -266,7 +266,7 @@ TEST_CASE("basic graph creation and manipulation")
     SECTION("inspection after removing the edge and adding an equivalent")
     {
         g.RemoveEdge(edgeId);
-        auto newEdgeId = g.AddEdge(nodeId2, nodeId1);
+        auto newEdgeId = g.AddEdge(nodeId2, nodeId1).id;
         auto newEdge = g.GetEdge(newEdgeId);
 
         REQUIRE(!g.IsEmpty());
@@ -291,12 +291,12 @@ TEST_CASE("basic graph creation and manipulation")
 
         REQUIRE(g.GetEdges(nodeId1).size() == 1);
         REQUIRE(g.GetEdges(nodeId2).size() == 1);
-        REQUIRE(CheckEdgeMatch(g.GetEdges(nodeId1)[0], nodeId1, nodeId2));
-        REQUIRE(CheckEdgeMatch(g.GetEdges(nodeId2)[0], nodeId1, nodeId2));
+        REQUIRE(CheckUndirectedEdgeMatch(g.GetEdges(nodeId1)[0], nodeId1, nodeId2));
+        REQUIRE(CheckUndirectedEdgeMatch(g.GetEdges(nodeId2)[0], nodeId1, nodeId2));
         REQUIRE(g.GetEdges(nodeId1)[0].id == newEdgeId);
         REQUIRE(g.GetEdges(nodeId2)[0].id == newEdgeId);
 
-        REQUIRE(CheckEdgeMatch(newEdge, nodeId1, nodeId2));
+        REQUIRE(CheckUndirectedEdgeMatch(newEdge, nodeId1, nodeId2));
         REQUIRE(newEdge.id == newEdgeId);
         REQUIRE(newEdge.id == g.GetEdge(newEdgeId).id);
     }

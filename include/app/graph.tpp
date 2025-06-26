@@ -83,7 +83,7 @@ template <GraphType TType, typename TNode, typename TEdge> void Graph<TType, TNo
         assert(nodeEdges_[otherNodeId].contains(edgeId));
 
         nodeEdges_[otherNodeId].erase(edgeId);
-        edgeSet_.erase(CanonicalEdge(nodeIdA, nodeIdB));
+        edgeMap_.erase(CanonicalEdge(nodeIdA, nodeIdB));
         edges_.erase(edgeId);
     }
 
@@ -93,26 +93,28 @@ template <GraphType TType, typename TNode, typename TEdge> void Graph<TType, TNo
 }
 
 template <GraphType TType, typename TNode, typename TEdge>
-int Graph<TType, TNode, TEdge>::AddEdge(int nodeIdA, int nodeIdB)
+Graph<TType, TNode, TEdge>::AddEdgeResult Graph<TType, TNode, TEdge>::AddEdge(int nodeIdA, int nodeIdB)
 {
     assert(nextId_ < std::numeric_limits<int>::max());
     assert(nodeIdA != nodeIdB);
     assert(nodes_.contains(nodeIdA));
     assert(nodes_.contains(nodeIdB));
 
-    if (ContainsEdge(nodeIdA, nodeIdB)) {
-        return 0;
+    auto edgeKey = CanonicalEdge(nodeIdA, nodeIdB);
+
+    auto it = edgeMap_.find(edgeKey);
+    if (it != edgeMap_.end()) {
+        return {it->second, false};
     }
 
     int edgeId = nextId_++;
 
-    auto edgeKey = CanonicalEdge(nodeIdA, nodeIdB);
     edges_[edgeId] = edgeKey;
     nodeEdges_[nodeIdA].emplace(edgeId);
     nodeEdges_[nodeIdB].emplace(edgeId);
-    edgeSet_.emplace(edgeKey);
+    edgeMap_.emplace(edgeKey, edgeId);
 
-    return edgeId;
+    return {edgeId, true};
 }
 
 template <GraphType TType, typename TNode, typename TEdge>
@@ -126,7 +128,7 @@ bool Graph<TType, TNode, TEdge>::ContainsEdge(int nodeIdA, int nodeIdB) const
 {
     assert(nodeIdA != nodeIdB);
 
-    return edgeSet_.contains(CanonicalEdge(nodeIdA, nodeIdB));
+    return edgeMap_.contains(CanonicalEdge(nodeIdA, nodeIdB));
 }
 
 template <GraphType TType, typename TNode, typename TEdge>
@@ -190,7 +192,7 @@ template <GraphType TType, typename TNode, typename TEdge> void Graph<TType, TNo
 
     nodeEdges_[nodePair.first].erase(edgeId);
     nodeEdges_[nodePair.second].erase(edgeId);
-    edgeSet_.erase({nodePair.first, nodePair.second});
+    edgeMap_.erase({nodePair.first, nodePair.second});
     edges_.erase(edgeId);
 }
 
@@ -231,7 +233,7 @@ template <GraphType TType, typename TNode, typename TEdge> void Graph<TType, TNo
 {
     nodeEdges_.clear();
     edges_.clear();
-    edgeSet_.clear();
+    edgeMap_.clear();
     nodes_.clear();
 
     nextId_ = 1;
@@ -241,7 +243,7 @@ template <GraphType TType, typename TNode, typename TEdge> void Graph<TType, TNo
 {
     nodeEdges_.clear();
     edges_.clear();
-    edgeSet_.clear();
+    edgeMap_.clear();
 
     if (nodes_.empty()) {
         nextId_ = 1;
