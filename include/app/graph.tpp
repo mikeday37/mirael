@@ -17,15 +17,36 @@ inline std::pair<int, int> Graph<TType, TNodeData, TEdgeData>::CanonicalEdge(int
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
-int Graph<TType, TNodeData, TEdgeData>::AddNode(glm::vec2 pos)
+template <typename... Args>
+int Graph<TType, TNodeData, TEdgeData>::AddNode(Args &&...args)
 {
     assert(nextId_ < std::numeric_limits<int>::max());
 
     int nodeId = nextId_++;
-    nodes_[nodeId] = pos;
+    nodes_.emplace(std::piecewise_construct, std::forward_as_tuple(nodeId),
+                   std::forward_as_tuple(std::forward<Args>(args)...));
     nodeEdges_[nodeId];
 
     return nodeId;
+}
+
+template <GraphType TType, typename TNodeData, typename TEdgeData>
+int Graph<TType, TNodeData, TEdgeData>::AddNode(TNodeData &data)
+{
+    assert(nextId_ < std::numeric_limits<int>::max());
+
+    int nodeId = nextId_++;
+    nodes_[nodeId] = data;
+    nodeEdges_[nodeId];
+
+    return nodeId;
+}
+
+template <GraphType TType, typename TNodeData, typename TEdgeData>
+TNodeData &Graph<TType, TNodeData, TEdgeData>::NodeData(int nodeId)
+{
+    assert(nodes_.contains(nodeId));
+    return nodes_.at(nodeId);
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>

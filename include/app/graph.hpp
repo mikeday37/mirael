@@ -17,8 +17,7 @@ template <GraphType TType, typename TNodeData, typename TEdgeData> class Graph
 {
     static_assert(TType == GraphType::Directed || TType == GraphType::Undirected,
                   "TType must be either GraphType::Undirected or GraphType::Directed");
-    static_assert(std::is_class_v<TNodeData>, "TNodeData must be a class or struct.");
-    static_assert(std::is_class_v<TEdgeData>, "TEdgeData must be a class or struct.");
+    static_assert(std::is_same_v<TEdgeData, Empty>, "Non-Empty TEdgeData is not yet supported.");
 
 public:
     struct Node {
@@ -37,7 +36,10 @@ public:
         bool added; // true if it didn't already exist, false if it already existed
     };
 
-    int AddNode(glm::vec2 pos); // always returns a new id
+    template <typename... Args> int AddNode(Args &&...args);
+    int AddNode(TNodeData &data); // both variants of AddNode always return a new node id
+    TNodeData &NodeData(int nodeId);
+
     bool ContainsNode(int nodeId) const;
     Node GetNode(int nodeId) const;
     std::vector<Node> GetNodes() const;

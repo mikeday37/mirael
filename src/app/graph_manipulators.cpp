@@ -36,7 +36,7 @@ void GenerateRandomGraphManipulator::Manipulate(UntangleAppletGraph &g)
     std::uniform_real_distribution<float> coordPicker(-1.0f * scale_, 1.0f * scale_);
 
     for (int index : std::views::iota(0, nodeCount_)) {
-        auto nodeId = g.AddNode({coordPicker(rng), coordPicker(rng)});
+        auto nodeId = g.AddNode(coordPicker(rng), coordPicker(rng));
         assert(nodeId);
         nodeIds[index] = nodeId;
     }
@@ -115,7 +115,7 @@ void GenerateGridGraphManipulator::Manipulate(UntangleAppletGraph &g)
     };
     for (auto y : std::views::iota(0, height_)) {
         for (auto x : std::views::iota(0, width_)) {
-            nodeIds.push_back(g.AddNode({lerp(x, width_), lerp(y, height_)}));
+            nodeIds.push_back(g.AddNode(lerp(x, width_), lerp(y, height_)));
         }
     }
 

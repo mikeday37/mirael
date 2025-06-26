@@ -61,7 +61,7 @@ TEST_CASE("Undirected: Basic graph creation and manipulation")
 
     SECTION("ids for the same type of object do not conflict")
     {
-        auto nodeId3 = g.AddNode({0, 0});
+        auto nodeId3 = g.AddNode(0, 0);
         auto edgeId2 = g.AddEdge(nodeId1, nodeId3).id;
 
         REQUIRE(nodeId1 != nodeId2);
