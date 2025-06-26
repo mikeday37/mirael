@@ -10,9 +10,9 @@ inline std::pair<int, int> CanonicalEdge(int a, int b) { return a < b ? std::mak
 
 template <GraphType TType, typename TNode, typename TEdge> int Graph<TType, TNode, TEdge>::AddNode(glm::vec2 pos)
 {
-    assert(nextNodeId_ < std::numeric_limits<int>::max());
+    assert(nextId_ < std::numeric_limits<int>::max());
 
-    int nodeId = nextNodeId_++;
+    int nodeId = nextId_++;
     nodes_[nodeId] = pos;
     nodeEdges_[nodeId];
 
@@ -95,6 +95,7 @@ template <GraphType TType, typename TNode, typename TEdge> void Graph<TType, TNo
 template <GraphType TType, typename TNode, typename TEdge>
 int Graph<TType, TNode, TEdge>::AddEdge(int nodeIdA, int nodeIdB)
 {
+    assert(nextId_ < std::numeric_limits<int>::max());
     assert(nodeIdA != nodeIdB);
     assert(nodes_.contains(nodeIdA));
     assert(nodes_.contains(nodeIdB));
@@ -103,7 +104,7 @@ int Graph<TType, TNode, TEdge>::AddEdge(int nodeIdA, int nodeIdB)
         return 0;
     }
 
-    int edgeId = nextEdgeId_++;
+    int edgeId = nextId_++;
 
     auto edgeKey = CanonicalEdge(nodeIdA, nodeIdB);
     edges_[edgeId] = edgeKey;
@@ -233,8 +234,7 @@ template <GraphType TType, typename TNode, typename TEdge> void Graph<TType, TNo
     edgeSet_.clear();
     nodes_.clear();
 
-    nextNodeId_ = 1;
-    nextEdgeId_ = 1;
+    nextId_ = 1;
 }
 
 template <GraphType TType, typename TNode, typename TEdge> void Graph<TType, TNode, TEdge>::ClearEdges()
@@ -243,5 +243,7 @@ template <GraphType TType, typename TNode, typename TEdge> void Graph<TType, TNo
     edges_.clear();
     edgeSet_.clear();
 
-    nextEdgeId_ = 1;
+    if (nodes_.empty()) {
+        nextId_ = 1;
+    }
 }
