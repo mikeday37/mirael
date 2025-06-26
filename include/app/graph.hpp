@@ -8,17 +8,22 @@
 #include <utility>
 #include <vector>
 
+struct Empty {
+};
+
 enum class GraphType { Directed, Undirected };
 
-template <GraphType TType, typename TNode, typename TEdge> class Graph
+template <GraphType TType, typename TNodeData, typename TEdgeData> class Graph
 {
     static_assert(TType == GraphType::Directed || TType == GraphType::Undirected,
                   "TType must be either GraphType::Undirected or GraphType::Directed");
+    static_assert(std::is_class_v<TNodeData>, "TNodeData must be a class or struct.");
+    static_assert(std::is_class_v<TEdgeData>, "TEdgeData must be a class or struct.");
 
 public:
     struct Node {
         int id;
-        glm::vec2 pos;
+        TNodeData data;
     };
 
     struct Edge {
@@ -63,7 +68,7 @@ private:
     std::pair<int, int> CanonicalEdge(int a, int b) const;
 
     int nextId_ = 1;
-    std::map<int, glm::vec2> nodes_;
+    std::map<int, TNodeData> nodes_;
 
     std::unordered_map<int, std::pair<int, int>> edges_;             // edge id -> node ids {a, b}
     std::unordered_map<std::pair<int, int>, int, PairHash> edgeMap_; // node ids {a, b} -> edge Id
@@ -72,13 +77,10 @@ private:
                     // makes no sense
 };
 
-struct Empty {
-};
+template <typename TNodeData = Empty, typename TEdgeData = Empty>
+using DirectedGraph = Graph<GraphType::Directed, TNodeData, TEdgeData>;
 
-template <typename TNode = Empty, typename TEdge = Empty>
-using DirectedGraph = Graph<GraphType::Directed, TNode, TEdge>;
-
-template <typename TNode = Empty, typename TEdge = Empty>
-using UndirectedGraph = Graph<GraphType::Undirected, TNode, TEdge>;
+template <typename TNodeData = Empty, typename TEdgeData = Empty>
+using UndirectedGraph = Graph<GraphType::Undirected, TNodeData, TEdgeData>;
 
 #include "app/graph.tpp"

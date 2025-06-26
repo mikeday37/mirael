@@ -1,10 +1,11 @@
 #include "app/graph.hpp"
 
-#include "app/applet_graph_types.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <ranges>
 
-bool CheckUndirectedEdgeMatch(UntangleAppletGraph::Edge edge, int nodeIdA, int nodeIdB)
+using UndirectedTestGraph = UndirectedGraph<glm::vec2>;
+
+bool CheckUndirectedEdgeMatch(UndirectedTestGraph::Edge edge, int nodeIdA, int nodeIdB)
 {
     return (edge.nodeIdA == nodeIdA && edge.nodeIdB == nodeIdB) || (edge.nodeIdA == nodeIdB && edge.nodeIdB == nodeIdA);
 }
@@ -14,7 +15,7 @@ constexpr glm::vec2 k_node2_pos{2, -2222};
 
 TEST_CASE("Undirected: Empty graph returns expected values")
 {
-    UntangleAppletGraph g;
+    UndirectedTestGraph g;
 
     REQUIRE(g.IsEmpty());
     REQUIRE(!g.HasNodes());
@@ -33,7 +34,7 @@ TEST_CASE("Undirected: Empty graph returns expected values")
 
 TEST_CASE("Undirected: Basic graph creation and manipulation")
 {
-    UntangleAppletGraph g;
+    UndirectedTestGraph g;
 
     // now for the objects we care about
     auto nodeId1 = g.AddNode(k_node1_pos);
@@ -93,9 +94,9 @@ TEST_CASE("Undirected: Basic graph creation and manipulation")
         REQUIRE(node2.id == nodeId2);
         REQUIRE(edge.id == edgeId);
 
-        REQUIRE(node1.pos != node2.pos);
-        REQUIRE(node1.pos == k_node1_pos);
-        REQUIRE(node2.pos == k_node2_pos);
+        REQUIRE(node1.data != node2.data);
+        REQUIRE(node1.data == k_node1_pos);
+        REQUIRE(node2.data == k_node2_pos);
 
         REQUIRE(CheckUndirectedEdgeMatch(edge, nodeId1, nodeId2));
 
@@ -200,7 +201,7 @@ TEST_CASE("Undirected: Basic graph creation and manipulation")
         REQUIRE(g.GetEdges().size() == 0);
 
         REQUIRE(g.GetNodes()[0].id == nodeId2);
-        REQUIRE(g.GetNodes()[0].pos == k_node2_pos);
+        REQUIRE(g.GetNodes()[0].data == k_node2_pos);
 
         REQUIRE(!g.ContainsEdge(edgeId));
         REQUIRE(!g.ContainsEdge(nodeId1, nodeId2));
@@ -228,7 +229,7 @@ TEST_CASE("Undirected: Basic graph creation and manipulation")
         REQUIRE(g.GetEdges().size() == 0);
 
         REQUIRE(g.GetNodes()[0].id == nodeId1);
-        REQUIRE(g.GetNodes()[0].pos == k_node1_pos);
+        REQUIRE(g.GetNodes()[0].data == k_node1_pos);
 
         REQUIRE(!g.ContainsEdge(edgeId));
         REQUIRE(!g.ContainsEdge(nodeId1, nodeId2));

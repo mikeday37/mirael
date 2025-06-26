@@ -34,7 +34,7 @@ void UntangleApplet::OnRenderBackground(Graphics &g)
 
 void UntangleApplet::DrawNode(Graphics &g, const UntangleAppletGraph::Node &node)
 {
-    auto pos = ToScreen(node.pos);
+    auto pos = ToScreen(node.data);
     auto style = GetNodeStyle(node.id);
     g.Circle(pos, style.radius * style_.nodeScale, style.lineThickness * style_.nodeScale, convert(style.fillColor),
              convert(style.lineColor));
@@ -44,8 +44,8 @@ void UntangleApplet::DrawEdge(Graphics &g, const UntangleAppletGraph::Edge &edge
 {
     auto nodeA = graph_.GetNode(edge.nodeIdA);
     auto nodeB = graph_.GetNode(edge.nodeIdB);
-    auto posA = ToScreen(nodeA.pos);
-    auto posB = ToScreen(nodeB.pos);
+    auto posA = ToScreen(nodeA.data);
+    auto posB = ToScreen(nodeB.data);
     auto style = GetEdgeStyle(edge.id);
     g.Line(posA, posB, style.lineThickness * style_.edgeScale, convert(style.lineColor));
 }
@@ -305,7 +305,7 @@ UntangleApplet::HitInfo UntangleApplet::HitTest(glm::vec2 screenPos)
 
     float closestPotentialNodeDist = 0;
     for (auto node : graph_.GetNodes()) {
-        auto dist = glm::distance(ToScreen(node.pos), screenPos);
+        auto dist = glm::distance(ToScreen(node.data), screenPos);
         auto hitRadius = node.id == selectedNodeId_ ? nodeHitRadiusSelected : nodeHitRadiusNormal;
         if (dist <= hitRadius && (!hit.nodeId || dist < closestPotentialNodeDist)) {
             hit.nodeId = node.id;
@@ -319,8 +319,8 @@ UntangleApplet::HitInfo UntangleApplet::HitTest(glm::vec2 screenPos)
 
     float closestPotentialEdgeDist = 0;
     for (auto edge : graph_.GetEdges()) {
-        auto dist = PointDistanceToLineSegment(screenPos, ToScreen(graph_.GetNode(edge.nodeIdA).pos),
-                                               ToScreen(graph_.GetNode(edge.nodeIdB).pos));
+        auto dist = PointDistanceToLineSegment(screenPos, ToScreen(graph_.GetNode(edge.nodeIdA).data),
+                                               ToScreen(graph_.GetNode(edge.nodeIdB).data));
         auto hitRadius = edge.id == selectedEdgeId_ ? edgeHitRadiusSelected : edgeHitRadiusNormal;
         if (dist <= hitRadius && (!hit.edgeId || dist < closestPotentialEdgeDist)) {
             hit.edgeId = edge.id;
@@ -385,7 +385,7 @@ void UntangleApplet::OnClick()
     if (selectedNodeId_) {
         dragging_ = true;
         auto node = graph_.GetNode(hit.nodeId);
-        dragOffset_ = ToWorld(mousePos_) - node.pos;
+        dragOffset_ = ToWorld(mousePos_) - node.data;
     }
 }
 

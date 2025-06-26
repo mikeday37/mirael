@@ -1,15 +1,16 @@
 #include "app/graph.hpp"
 
-#include "app/applet_graph_types.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <ranges>
 
-bool CheckDirectedEdgeMatch(FractalAppletGraph::Edge edge, int nodeIdA, int nodeIdB)
+using DirectedTestGraph = DirectedGraph<glm::vec2>;
+
+bool CheckDirectedEdgeMatch(DirectedTestGraph::Edge edge, int nodeIdA, int nodeIdB)
 {
     return edge.nodeIdA == nodeIdA && edge.nodeIdB == nodeIdB;
 }
 
-bool EdgeVectorContainsEdge(std::vector<typename FractalAppletGraph::Edge> edgeVector, int nodeIdA, int nodeIdB)
+bool EdgeVectorContainsEdge(std::vector<typename DirectedTestGraph::Edge> edgeVector, int nodeIdA, int nodeIdB)
 {
     for (const auto &edge : edgeVector) {
         if (CheckDirectedEdgeMatch(edge, nodeIdA, nodeIdB)) {
@@ -20,7 +21,7 @@ bool EdgeVectorContainsEdge(std::vector<typename FractalAppletGraph::Edge> edgeV
     return false;
 }
 
-bool EdgeVectorContainsEdgeId(std::vector<typename FractalAppletGraph::Edge> edgeVector, int edgeId)
+bool EdgeVectorContainsEdgeId(std::vector<typename DirectedTestGraph::Edge> edgeVector, int edgeId)
 {
     for (const auto &edge : edgeVector) {
         if (edge.id == edgeId) {
@@ -36,7 +37,7 @@ constexpr glm::vec2 k_node2_pos{2, -2222};
 
 TEST_CASE("Directed: Empty graph returns expected values")
 {
-    FractalAppletGraph g;
+    DirectedTestGraph g;
 
     CHECK(g.IsEmpty());
     CHECK(!g.HasNodes());
@@ -55,7 +56,7 @@ TEST_CASE("Directed: Empty graph returns expected values")
 
 TEST_CASE("Directed: Basic graph creation and manipulation")
 {
-    FractalAppletGraph g;
+    DirectedTestGraph g;
 
     // now for the objects we care about
     auto nodeId1 = g.AddNode(k_node1_pos);
@@ -115,9 +116,9 @@ TEST_CASE("Directed: Basic graph creation and manipulation")
         CHECK(node2.id == nodeId2);
         CHECK(edge.id == edgeId);
 
-        CHECK(node1.pos != node2.pos);
-        CHECK(node1.pos == k_node1_pos);
-        CHECK(node2.pos == k_node2_pos);
+        CHECK(node1.data != node2.data);
+        CHECK(node1.data == k_node1_pos);
+        CHECK(node2.data == k_node2_pos);
 
         CHECK(CheckDirectedEdgeMatch(edge, nodeId1, nodeId2));
 
@@ -160,9 +161,9 @@ TEST_CASE("Directed: Basic graph creation and manipulation")
         CHECK(edge.id == edgeId);
         CHECK(edge2.id == edgeId2);
 
-        CHECK(node1.pos != node2.pos);
-        CHECK(node1.pos == k_node1_pos);
-        CHECK(node2.pos == k_node2_pos);
+        CHECK(node1.data != node2.data);
+        CHECK(node1.data == k_node1_pos);
+        CHECK(node2.data == k_node2_pos);
 
         CHECK(CheckDirectedEdgeMatch(edge, nodeId1, nodeId2));
         CHECK(!CheckDirectedEdgeMatch(edge, nodeId2, nodeId1));
@@ -277,7 +278,7 @@ TEST_CASE("Directed: Basic graph creation and manipulation")
         CHECK(g.GetEdges().size() == 0);
 
         CHECK(g.GetNodes()[0].id == nodeId2);
-        CHECK(g.GetNodes()[0].pos == k_node2_pos);
+        CHECK(g.GetNodes()[0].data == k_node2_pos);
 
         CHECK(!g.ContainsEdge(edgeId));
         CHECK(!g.ContainsEdge(nodeId1, nodeId2));
@@ -305,7 +306,7 @@ TEST_CASE("Directed: Basic graph creation and manipulation")
         CHECK(g.GetEdges().size() == 0);
 
         CHECK(g.GetNodes()[0].id == nodeId1);
-        CHECK(g.GetNodes()[0].pos == k_node1_pos);
+        CHECK(g.GetNodes()[0].data == k_node1_pos);
 
         CHECK(!g.ContainsEdge(edgeId));
         CHECK(!g.ContainsEdge(nodeId1, nodeId2));

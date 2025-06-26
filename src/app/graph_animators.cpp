@@ -19,7 +19,7 @@ void JitterGraphAnimator::Animate(UntangleAppletGraph &g, seconds worldTime, sec
 
     for (auto node : g.GetNodes()) {
         g.RepositionNode(node.id,
-                         {node.pos.x + jitter(rng_) * horizontalScale_, node.pos.y + jitter(rng_) * verticalScale_});
+                         {node.data.x + jitter(rng_) * horizontalScale_, node.data.y + jitter(rng_) * verticalScale_});
     }
 }
 
@@ -60,7 +60,7 @@ void OrbitGraphAnimator::Animate(UntangleAppletGraph &g, seconds worldTime, seco
     constexpr float G = 6.67430e-20f; // km^3/kg/s^2
 
     for (auto &node : g.GetNodes()) {
-        glm::vec2 pos = node.pos * distanceScale_;
+        glm::vec2 pos = node.data * distanceScale_;
         float r = glm::length(pos);
         if (r == 0.0f) {
             continue;
@@ -82,6 +82,6 @@ void OrbitGraphAnimator::Animate(UntangleAppletGraph &g, seconds worldTime, seco
             std::sin(theta),
             std::cos(theta),
         };
-        g.RepositionNode(node.id, rotation * node.pos);
+        g.RepositionNode(node.id, rotation * node.data);
     }
 }
