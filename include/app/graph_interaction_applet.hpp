@@ -2,17 +2,32 @@
 
 #include "app/applet.hpp"
 #include "app/graph.hpp"
+#include "applet_graph_types.hpp"
 #include "imgui.h"
 #include "vec2.hpp"
 
-template <GraphType TType, typename TNodeData, typename TEdgeData> class GraphInteractionApplet : public Applet
+struct DefaultGraphInteractionPolicy {
+    // Note: if a graph aspect (nodes or edges) supports neither selection nor hover highlighting, then it won't
+    // be involved in hit-testing, which can greatly improve performance.
+    static constexpr bool canSelectNodes = true;
+    static constexpr bool canSelectEdges = true;
+    static constexpr bool hoverHighlightsNodes = true;
+    static constexpr bool hoverHighlightsEdges = true;
+};
+
+// TODO: add concepts and static asserts to verify DrawNode() and DrawEdge() have been defined by the derived.
+
+// This class uses the CRTP and Policy patterns for zero-cost extensibility and configurability.
+template <typename TDerived, GraphType TGraphType, typename TNodeData, typename TEdgeData,
+          typename TInteractionPolicy = DefaultGraphInteractionPolicy>
+class GraphInteractionApplet : public Applet
 {
     static_assert(std::is_same_v<TNodeData, glm::vec2>, "TNodeData must currently be glm::vec2.");
 
 public:
     GraphInteractionApplet(App &app) : Applet(app) {}
 
-    using Graph = Graph<TType, TNodeData, TEdgeData>;
+    using Graph = Graph<TGraphType, TNodeData, TEdgeData>;
 
     void OnRenderBackground(Graphics &g) override;
     void OnShowControls() override;
@@ -23,12 +38,31 @@ protected:
     Graph graph_;
 
     // derived UI handling
-    virtual void OnShowDerivedAppletControls() {}
+    virtual void OnShowSettingsUI() {}
+    virtual void OnShowStyleUI() {}
     void ClearGraphIndicators();
 
     // coordinate handling
-    glm::vec2 ToScreen(glm::vec2 worldPos);
-    glm::vec2 ToWorld(glm::vec2 screenPos);
+    glm::vec2 ToScreen(glm::vec2 worldPos) const;
+    glm::vec2 ToWorld(glm::vec2 screenPos) const;
+
+    int &SelectedNode() { return selectedNodeId_; }
+    int &HighlightedNode() { return highlightedNodeId_; }
+    int &SelectedEdge() { return selectedEdgeId_; }
+    int &HighlightedEdge() { return highlightedEdgeId_; }
+
+    const int &SelectedNode() const { return selectedNodeId_; }
+    const int &HighlightedNode() const { return highlightedNodeId_; }
+    const int &SelectedEdge() const { return selectedEdgeId_; }
+    const int &HighlightedEdge() const { return highlightedEdgeId_; }
+
+    struct HitTestSettings {
+        float nodeHitRadiusNormal;
+        float nodeHitRadiusSelected;
+        float edgeHitRadiusNormal;
+        float edgeHitRadiusSelected;
+    };
+    virtual HitTestSettings GetHitTestSettings() const = 0;
 
 private:
     // controls
@@ -45,17 +79,16 @@ private:
     glm::vec2 dragOffset_;
     glm::vec2 mousePos_ = {-1, -1};
 
-    // drawing helpers
-    void DrawNode(Graphics &g, const Graph::Node &node);
-    void DrawEdge(Graphics &g, const Graph::Edge &edge);
-
     // hit testing
     struct HitInfo {
         glm::vec2 worldPos;
         int nodeId;
         int edgeId;
     };
-    HitInfo HitTest(glm::vec2 screenPos);
+    HitInfo HitTest(glm::vec2 screenPos) const;
+
+    // drawing
+    void DrawGraph(Graphics &g);
 
     // ui handling
     void OnAdd();
@@ -63,64 +96,6 @@ private:
     void OnClick();
     void OnMove();
     void OnEndClick();
-
-    // visual style
-    struct NodeStyle {
-        float radius;
-        float lineThickness;
-        ImVec4 fillColor;
-        ImVec4 lineColor;
-    };
-
-    struct EdgeStyle {
-        float lineThickness;
-        ImVec4 lineColor;
-    };
-
-    struct GraphPartStyle {
-        NodeStyle node;
-        EdgeStyle edge;
-    };
-
-    struct GraphStyle {
-        GraphPartStyle normal;
-        GraphPartStyle selected;
-        GraphPartStyle highlight;
-        GraphPartStyle highlightSelected;
-
-        float nodeScale = 0.1f;
-        float nodeHitTestPadding = 15.0f;
-        float edgeScale = 1.0f;
-        float edgeHitTestPadding = 4.0f;
-
-        // only relevant to directed graphs:
-        float arrowAngle = 25.0f;
-        float arrowLength = 25.0f;
-    };
-
-    GraphStyle style_ = {{
-                             // ---- normal ----
-                             {40.0f, 6.0f, {1, 1, 1, 1}, {0, 0, 0, 1}}, // node
-                             {2.0f, {1, 0.635f, 0.161f, 0.761f}}        // edge
-                         },
-                         {
-                             // ---- selected ----
-                             {46.0f, 12.0f, {0, 0, 1, 1}, {0, 0, 0.25f, 1}}, // node
-                             {4.0f, {0.63f, 0.63f, 1.0, 1}}                  // edge
-                         },
-                         {
-                             // ---- highlight ----
-                             {43.0f, 9.0f, {0, 1, 0, 1}, {0, 0.25f, 0, 1}}, // node
-                             {3.0f, {0.63f, 1, 0.63f, 1}}                   // edge
-                         },
-                         {
-                             // ---- highlightSelected ----
-                             {49.0f, 15.0f, {0, 1, 1, 1}, {0, 0.25f, 0.25f, 1}}, // node
-                             {5.0f, {0.63f, 1, 1, 1}}                            // edge
-                         }};
-
-    NodeStyle GetNodeStyle(int nodeId);
-    EdgeStyle GetEdgeStyle(int edgeId);
 };
 
 #include "app/graph_interaction_applet.tpp"

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "app/applet_graph_types.hpp"
 #include "app/graph.hpp"
 #include "app/graph_interaction_applet.hpp"
 #include "imgui.h"
@@ -8,8 +9,14 @@
 
 inline Color convert(ImVec4 color) { return {color.x, color.y, color.z, color.w}; }
 
-template <GraphType TType, typename TNodeData, typename TEdgeData>
-void GraphInteractionApplet<TType, TNodeData, TEdgeData>::OnRenderBackground(Graphics &g)
+template <typename TDerived, GraphType TType, typename TNodeData, typename TEdgeData, typename TInteractionPolicy>
+void GraphInteractionApplet<TDerived, TType, TNodeData, TEdgeData, TInteractionPolicy>::OnRenderBackground(Graphics &g)
+{
+    DrawGraph(g);
+}
+
+template <typename TDerived, GraphType TType, typename TNodeData, typename TEdgeData, typename TInteractionPolicy>
+void GraphInteractionApplet<TDerived, TType, TNodeData, TEdgeData, TInteractionPolicy>::DrawGraph(Graphics &g)
 {
     if (autoSize_) {
         auto size = GetWindowSize();
@@ -20,74 +27,41 @@ void GraphInteractionApplet<TType, TNodeData, TEdgeData>::OnRenderBackground(Gra
     // TODO: modify Graph to use iterators
 
     for (const auto &edge : graph_.GetEdges()) {
-        DrawEdge(g, edge);
+        static_cast<TDerived *>(this)->DrawEdge(g, edge);
     }
 
     for (const auto &node : graph_.GetNodes()) {
-        DrawNode(g, node);
+        static_cast<TDerived *>(this)->DrawNode(g, node);
     }
 
-    if (selectedNodeId_ && selectedNodeId_ != highlightedNodeId_) {
-        DrawNode(g, graph_.GetNode(selectedNodeId_));
+    if constexpr (TInteractionPolicy::hoverHighlightsNodes) {
+        if (selectedNodeId_ && selectedNodeId_ != highlightedNodeId_) {
+            static_cast<TDerived *>(this)->DrawNode(g, graph_.GetNode(selectedNodeId_));
+        }
     }
 
-    if (highlightedNodeId_) {
-        DrawNode(g, graph_.GetNode(highlightedNodeId_));
+    if constexpr (TInteractionPolicy::canSelectNodes) {
+        if (highlightedNodeId_) {
+            static_cast<TDerived *>(this)->DrawNode(g, graph_.GetNode(highlightedNodeId_));
+        }
     }
 }
 
-template <GraphType TType, typename TNodeData, typename TEdgeData>
-void GraphInteractionApplet<TType, TNodeData, TEdgeData>::OnShowControls()
+template <typename TDerived, GraphType TType, typename TNodeData, typename TEdgeData, typename TInteractionPolicy>
+void GraphInteractionApplet<TDerived, TType, TNodeData, TEdgeData, TInteractionPolicy>::OnShowControls()
 {
     if (ImGui::BeginTabBar("##UntangleTabs")) {
 
         if (ImGui::BeginTabItem("Settings")) {
             ImGui::Checkbox("Auto-Size Window", &autoSize_);
             ImGui::PushID(this);
-            OnShowDerivedAppletControls();
+            OnShowSettingsUI();
             ImGui::PopID();
             ImGui::EndTabItem();
         }
 
         if (ImGui::BeginTabItem("Style")) {
-            ImGui::SliderFloat("Node Scale", &style_.nodeScale, 0.0f, 2.0f, "%.3f");
-            ImGui::SliderFloat("Node Hit Test Padding", &style_.nodeHitTestPadding, 0.0f, 50.0f, "%.3f");
-            ImGui::SliderFloat("Edge Scale", &style_.edgeScale, 0.0f, 10.0f, "%.3f");
-            ImGui::SliderFloat("Edge Hit Test Padding", &style_.edgeHitTestPadding, 0.0f, 50.0f, "%.3f");
-            if constexpr (TType == GraphType::Directed) {
-                ImGui::SliderFloat("Line End Arrow Angle", &style_.arrowAngle, 0.0f, 90.0f, "%.0f");
-                ImGui::SliderFloat("Line End Arrow Length", &style_.arrowLength, 0.0f, 100.0f, "%.1f");
-            }
-
-            auto stateStyle = [](const char *name, const char *suffix, GraphPartStyle &part) -> void {
-                if (ImGui::TreeNodeEx(name, ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_DrawLinesFull)) {
-                    if (ImGui::TreeNodeEx(std::format("Node##{}", suffix).c_str(),
-                                          ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_DrawLinesFull)) {
-                        ImGui::SliderFloat(std::format("Radius##{}", suffix).c_str(), &part.node.radius, 0.0f, 50.0f,
-                                           "%.1f");
-                        ImGui::SliderFloat(std::format("Line Thickness##{}", suffix).c_str(), &part.node.lineThickness,
-                                           0.0f, 20.0f, "%.1f");
-                        ImGui::ColorEdit4(std::format("Fill Color##{}", suffix).c_str(), (float *)&part.node.fillColor,
-                                          ImGuiColorEditFlags_AlphaBar);
-                        ImGui::ColorEdit4(std::format("Line Color##{}", suffix).c_str(), (float *)&part.node.lineColor,
-                                          ImGuiColorEditFlags_AlphaBar);
-                        ImGui::TreePop();
-                    }
-                    if (ImGui::TreeNodeEx(std::format("Edge##{}", suffix).c_str(),
-                                          ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_DrawLinesFull)) {
-                        ImGui::SliderFloat(std::format("Line Thickness##{}", suffix).c_str(), &part.edge.lineThickness,
-                                           0.0f, 20.0f, "%.1f");
-                        ImGui::ColorEdit4(std::format("Line Color##{}", suffix).c_str(), (float *)&part.edge.lineColor,
-                                          ImGuiColorEditFlags_AlphaBar);
-                        ImGui::TreePop();
-                    }
-                    ImGui::TreePop();
-                }
-            };
-            stateStyle("Normal", "n", style_.normal);
-            stateStyle("Selected", "s", style_.selected);
-            stateStyle("Highlight", "h", style_.highlight);
-            stateStyle("Highlight Selected", "hs", style_.highlightSelected);
+            OnShowStyleUI();
             ImGui::EndTabItem();
         }
 
@@ -133,8 +107,8 @@ void GraphInteractionApplet<TType, TNodeData, TEdgeData>::OnShowControls()
     }
 }
 
-template <GraphType TType, typename TNodeData, typename TEdgeData>
-void GraphInteractionApplet<TType, TNodeData, TEdgeData>::OnEvent(const SDL_Event &e)
+template <typename TDerived, GraphType TType, typename TNodeData, typename TEdgeData, typename TInteractionPolicy>
+void GraphInteractionApplet<TDerived, TType, TNodeData, TEdgeData, TInteractionPolicy>::OnEvent(const SDL_Event &e)
 {
     switch (e.type) {
     case SDL_KEYDOWN:
@@ -183,79 +157,57 @@ void GraphInteractionApplet<TType, TNodeData, TEdgeData>::OnEvent(const SDL_Even
     }
 }
 
-template <GraphType TType, typename TNodeData, typename TEdgeData>
-glm::vec2 GraphInteractionApplet<TType, TNodeData, TEdgeData>::ToScreen(glm::vec2 worldPos)
+template <typename TDerived, GraphType TType, typename TNodeData, typename TEdgeData, typename TInteractionPolicy>
+void GraphInteractionApplet<TDerived, TType, TNodeData, TEdgeData, TInteractionPolicy>::ClearGraphIndicators()
+{
+    selectedNodeId_ = 0;
+    selectedEdgeId_ = 0;
+    highlightedNodeId_ = 0;
+    highlightedEdgeId_ = 0;
+}
+
+template <typename TDerived, GraphType TType, typename TNodeData, typename TEdgeData, typename TInteractionPolicy>
+glm::vec2
+GraphInteractionApplet<TDerived, TType, TNodeData, TEdgeData, TInteractionPolicy>::ToScreen(glm::vec2 worldPos) const
 {
     return worldPos * zoom_ + pan_;
 }
 
-template <GraphType TType, typename TNodeData, typename TEdgeData>
-glm::vec2 GraphInteractionApplet<TType, TNodeData, TEdgeData>::ToWorld(glm::vec2 screenPos)
+template <typename TDerived, GraphType TType, typename TNodeData, typename TEdgeData, typename TInteractionPolicy>
+glm::vec2
+GraphInteractionApplet<TDerived, TType, TNodeData, TEdgeData, TInteractionPolicy>::ToWorld(glm::vec2 screenPos) const
 {
     return (screenPos - pan_) / zoom_;
 }
 
-template <GraphType TType, typename TNodeData, typename TEdgeData>
-void GraphInteractionApplet<TType, TNodeData, TEdgeData>::DrawNode(
-    Graphics &g, const GraphInteractionApplet<TType, TNodeData, TEdgeData>::Graph::Node &node)
-{
-    auto pos = ToScreen(node.data);
-    auto style = GetNodeStyle(node.id);
-    g.Circle(pos, style.radius * style_.nodeScale, style.lineThickness * style_.nodeScale, convert(style.fillColor),
-             convert(style.lineColor));
-}
-
-template <GraphType TType, typename TNodeData, typename TEdgeData>
-void GraphInteractionApplet<TType, TNodeData, TEdgeData>::DrawEdge(
-    Graphics &g, const GraphInteractionApplet<TType, TNodeData, TEdgeData>::Graph::Edge &edge)
-{
-    auto nodeA = graph_.GetNode(edge.nodeIdA);
-    auto nodeB = graph_.GetNode(edge.nodeIdB);
-    auto posA = ToScreen(nodeA.data);
-    auto posB = ToScreen(nodeB.data);
-    auto style = GetEdgeStyle(edge.id);
-    g.Line(posA, posB, style.lineThickness * style_.edgeScale, convert(style.lineColor));
-    if constexpr (TType == GraphType::Directed) {
-        g.LineArrowEnd(posA, posB, style.lineThickness * style_.edgeScale, convert(style.lineColor), style_.arrowAngle,
-                       style_.arrowLength);
-    }
-}
-
-template <GraphType TType, typename TNodeData, typename TEdgeData>
-GraphInteractionApplet<TType, TNodeData, TEdgeData>::HitInfo
-GraphInteractionApplet<TType, TNodeData, TEdgeData>::HitTest(glm::vec2 screenPos)
+template <typename TDerived, GraphType TType, typename TNodeData, typename TEdgeData, typename TInteractionPolicy>
+GraphInteractionApplet<TDerived, TType, TNodeData, TEdgeData, TInteractionPolicy>::HitInfo
+GraphInteractionApplet<TDerived, TType, TNodeData, TEdgeData, TInteractionPolicy>::HitTest(glm::vec2 screenPos) const
 {
     HitInfo hit;
     hit.worldPos = ToWorld(screenPos);
     hit.nodeId = 0;
     hit.edgeId = 0;
 
-    auto nodeHitRadiusNormal =
-        (style_.normal.node.radius + style_.normal.node.lineThickness / 2.0f) * style_.nodeScale +
-        style_.nodeHitTestPadding;
-    auto nodeHitRadiusSelected =
-        (style_.selected.node.radius + style_.selected.node.lineThickness / 2.0f) * style_.nodeScale +
-        style_.nodeHitTestPadding;
+    auto hitTestSettings = GetHitTestSettings();
 
     float closestPotentialNodeDist = 0;
     for (auto node : graph_.GetNodes()) {
         auto dist = glm::distance(ToScreen(node.data), screenPos);
-        auto hitRadius = node.id == selectedNodeId_ ? nodeHitRadiusSelected : nodeHitRadiusNormal;
+        auto hitRadius =
+            node.id == selectedNodeId_ ? hitTestSettings.nodeHitRadiusSelected : hitTestSettings.nodeHitRadiusNormal;
         if (dist <= hitRadius && (!hit.nodeId || dist < closestPotentialNodeDist)) {
             hit.nodeId = node.id;
             closestPotentialNodeDist = dist;
         }
     }
 
-    auto edgeHitRadiusNormal = (style_.normal.edge.lineThickness / 2.0f) * style_.edgeScale + style_.edgeHitTestPadding;
-    auto edgeHitRadiusSelected =
-        (style_.selected.edge.lineThickness / 2.0f) * style_.edgeScale + style_.edgeHitTestPadding;
-
     float closestPotentialEdgeDist = 0;
     for (auto edge : graph_.GetEdges()) {
         auto dist = PointDistanceToLineSegment(screenPos, ToScreen(graph_.GetNode(edge.nodeIdA).data),
                                                ToScreen(graph_.GetNode(edge.nodeIdB).data));
-        auto hitRadius = edge.id == selectedEdgeId_ ? edgeHitRadiusSelected : edgeHitRadiusNormal;
+        auto hitRadius =
+            edge.id == selectedEdgeId_ ? hitTestSettings.edgeHitRadiusSelected : hitTestSettings.edgeHitRadiusNormal;
         if (dist <= hitRadius && (!hit.edgeId || dist < closestPotentialEdgeDist)) {
             hit.edgeId = edge.id;
             closestPotentialEdgeDist = dist;
@@ -265,8 +217,8 @@ GraphInteractionApplet<TType, TNodeData, TEdgeData>::HitTest(glm::vec2 screenPos
     return hit;
 }
 
-template <GraphType TType, typename TNodeData, typename TEdgeData>
-void GraphInteractionApplet<TType, TNodeData, TEdgeData>::OnAdd()
+template <typename TDerived, GraphType TType, typename TNodeData, typename TEdgeData, typename TInteractionPolicy>
+void GraphInteractionApplet<TDerived, TType, TNodeData, TEdgeData, TInteractionPolicy>::OnAdd()
 {
     if (dragging_)
         return;
@@ -278,8 +230,8 @@ void GraphInteractionApplet<TType, TNodeData, TEdgeData>::OnAdd()
     }
 }
 
-template <GraphType TType, typename TNodeData, typename TEdgeData>
-void GraphInteractionApplet<TType, TNodeData, TEdgeData>::OnDelete()
+template <typename TDerived, GraphType TType, typename TNodeData, typename TEdgeData, typename TInteractionPolicy>
+void GraphInteractionApplet<TDerived, TType, TNodeData, TEdgeData, TInteractionPolicy>::OnDelete()
 {
     if (dragging_)
         return;
@@ -303,8 +255,8 @@ void GraphInteractionApplet<TType, TNodeData, TEdgeData>::OnDelete()
     }
 }
 
-template <GraphType TType, typename TNodeData, typename TEdgeData>
-void GraphInteractionApplet<TType, TNodeData, TEdgeData>::OnClick()
+template <typename TDerived, GraphType TType, typename TNodeData, typename TEdgeData, typename TInteractionPolicy>
+void GraphInteractionApplet<TDerived, TType, TNodeData, TEdgeData, TInteractionPolicy>::OnClick()
 {
     auto hit = HitTest(mousePos_);
 
@@ -326,8 +278,8 @@ void GraphInteractionApplet<TType, TNodeData, TEdgeData>::OnClick()
     }
 }
 
-template <GraphType TType, typename TNodeData, typename TEdgeData>
-void GraphInteractionApplet<TType, TNodeData, TEdgeData>::OnMove()
+template <typename TDerived, GraphType TType, typename TNodeData, typename TEdgeData, typename TInteractionPolicy>
+void GraphInteractionApplet<TDerived, TType, TNodeData, TEdgeData, TInteractionPolicy>::OnMove()
 {
     if (dragging_) {
         assert(selectedNodeId_);
@@ -350,35 +302,8 @@ void GraphInteractionApplet<TType, TNodeData, TEdgeData>::OnMove()
     }
 }
 
-template <GraphType TType, typename TNodeData, typename TEdgeData>
-void GraphInteractionApplet<TType, TNodeData, TEdgeData>::OnEndClick()
+template <typename TDerived, GraphType TType, typename TNodeData, typename TEdgeData, typename TInteractionPolicy>
+void GraphInteractionApplet<TDerived, TType, TNodeData, TEdgeData, TInteractionPolicy>::OnEndClick()
 {
     dragging_ = false;
-}
-
-template <GraphType TType, typename TNodeData, typename TEdgeData>
-GraphInteractionApplet<TType, TNodeData, TEdgeData>::NodeStyle
-GraphInteractionApplet<TType, TNodeData, TEdgeData>::GetNodeStyle(int nodeId)
-{
-    return (nodeId == selectedNodeId_ ? (nodeId == highlightedNodeId_ ? style_.highlightSelected : style_.selected)
-                                      : (nodeId == highlightedNodeId_ ? style_.highlight : style_.normal))
-        .node;
-}
-
-template <GraphType TType, typename TNodeData, typename TEdgeData>
-GraphInteractionApplet<TType, TNodeData, TEdgeData>::EdgeStyle
-GraphInteractionApplet<TType, TNodeData, TEdgeData>::GetEdgeStyle(int edgeId)
-{
-    return (edgeId == selectedEdgeId_ ? (edgeId == highlightedEdgeId_ ? style_.highlightSelected : style_.selected)
-                                      : (edgeId == highlightedEdgeId_ ? style_.highlight : style_.normal))
-        .edge;
-}
-
-template <GraphType TType, typename TNodeData, typename TEdgeData>
-void GraphInteractionApplet<TType, TNodeData, TEdgeData>::ClearGraphIndicators()
-{
-    selectedNodeId_ = 0;
-    selectedEdgeId_ = 0;
-    highlightedNodeId_ = 0;
-    highlightedEdgeId_ = 0;
 }
