@@ -4,6 +4,7 @@
 #include "app/graph_interaction_applet.hpp"
 #include "imgui.h"
 #include "vec2.hpp"
+#include <format>
 
 inline Color convert(ImVec4 color) { return {color.x, color.y, color.z, color.w}; }
 
@@ -42,60 +43,9 @@ void GraphInteractionApplet<TType, TNodeData, TEdgeData>::OnShowControls()
 
         if (ImGui::BeginTabItem("Settings")) {
             ImGui::Checkbox("Auto-Size Window", &autoSize_);
-            if (ImGui::TreeNodeEx("Graph Manipulators",
-                                  ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_DrawLinesFull)) {
-                if (ImGui::BeginTable("##GraphManipulators", 2,
-                                      ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchProp)) {
-                    for (auto manipulator : graphManipulators_.GetAll()) {
-                        ImGui::TableNextRow();
-                        ImGui::TableNextColumn();
-                        if (ImGui::Button(manipulator->GetDisplayName())) {
-                            ClearGraphIndicators();
-                            manipulator->Manipulate(graph_);
-                        }
-                        ImGui::TableNextColumn();
-                        ImGui::PushID(manipulator);
-                        manipulator->OnShowControls();
-                        ImGui::PopID();
-                    }
-                    ImGui::TableNextRow();
-                    ImGui::TableNextColumn();
-                    if (ImGui::Button("Clear")) {
-                        ClearGraphIndicators();
-                        graph_.Clear();
-                    }
-                    ImGui::EndTable();
-                }
-                ImGui::TreePop();
-            }
-            if (ImGui::TreeNodeEx("Graph Animators",
-                                  ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_DrawLinesFull)) {
-                if (playingAnimation_) {
-                    if (ImGui::Button("Pause")) {
-                        Pause();
-                    }
-                } else {
-                    if (ImGui::Button("Play")) {
-                        Play();
-                    }
-                }
-                if (ImGui::BeginTable("##GraphAnimators", 2,
-                                      ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchProp)) {
-                    for (auto animator : graphAnimators_.GetAll()) {
-                        ImGui::TableNextRow();
-                        ImGui::TableNextColumn();
-                        if (ImGui::Button(animator->GetDisplayName())) {
-                            SetCurrentAnimator(animator);
-                        }
-                        ImGui::TableNextColumn();
-                        ImGui::PushID(animator);
-                        animator->OnShowControls();
-                        ImGui::PopID();
-                    }
-                    ImGui::EndTable();
-                }
-                ImGui::TreePop();
-            }
+            ImGui::PushID(this);
+            OnShowDerivedAppletControls();
+            ImGui::PopID();
             ImGui::EndTabItem();
         }
 
@@ -104,6 +54,10 @@ void GraphInteractionApplet<TType, TNodeData, TEdgeData>::OnShowControls()
             ImGui::SliderFloat("Node Hit Test Padding", &style_.nodeHitTestPadding, 0.0f, 50.0f, "%.3f");
             ImGui::SliderFloat("Edge Scale", &style_.edgeScale, 0.0f, 10.0f, "%.3f");
             ImGui::SliderFloat("Edge Hit Test Padding", &style_.edgeHitTestPadding, 0.0f, 50.0f, "%.3f");
+            if constexpr (TType == GraphType::Directed) {
+                ImGui::SliderFloat("Line End Arrow Angle", &style_.arrowAngle, 0.0f, 90.0f, "%.0f");
+                ImGui::SliderFloat("Line End Arrow Length", &style_.arrowLength, 0.0f, 100.0f, "%.1f");
+            }
 
             auto stateStyle = [](const char *name, const char *suffix, GraphPartStyle &part) -> void {
                 if (ImGui::TreeNodeEx(name, ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_DrawLinesFull)) {
@@ -194,18 +148,6 @@ void GraphInteractionApplet<TType, TNodeData, TEdgeData>::OnEvent(const SDL_Even
             OnDelete();
             break;
 
-        case SDLK_SPACE:
-            if (!currentAnimator_) {
-                break;
-            };
-
-            if (playingAnimation_) {
-                Pause();
-            } else {
-                Play();
-            }
-            break;
-
         default:
             // this applet doesn't care about other keys
             break;
@@ -273,6 +215,10 @@ void GraphInteractionApplet<TType, TNodeData, TEdgeData>::DrawEdge(
     auto posB = ToScreen(nodeB.data);
     auto style = GetEdgeStyle(edge.id);
     g.Line(posA, posB, style.lineThickness * style_.edgeScale, convert(style.lineColor));
+    if constexpr (TType == GraphType::Directed) {
+        g.LineArrowEnd(posA, posB, style.lineThickness * style_.edgeScale, convert(style.lineColor), style_.arrowAngle,
+                       style_.arrowLength);
+    }
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>

@@ -10,6 +10,8 @@ template <GraphType TType, typename TNodeData, typename TEdgeData> class GraphIn
     static_assert(std::is_same_v<TNodeData, glm::vec2>, "TNodeData must currently be glm::vec2.");
 
 public:
+    GraphInteractionApplet(App &app) : Applet(app) {}
+
     using Graph = Graph<TType, TNodeData, TEdgeData>;
 
     void OnRenderBackground(Graphics &g) override;
@@ -20,6 +22,10 @@ protected:
     // graph
     Graph graph_;
 
+    // derived UI handling
+    virtual void OnShowDerivedAppletControls() {}
+    void ClearGraphIndicators();
+
     // coordinate handling
     glm::vec2 ToScreen(glm::vec2 worldPos);
     glm::vec2 ToWorld(glm::vec2 screenPos);
@@ -29,15 +35,6 @@ private:
     bool autoSize_ = true;
     glm::vec2 pan_ = {0, 0};
     float zoom_ = 1.0f;
-
-    // animation
-    KnownGraphAnimators graphAnimators_;
-    bool playingAnimation_ = false;
-    GraphAnimator *currentAnimator_ = nullptr;
-    SimulationTimer animationTimer_;
-    void SetCurrentAnimator(GraphAnimator *animator);
-    void Play();
-    void Pause();
 
     // ui state
     int selectedNodeId_ = 0;
@@ -95,6 +92,10 @@ private:
         float nodeHitTestPadding = 15.0f;
         float edgeScale = 1.0f;
         float edgeHitTestPadding = 4.0f;
+
+        // only relevant to directed graphs:
+        float arrowAngle = 25.0f;
+        float arrowLength = 25.0f;
     };
 
     GraphStyle style_ = {{
@@ -120,7 +121,6 @@ private:
 
     NodeStyle GetNodeStyle(int nodeId);
     EdgeStyle GetEdgeStyle(int edgeId);
-    void ClearGraphIndicators();
 };
 
 #include "app/graph_interaction_applet.tpp"
