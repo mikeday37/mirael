@@ -46,15 +46,17 @@ protected:
     glm::vec2 ToScreen(glm::vec2 worldPos) const;
     glm::vec2 ToWorld(glm::vec2 screenPos) const;
 
-    int &SelectedNode() { return selectedNodeId_; }
-    int &HighlightedNode() { return highlightedNodeId_; }
-    int &SelectedEdge() { return selectedEdgeId_; }
-    int &HighlightedEdge() { return highlightedEdgeId_; }
+    int &SelectedNodeId() { return selectedNodeId_; }
+    int &HighlightedNodeId() { return highlightedNodeId_; }
+    int &SelectedEdgeId() { return selectedEdgeId_; }
+    int &HighlightedEdgeId() { return highlightedEdgeId_; }
 
-    const int &SelectedNode() const { return selectedNodeId_; }
-    const int &HighlightedNode() const { return highlightedNodeId_; }
-    const int &SelectedEdge() const { return selectedEdgeId_; }
-    const int &HighlightedEdge() const { return highlightedEdgeId_; }
+    const int &SelectedNodeId() const { return selectedNodeId_; }
+    const int &HighlightedNodeId() const { return highlightedNodeId_; }
+    const int &SelectedEdgeId() const { return selectedEdgeId_; }
+    const int &HighlightedEdgeId() const { return highlightedEdgeId_; }
+
+    glm::vec2 GetMousePosition() const { return mousePos_; }
 
     struct HitTestSettings {
         float nodeHitRadiusNormal;
@@ -63,6 +65,14 @@ protected:
         float edgeHitRadiusSelected;
     };
     virtual HitTestSettings GetHitTestSettings() const = 0;
+
+    // hit testing
+    struct HitInfo {
+        glm::vec2 worldPos;
+        int nodeId;
+        int edgeId;
+    };
+    HitInfo HitTest(glm::vec2 screenPos) const;
 
 private:
     // controls
@@ -78,14 +88,6 @@ private:
     bool dragging_ = false;
     glm::vec2 dragOffset_;
     glm::vec2 mousePos_ = {-1, -1};
-
-    // hit testing
-    struct HitInfo {
-        glm::vec2 worldPos;
-        int nodeId;
-        int edgeId;
-    };
-    HitInfo HitTest(glm::vec2 screenPos) const;
 
     // drawing
     void DrawGraph(Graphics &g);

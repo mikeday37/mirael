@@ -29,6 +29,7 @@ public:
         int id;
         int nodeIdA;
         int nodeIdB;
+        TEdgeData data;
     };
 
     struct AddEdgeResult {
@@ -36,8 +37,7 @@ public:
         bool added; // true if it didn't already exist, false if it already existed
     };
 
-    template <typename... Args> int AddNode(Args &&...args);
-    int AddNode(TNodeData &data); // both variants of AddNode always return a new node id
+    template <typename... Args> int AddNode(Args &&...args); // always returns a new node id
     TNodeData &NodeData(int nodeId);
 
     bool ContainsNode(int nodeId) const;
@@ -46,8 +46,11 @@ public:
     void RepositionNode(int nodeId, glm::vec2 pos);
     void RemoveNode(int nodeId);
 
-    AddEdgeResult AddEdge(int nodeIdA,
-                          int nodeIdB); // returns a new id if added == true, or the existing id if added == false
+    template <typename... Args>
+    AddEdgeResult AddEdge(int nodeIdA, int nodeIdB,
+                          Args &&...args); // returns a new id if added == true, or the existing id if added == false
+    TEdgeData &EdgeData(int edgeId);
+
     bool ContainsEdge(int edgeId) const;
     bool ContainsEdge(int nodeIdA, int nodeIdB) const;
     Edge GetEdge(int edgeId) const;
@@ -72,7 +75,7 @@ private:
     int nextId_ = 1;
     std::map<int, TNodeData> nodes_;
 
-    std::unordered_map<int, std::pair<int, int>> edges_;             // edge id -> node ids {a, b}
+    std::unordered_map<int, Triplet<int, int, TEdgeData>> edges_;    // edge id -> node ids {a, b}
     std::unordered_map<std::pair<int, int>, int, PairHash> edgeMap_; // node ids {a, b} -> edge Id
     std::unordered_map<int, std::unordered_set<int>>
         nodeEdges_; // node id to set of edge id, for both ends (has every edge twice) // TODO: check & update - this

@@ -122,15 +122,15 @@ void UntangleApplet::Pause()
 
 UntangleApplet::NodeStyle UntangleApplet::GetNodeStyle(int nodeId) const
 {
-    return (nodeId == SelectedNode() ? (nodeId == HighlightedNode() ? style_.highlightSelected : style_.selected)
-                                     : (nodeId == HighlightedNode() ? style_.highlight : style_.normal))
+    return (nodeId == SelectedNodeId() ? (nodeId == HighlightedNodeId() ? style_.highlightSelected : style_.selected)
+                                     : (nodeId == HighlightedNodeId() ? style_.highlight : style_.normal))
         .node;
 }
 
 UntangleApplet::EdgeStyle UntangleApplet::GetEdgeStyle(int edgeId) const
 {
-    return (edgeId == SelectedEdge() ? (edgeId == HighlightedEdge() ? style_.highlightSelected : style_.selected)
-                                     : (edgeId == HighlightedEdge() ? style_.highlight : style_.normal))
+    return (edgeId == SelectedEdgeId() ? (edgeId == HighlightedEdgeId() ? style_.highlightSelected : style_.selected)
+                                     : (edgeId == HighlightedEdgeId() ? style_.highlight : style_.normal))
         .edge;
 }
 
@@ -151,15 +151,6 @@ void UntangleApplet::DrawEdge(Graphics &g, const Graph::Edge &edge) const
     auto style = GetEdgeStyle(edge.id);
     g.Line(posA, posB, style.lineThickness * style_.edgeScale, convert(style.lineColor));
 }
-
-/*
-        if constexpr (TType == GraphType::Directed) {
-        g.LineArrowEnd(posA, posB, style.lineThickness * style_.edgeScale, convert(style.lineColor), style_.arrowAngle,
-                    style_.arrowLength);
-    }
-
-
-*/
 
 void UntangleApplet::OnShowStyleUI()
 {

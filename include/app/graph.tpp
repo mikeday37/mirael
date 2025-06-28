@@ -31,18 +31,6 @@ int Graph<TType, TNodeData, TEdgeData>::AddNode(Args &&...args)
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
-int Graph<TType, TNodeData, TEdgeData>::AddNode(TNodeData &data)
-{
-    assert(nextId_ < std::numeric_limits<int>::max());
-
-    int nodeId = nextId_++;
-    nodes_[nodeId] = data;
-    nodeEdges_[nodeId];
-
-    return nodeId;
-}
-
-template <GraphType TType, typename TNodeData, typename TEdgeData>
 TNodeData &Graph<TType, TNodeData, TEdgeData>::NodeData(int nodeId)
 {
     assert(nodes_.contains(nodeId));
@@ -107,7 +95,8 @@ void Graph<TType, TNodeData, TEdgeData>::RemoveNode(int nodeId)
 
     // for each edge, erase it from other nodes' edge sets, and erase the edge itself
     for (const auto &edgeId : connectedEdges) {
-        const auto &[nodeIdA, nodeIdB] = edges_[edgeId];
+        const auto &[nodeIdA, nodeIdB, _] = edges_[edgeId];
+        unused(_);
         int otherNodeId = nodeIdA == nodeId ? nodeIdB : nodeIdA;
 
         assert(edges_.contains(edgeId));
@@ -124,7 +113,9 @@ void Graph<TType, TNodeData, TEdgeData>::RemoveNode(int nodeId)
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
-Graph<TType, TNodeData, TEdgeData>::AddEdgeResult Graph<TType, TNodeData, TEdgeData>::AddEdge(int nodeIdA, int nodeIdB)
+template <typename... Args>
+Graph<TType, TNodeData, TEdgeData>::AddEdgeResult Graph<TType, TNodeData, TEdgeData>::AddEdge(int nodeIdA, int nodeIdB,
+                                                                                              Args &&...args)
 {
     assert(nextId_ < std::numeric_limits<int>::max());
     assert(nodeIdA != nodeIdB);
@@ -140,7 +131,9 @@ Graph<TType, TNodeData, TEdgeData>::AddEdgeResult Graph<TType, TNodeData, TEdgeD
 
     int edgeId = nextId_++;
 
-    edges_[edgeId] = edgeKey;
+    edges_.emplace(std::piecewise_construct,      //
+                   std::forward_as_tuple(edgeId), //
+                   std::forward_as_tuple(edgeKey.first, edgeKey.second, std::forward<Args>(args)...));
     nodeEdges_[nodeIdA].emplace(edgeId);
     nodeEdges_[nodeIdB].emplace(edgeId);
     edgeMap_.emplace(edgeKey, edgeId);
@@ -221,7 +214,9 @@ void Graph<TType, TNodeData, TEdgeData>::RemoveEdge(int edgeId)
     assert(nodes_.contains(nodePair.second));
     assert(nodeEdges_[nodePair.first].contains(edgeId));
     assert(nodeEdges_[nodePair.second].contains(edgeId));
-    assert(nodePair.first < nodePair.second);
+    if constexpr (TType == GraphType::Undirected) {
+        assert(nodePair.first < nodePair.second);
+    }
 
     nodeEdges_[nodePair.first].erase(edgeId);
     nodeEdges_[nodePair.second].erase(edgeId);

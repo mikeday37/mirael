@@ -7,8 +7,6 @@
 #include "vec2.hpp"
 #include <format>
 
-inline Color convert(ImVec4 color) { return {color.x, color.y, color.z, color.w}; }
-
 template <typename TDerived, GraphType TType, typename TNodeData, typename TEdgeData, typename TInteractionPolicy>
 void GraphInteractionApplet<TDerived, TType, TNodeData, TEdgeData, TInteractionPolicy>::OnRenderBackground(Graphics &g)
 {
@@ -33,6 +31,9 @@ void GraphInteractionApplet<TDerived, TType, TNodeData, TEdgeData, TInteractionP
     for (const auto &node : graph_.GetNodes()) {
         static_cast<TDerived *>(this)->DrawNode(g, node);
     }
+
+    // TODO: this is a slight bit wasteful - drawing the selected/highlighted node a second time to make sure it
+    // appears on top.  This will also mess with the alpha if not 1.
 
     if constexpr (TInteractionPolicy::hoverHighlightsNodes) {
         if (selectedNodeId_ && selectedNodeId_ != highlightedNodeId_) {
@@ -191,26 +192,30 @@ GraphInteractionApplet<TDerived, TType, TNodeData, TEdgeData, TInteractionPolicy
 
     auto hitTestSettings = GetHitTestSettings();
 
-    float closestPotentialNodeDist = 0;
-    for (auto node : graph_.GetNodes()) {
-        auto dist = glm::distance(ToScreen(node.data), screenPos);
-        auto hitRadius =
-            node.id == selectedNodeId_ ? hitTestSettings.nodeHitRadiusSelected : hitTestSettings.nodeHitRadiusNormal;
-        if (dist <= hitRadius && (!hit.nodeId || dist < closestPotentialNodeDist)) {
-            hit.nodeId = node.id;
-            closestPotentialNodeDist = dist;
+    if constexpr (TInteractionPolicy::canSelectNodes || TInteractionPolicy::hoverHighlightsNodes) {
+        float closestPotentialNodeDist = 0;
+        for (auto node : graph_.GetNodes()) {
+            auto dist = glm::distance(ToScreen(node.data), screenPos);
+            auto hitRadius = node.id == selectedNodeId_ ? hitTestSettings.nodeHitRadiusSelected
+                                                        : hitTestSettings.nodeHitRadiusNormal;
+            if (dist <= hitRadius && (!hit.nodeId || dist < closestPotentialNodeDist)) {
+                hit.nodeId = node.id;
+                closestPotentialNodeDist = dist;
+            }
         }
     }
 
     float closestPotentialEdgeDist = 0;
-    for (auto edge : graph_.GetEdges()) {
-        auto dist = PointDistanceToLineSegment(screenPos, ToScreen(graph_.GetNode(edge.nodeIdA).data),
-                                               ToScreen(graph_.GetNode(edge.nodeIdB).data));
-        auto hitRadius =
-            edge.id == selectedEdgeId_ ? hitTestSettings.edgeHitRadiusSelected : hitTestSettings.edgeHitRadiusNormal;
-        if (dist <= hitRadius && (!hit.edgeId || dist < closestPotentialEdgeDist)) {
-            hit.edgeId = edge.id;
-            closestPotentialEdgeDist = dist;
+    if constexpr (TInteractionPolicy::canSelectEdges || TInteractionPolicy::hoverHighlightsEdges) {
+        for (auto edge : graph_.GetEdges()) {
+            auto dist = PointDistanceToLineSegment(screenPos, ToScreen(graph_.GetNode(edge.nodeIdA).data),
+                                                   ToScreen(graph_.GetNode(edge.nodeIdB).data));
+            auto hitRadius = edge.id == selectedEdgeId_ ? hitTestSettings.edgeHitRadiusSelected
+                                                        : hitTestSettings.edgeHitRadiusNormal;
+            if (dist <= hitRadius && (!hit.edgeId || dist < closestPotentialEdgeDist)) {
+                hit.edgeId = edge.id;
+                closestPotentialEdgeDist = dist;
+            }
         }
     }
 
@@ -224,7 +229,7 @@ void GraphInteractionApplet<TDerived, TType, TNodeData, TEdgeData, TInteractionP
         return;
     auto hit = HitTest(mousePos_);
     if (hit.nodeId && selectedNodeId_ && hit.nodeId != selectedNodeId_) {
-        graph_.AddEdge(hit.nodeId, selectedNodeId_);
+        graph_.AddEdge(selectedNodeId_, hit.nodeId);
     } else if (!hit.nodeId) {
         graph_.AddNode(hit.worldPos);
     }
@@ -260,16 +265,18 @@ void GraphInteractionApplet<TDerived, TType, TNodeData, TEdgeData, TInteractionP
 {
     auto hit = HitTest(mousePos_);
 
-    if (hit.nodeId) {
+    if (hit.nodeId && TInteractionPolicy::canSelectNodes) {
         selectedNodeId_ = hit.nodeId;
     } else {
         selectedNodeId_ = 0;
-        if (hit.edgeId) {
+        if (hit.edgeId && TInteractionPolicy::canSelectEdges) {
             selectedEdgeId_ = hit.edgeId;
         } else {
             selectedEdgeId_ = 0;
         }
     }
+
+    // TODO: fix - with current logic, if !TInteractionPolicy::canSelectNodes, then they can't be dragged, either.
 
     if (selectedNodeId_) {
         dragging_ = true;
@@ -288,12 +295,12 @@ void GraphInteractionApplet<TDerived, TType, TNodeData, TEdgeData, TInteractionP
     } else {
         auto hit = HitTest(mousePos_);
 
-        if (hit.nodeId) {
+        if (hit.nodeId && TInteractionPolicy::hoverHighlightsNodes) {
             highlightedNodeId_ = hit.nodeId;
             highlightedEdgeId_ = 0;
         } else {
             highlightedNodeId_ = 0;
-            if (hit.edgeId) {
+            if (hit.edgeId && TInteractionPolicy::hoverHighlightsEdges) {
                 highlightedEdgeId_ = hit.edgeId;
             } else {
                 highlightedEdgeId_ = 0;

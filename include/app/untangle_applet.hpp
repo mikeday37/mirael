@@ -21,8 +21,6 @@ struct UntangleAppletGraphInteractionPolicy {
 class UntangleApplet : public GraphInteractionApplet<UntangleApplet, GraphType::Undirected, glm::vec2, Empty,
                                                      UntangleAppletGraphInteractionPolicy>
 {
-    friend struct UntangleAppletGraphInteractionPolicy;
-
 public:
     using Base = GraphInteractionApplet<UntangleApplet, GraphType::Undirected, glm::vec2, Empty,
                                         UntangleAppletGraphInteractionPolicy>;
@@ -83,10 +81,6 @@ private:
         float nodeHitTestPadding = 15.0f;
         float edgeScale = 1.0f;
         float edgeHitTestPadding = 4.0f;
-
-        // only relevant to directed graphs:
-        float arrowAngle = 25.0f;
-        float arrowLength = 25.0f;
     };
 
     GraphStyle style_ = {{
