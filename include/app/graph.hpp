@@ -79,9 +79,7 @@ private:
 
     std::unordered_map<int, Triplet<int, int, TEdgeData>> edges_;    // edge id -> node ids {a, b}
     std::unordered_map<std::pair<int, int>, int, PairHash> edgeMap_; // node ids {a, b} -> edge Id
-    std::unordered_map<int, std::unordered_set<int>>
-        nodeEdges_; // node id to set of edge id, for both ends (has every edge twice) // TODO: check & update - this
-                    // makes no sense
+    std::unordered_map<int, std::unordered_set<int>> nodeEdges_;     // node id -> set of adjacent edge ids
 };
 
 template <typename TNodeData = Empty, typename TEdgeData = Empty>
