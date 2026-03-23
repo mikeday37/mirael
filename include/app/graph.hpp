@@ -17,7 +17,6 @@ template <GraphType TType, typename TNodeData, typename TEdgeData> class Graph
 {
     static_assert(TType == GraphType::Directed || TType == GraphType::Undirected,
                   "TType must be either GraphType::Undirected or GraphType::Directed");
-    static_assert(std::is_same_v<TEdgeData, Empty>, "Non-Empty TEdgeData is not yet supported.");
 
 public:
     struct Node {
@@ -39,6 +38,7 @@ public:
 
     template <typename... Args> int AddNode(Args &&...args); // always returns a new node id
     TNodeData &NodeData(int nodeId);
+    const TNodeData &NodeData(int nodeId) const;
 
     bool ContainsNode(int nodeId) const;
     Node GetNode(int nodeId) const;
@@ -50,10 +50,12 @@ public:
     AddEdgeResult AddEdge(int nodeIdA, int nodeIdB,
                           Args &&...args); // returns a new id if added == true, or the existing id if added == false
     TEdgeData &EdgeData(int edgeId);
+    const TEdgeData &EdgeData(int edgeId) const;
 
     bool ContainsEdge(int edgeId) const;
     bool ContainsEdge(int nodeIdA, int nodeIdB) const;
     Edge GetEdge(int edgeId) const;
+    Edge GetEdge(int nodeIdA, int nodeIdB) const;
     std::vector<Edge> GetEdges() const;
     std::vector<Edge> GetEdges(int nodeId) const;
     void RemoveEdge(int edgeId);

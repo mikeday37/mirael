@@ -38,6 +38,13 @@ TNodeData &Graph<TType, TNodeData, TEdgeData>::NodeData(int nodeId)
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
+const TNodeData &Graph<TType, TNodeData, TEdgeData>::NodeData(int nodeId) const
+{
+    assert(nodes_.contains(nodeId));
+    return nodes_.at(nodeId);
+}
+
+template <GraphType TType, typename TNodeData, typename TEdgeData>
 bool Graph<TType, TNodeData, TEdgeData>::ContainsNode(int nodeId) const
 {
     return nodes_.contains(nodeId);
@@ -142,6 +149,20 @@ Graph<TType, TNodeData, TEdgeData>::AddEdgeResult Graph<TType, TNodeData, TEdgeD
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
+TEdgeData &Graph<TType, TNodeData, TEdgeData>::EdgeData(int edgeId)
+{
+    assert(edges_.contains(edgeId));
+    return edges_.at(edgeId).third;
+}
+
+template <GraphType TType, typename TNodeData, typename TEdgeData>
+const TEdgeData &Graph<TType, TNodeData, TEdgeData>::EdgeData(int edgeId) const
+{
+    assert(edges_.contains(edgeId));
+    return edges_.at(edgeId).third;
+}
+
+template <GraphType TType, typename TNodeData, typename TEdgeData>
 bool Graph<TType, TNodeData, TEdgeData>::ContainsEdge(int edgeId) const
 {
     return edges_.contains(edgeId);
@@ -162,7 +183,16 @@ Graph<TType, TNodeData, TEdgeData>::Edge Graph<TType, TNodeData, TEdgeData>::Get
 
     auto it = edges_.find(edgeId);
 
-    return {edgeId, it->second.first, it->second.second};
+    return {edgeId, it->second.first, it->second.second, it->second.third};
+}
+
+template <GraphType TType, typename TNodeData, typename TEdgeData>
+Graph<TType, TNodeData, TEdgeData>::Edge Graph<TType, TNodeData, TEdgeData>::GetEdge(int nodeIdA, int nodeIdB) const
+{
+    auto edgeKey = CanonicalEdge(nodeIdA, nodeIdB);
+    assert(edgeMap_.contains(edgeKey));
+    auto it = edgeMap_.find(edgeKey);
+    return GetEdge(it->second);
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
@@ -172,7 +202,7 @@ std::vector<typename Graph<TType, TNodeData, TEdgeData>::Edge> Graph<TType, TNod
     edges.reserve(edges_.size());
 
     for (const auto &[id, nodes] : edges_) {
-        edges.emplace_back(id, nodes.first, nodes.second);
+        edges.emplace_back(id, nodes.first, nodes.second, nodes.third);
     }
 
     return edges;
