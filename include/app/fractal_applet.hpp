@@ -66,11 +66,17 @@ private:
         float highlightThicknessPadding = 4.0f;
     };
 
+    struct FractalStyle {
+        float lineThickness;
+        ImVec4 lineColor;
+    };
+
     struct Style {
 
         NodeStyle normalNode;
         NodeStyle selectedNode;
         EdgeStyle edge;
+        FractalStyle fractal;
 
         float nodeScale = 0.35f;
         float nodeHitTestPadding = 15.0f;
@@ -80,11 +86,13 @@ private:
 
     Style style_ = {.normalNode = {40.0f, 6.0f, {1, 1, 1, 1}, {0, 0, 0, 1}},
                     .selectedNode = {44.0f, 9.0f, {0, 0.5f, 1, 1}, {0, 0, 0, 1}},
-                    .edge = {
-                        2.0f,
-                        {0, 1, 1, 1},         // primary
-                        {0, 1, 0, 1},         // secondary
-                        {1, 0, 0, 1},         // reversed
-                        {0.7f, 0.7f, 0.7f, 1} // cosmetic
-                    }};
+                    .edge =
+                        {
+                            2.0f,
+                            {0, 1, 1, 1},         // primary
+                            {0, 1, 0, 1},         // secondary
+                            {1, 0, 0, 1},         // reversed
+                            {0.7f, 0.7f, 0.7f, 1} // cosmetic
+                        },
+                    .fractal = {2.0f, {0.5f, 0.5f, 0.5f, 1}}};
 };

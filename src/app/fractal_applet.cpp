@@ -68,19 +68,20 @@ void FractalApplet::OnShowStyleUI()
         ImGui::TreePop();
     }
     if (ImGui::TreeNodeEx("Edge", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_DrawLinesFull)) {
-        ImGui::SliderFloat("Line Thickness##{}", &style_.edge.lineThickness, 0.0f, 20.0f, "%.1f");
-        ImGui::ColorEdit4("Primary Line Color##{}", (float *)&style_.edge.primaryLineColor,
+        ImGui::SliderFloat("Line Thickness", &style_.edge.lineThickness, 0.0f, 20.0f, "%.1f");
+        ImGui::ColorEdit4("Primary Line Color", (float *)&style_.edge.primaryLineColor, ImGuiColorEditFlags_AlphaBar);
+        ImGui::ColorEdit4("Secondary Line Color", (float *)&style_.edge.secondaryLineColor,
                           ImGuiColorEditFlags_AlphaBar);
-        ImGui::ColorEdit4("Secondary Line Color##{}", (float *)&style_.edge.secondaryLineColor,
-                          ImGuiColorEditFlags_AlphaBar);
-        ImGui::ColorEdit4("Reversed Line Color##{}", (float *)&style_.edge.reversedLineColor,
-                          ImGuiColorEditFlags_AlphaBar);
-        ImGui::ColorEdit4("Cosmetic Line Color##{}", (float *)&style_.edge.cosmeticLineColor,
-                          ImGuiColorEditFlags_AlphaBar);
+        ImGui::ColorEdit4("Reversed Line Color", (float *)&style_.edge.reversedLineColor, ImGuiColorEditFlags_AlphaBar);
+        ImGui::ColorEdit4("Cosmetic Line Color", (float *)&style_.edge.cosmeticLineColor, ImGuiColorEditFlags_AlphaBar);
         ImGui::SliderFloat("Arrow Angle", &style_.edge.arrowAngle, 0.0f, 90.0f, "%.0f");
         ImGui::SliderFloat("Arrow Length", &style_.edge.arrowLength, 0.0f, 100.0f, "%.1f");
-        ImGui::SliderFloat("Highlight Thickness Padding##{}", &style_.edge.highlightThicknessPadding, 0.0f, 20.0f,
-                           "%.1f");
+        ImGui::SliderFloat("Highlight Thickness Padding", &style_.edge.highlightThicknessPadding, 0.0f, 20.0f, "%.1f");
+        ImGui::TreePop();
+    }
+    if (ImGui::TreeNodeEx("Fractal", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_DrawLinesFull)) {
+        ImGui::SliderFloat("Line Thickness", &style_.fractal.lineThickness, 0.0f, 20.0f, "%.1f");
+        ImGui::ColorEdit4("Line Color", (float *)&style_.fractal.lineColor, ImGuiColorEditFlags_AlphaBar);
         ImGui::TreePop();
     }
 }
