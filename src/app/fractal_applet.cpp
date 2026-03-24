@@ -109,7 +109,9 @@ void FractalApplet::OnRightClick()
 
 void FractalApplet::CycleEdgeType(int fromNodeId, int toNodeId)
 {
-    if (!graph_.ContainsEdge(fromNodeId, toNodeId)) {
+    if (!graph_.HasEdges()) {
+        graph_.AddEdge(fromNodeId, toNodeId, FractalDefinition::LineType::Primary);
+    } else if (!graph_.ContainsEdge(fromNodeId, toNodeId)) {
         graph_.AddEdge(fromNodeId, toNodeId, FractalDefinition::LineType::Secondary);
     } else {
         auto edge = graph_.GetEdge(fromNodeId, toNodeId);
