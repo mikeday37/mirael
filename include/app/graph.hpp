@@ -41,7 +41,7 @@ public:
     const TNodeData &NodeData(int nodeId) const;
 
     bool ContainsNode(int nodeId) const;
-    Node GetNode(int nodeId) const;
+    const Node &GetNode(int nodeId) const;
     std::vector<Node> GetNodes() const;
     void RepositionNode(int nodeId, glm::vec2 pos);
     void RemoveNode(int nodeId);
@@ -54,8 +54,8 @@ public:
 
     bool ContainsEdge(int edgeId) const;
     bool ContainsEdge(int nodeIdA, int nodeIdB) const;
-    Edge GetEdge(int edgeId) const;
-    Edge GetEdge(int nodeIdA, int nodeIdB) const;
+    const Edge &GetEdge(int edgeId) const;
+    const Edge &GetEdge(int nodeIdA, int nodeIdB) const;
     std::vector<Edge> GetEdges() const;
     std::vector<Edge> GetEdges(int nodeId) const;
     void RemoveEdge(int edgeId);
@@ -75,9 +75,8 @@ private:
     std::pair<int, int> CanonicalEdge(int a, int b) const;
 
     int nextId_ = 1;
-    std::map<int, TNodeData> nodes_;
-
-    std::unordered_map<int, Triplet<int, int, TEdgeData>> edges_;    // edge id -> node ids {a, b}
+    std::map<int, Node> nodes_;
+    std::unordered_map<int, Edge> edges_;
     std::unordered_map<std::pair<int, int>, int, PairHash> edgeMap_; // node ids {a, b} -> edge Id
     std::unordered_map<int, std::unordered_set<int>> nodeEdges_;     // node id -> set of adjacent edge ids
 };

@@ -24,7 +24,7 @@ int Graph<TType, TNodeData, TEdgeData>::AddNode(Args &&...args)
 
     int nodeId = nextId_++;
     nodes_.emplace(std::piecewise_construct, std::forward_as_tuple(nodeId),
-                   std::forward_as_tuple(std::forward<Args>(args)...));
+                   std::forward_as_tuple(nodeId, TNodeData{std::forward<Args>(args)...}));
     nodeEdges_[nodeId];
 
     return nodeId;
@@ -34,14 +34,14 @@ template <GraphType TType, typename TNodeData, typename TEdgeData>
 TNodeData &Graph<TType, TNodeData, TEdgeData>::NodeData(int nodeId)
 {
     assert(nodes_.contains(nodeId));
-    return nodes_.at(nodeId);
+    return nodes_.at(nodeId).data;
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
 const TNodeData &Graph<TType, TNodeData, TEdgeData>::NodeData(int nodeId) const
 {
     assert(nodes_.contains(nodeId));
-    return nodes_.at(nodeId);
+    return nodes_.at(nodeId).data;
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
@@ -51,13 +51,10 @@ bool Graph<TType, TNodeData, TEdgeData>::ContainsNode(int nodeId) const
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
-Graph<TType, TNodeData, TEdgeData>::Node Graph<TType, TNodeData, TEdgeData>::GetNode(int nodeId) const
+const Graph<TType, TNodeData, TEdgeData>::Node &Graph<TType, TNodeData, TEdgeData>::GetNode(int nodeId) const
 {
     assert(nodes_.contains(nodeId));
-
-    auto it = nodes_.find(nodeId);
-
-    return {nodeId, it->second};
+    return nodes_.at(nodeId);
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
@@ -66,8 +63,8 @@ std::vector<typename Graph<TType, TNodeData, TEdgeData>::Node> Graph<TType, TNod
     std::vector<Graph<TType, TNodeData, TEdgeData>::Node> nodes;
     nodes.reserve(nodes_.size());
 
-    for (const auto &[id, pos] : nodes_) {
-        nodes.emplace_back(id, pos);
+    for (const auto &[id, node] : nodes_) {
+        nodes.emplace_back(id, node.data);
     }
 
     return nodes;
@@ -80,8 +77,8 @@ void Graph<TType, TNodeData, TEdgeData>::RepositionNode(int nodeId, glm::vec2 po
 
     auto it = nodes_.find(nodeId);
 
-    it->second.x = pos.x;
-    it->second.y = pos.y;
+    it->second.data.x = pos.x;
+    it->second.data.y = pos.y;
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
@@ -102,8 +99,9 @@ void Graph<TType, TNodeData, TEdgeData>::RemoveNode(int nodeId)
 
     // for each edge, erase it from other nodes' edge sets, and erase the edge itself
     for (const auto &edgeId : connectedEdges) {
-        const auto &[nodeIdA, nodeIdB, _] = edges_[edgeId];
+        const auto &[_, nodeIdA, nodeIdB, __] = edges_[edgeId];
         unused(_);
+        unused(__);
         int otherNodeId = nodeIdA == nodeId ? nodeIdB : nodeIdA;
 
         assert(edges_.contains(edgeId));
@@ -138,9 +136,9 @@ Graph<TType, TNodeData, TEdgeData>::AddEdgeResult Graph<TType, TNodeData, TEdgeD
 
     int edgeId = nextId_++;
 
-    edges_.emplace(std::piecewise_construct,      //
-                   std::forward_as_tuple(edgeId), //
-                   std::forward_as_tuple(edgeKey.first, edgeKey.second, std::forward<Args>(args)...));
+    edges_.emplace(
+        std::piecewise_construct, std::forward_as_tuple(edgeId),
+        std::forward_as_tuple(edgeId, edgeKey.first, edgeKey.second, TEdgeData{std::forward<Args>(args)...}));
     nodeEdges_[nodeIdA].emplace(edgeId);
     nodeEdges_[nodeIdB].emplace(edgeId);
     edgeMap_.emplace(edgeKey, edgeId);
@@ -152,14 +150,14 @@ template <GraphType TType, typename TNodeData, typename TEdgeData>
 TEdgeData &Graph<TType, TNodeData, TEdgeData>::EdgeData(int edgeId)
 {
     assert(edges_.contains(edgeId));
-    return edges_.at(edgeId).third;
+    return edges_.at(edgeId).data;
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
 const TEdgeData &Graph<TType, TNodeData, TEdgeData>::EdgeData(int edgeId) const
 {
     assert(edges_.contains(edgeId));
-    return edges_.at(edgeId).third;
+    return edges_.at(edgeId).data;
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
@@ -177,17 +175,15 @@ bool Graph<TType, TNodeData, TEdgeData>::ContainsEdge(int nodeIdA, int nodeIdB) 
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
-Graph<TType, TNodeData, TEdgeData>::Edge Graph<TType, TNodeData, TEdgeData>::GetEdge(int edgeId) const
+const Graph<TType, TNodeData, TEdgeData>::Edge &Graph<TType, TNodeData, TEdgeData>::GetEdge(int edgeId) const
 {
     assert(edges_.contains(edgeId));
-
-    auto it = edges_.find(edgeId);
-
-    return {edgeId, it->second.first, it->second.second, it->second.third};
+    return edges_.at(edgeId);
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
-Graph<TType, TNodeData, TEdgeData>::Edge Graph<TType, TNodeData, TEdgeData>::GetEdge(int nodeIdA, int nodeIdB) const
+const Graph<TType, TNodeData, TEdgeData>::Edge &Graph<TType, TNodeData, TEdgeData>::GetEdge(int nodeIdA,
+                                                                                            int nodeIdB) const
 {
     auto edgeKey = CanonicalEdge(nodeIdA, nodeIdB);
     assert(edgeMap_.contains(edgeKey));
@@ -201,8 +197,8 @@ std::vector<typename Graph<TType, TNodeData, TEdgeData>::Edge> Graph<TType, TNod
     std::vector<Graph<TType, TNodeData, TEdgeData>::Edge> edges;
     edges.reserve(edges_.size());
 
-    for (const auto &[id, nodes] : edges_) {
-        edges.emplace_back(id, nodes.first, nodes.second, nodes.third);
+    for (const auto &[id, node] : edges_) {
+        edges.emplace_back(id, node.nodeIdA, node.nodeIdB, node.data);
     }
 
     return edges;
@@ -227,7 +223,7 @@ Graph<TType, TNodeData, TEdgeData>::GetEdges(int nodeId) const
 
     for (const auto edgeId : nodeEdgeIds) {
         auto &edge = *edges_.find(edgeId);
-        edges.emplace_back(edgeId, edge.second.first, edge.second.second);
+        edges.emplace_back(edgeId, edge.second.nodeIdA, edge.second.nodeIdB, edge.second.data);
     }
 
     return edges;
@@ -238,19 +234,19 @@ void Graph<TType, TNodeData, TEdgeData>::RemoveEdge(int edgeId)
 {
     assert(edges_.contains(edgeId));
 
-    const auto &nodePair = edges_[edgeId];
+    const auto &edge = edges_[edgeId];
 
-    assert(nodes_.contains(nodePair.first));
-    assert(nodes_.contains(nodePair.second));
-    assert(nodeEdges_[nodePair.first].contains(edgeId));
-    assert(nodeEdges_[nodePair.second].contains(edgeId));
+    assert(nodes_.contains(edge.nodeIdA));
+    assert(nodes_.contains(edge.nodeIdB));
+    assert(nodeEdges_[edge.nodeIdA].contains(edgeId));
+    assert(nodeEdges_[edge.nodeIdB].contains(edgeId));
     if constexpr (TType == GraphType::Undirected) {
-        assert(nodePair.first < nodePair.second);
+        assert(edge.nodeIdA < edge.nodeIdB);
     }
 
-    nodeEdges_[nodePair.first].erase(edgeId);
-    nodeEdges_[nodePair.second].erase(edgeId);
-    edgeMap_.erase({nodePair.first, nodePair.second});
+    nodeEdges_[edge.nodeIdA].erase(edgeId);
+    nodeEdges_[edge.nodeIdB].erase(edgeId);
+    edgeMap_.erase({edge.nodeIdA, edge.nodeIdB});
     edges_.erase(edgeId);
 }
 

@@ -43,16 +43,3 @@ template <typename T> T RemoveRandomElement(std::vector<T> &v, std::mt19937 &rng
 float PointDistanceToLineSegment(const glm::vec2 &P, const glm::vec2 &A, const glm::vec2 &B);
 
 inline Color convert(ImVec4 color) { return {color.x, color.y, color.z, color.w}; }
-
-template <typename A, typename B, typename C> struct Triplet {
-    A first;
-    B second;
-    C third;
-
-    constexpr Triplet() = default;
-    constexpr Triplet(const A &a) : first(a) {}
-    constexpr Triplet(const A &a, const B &b) : first(a), second(b) {}
-    constexpr Triplet(const A &a, const B &b, const C &c) : first(a), second(b), third(c) {}
-
-    auto operator<=>(const Triplet &) const = default;
-};
