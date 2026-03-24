@@ -159,7 +159,7 @@ void TangleGraphManipulator::Manipulate(UntangleAppletGraph &g)
     switch (shape_) {
     case Shape::Random: {
         std::uniform_real_distribution<float> coordPicker(-1.0f * scale_, 1.0f * scale_);
-        for (auto node : g.GetNodes()) {
+        for (const auto &node : g.GetNodes()) {
             g.NodeData(node.id) = {coordPicker(rng), coordPicker(rng)};
         }
         break;

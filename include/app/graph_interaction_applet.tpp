@@ -194,7 +194,7 @@ GraphInteractionApplet<TDerived, TType, TNodeData, TEdgeData, TInteractionPolicy
 
     if constexpr (TInteractionPolicy::canSelectNodes || TInteractionPolicy::hoverHighlightsNodes) {
         float closestPotentialNodeDist = 0;
-        for (auto node : graph_.GetNodes()) {
+        for (const auto &node : graph_.GetNodes()) {
             auto dist = glm::distance(ToScreen(node.data), screenPos);
             auto hitRadius = node.id == selectedNodeId_ ? hitTestSettings.nodeHitRadiusSelected
                                                         : hitTestSettings.nodeHitRadiusNormal;
@@ -207,7 +207,7 @@ GraphInteractionApplet<TDerived, TType, TNodeData, TEdgeData, TInteractionPolicy
 
     float closestPotentialEdgeDist = 0;
     if constexpr (TInteractionPolicy::canSelectEdges || TInteractionPolicy::hoverHighlightsEdges) {
-        for (auto edge : graph_.GetEdges()) {
+        for (const auto &edge : graph_.GetEdges()) {
             auto dist = PointDistanceToLineSegment(screenPos, ToScreen(graph_.GetNode(edge.nodeIdA).data),
                                                    ToScreen(graph_.GetNode(edge.nodeIdB).data));
             auto hitRadius = edge.id == selectedEdgeId_ ? hitTestSettings.edgeHitRadiusSelected
