@@ -160,7 +160,7 @@ void TangleGraphManipulator::Manipulate(UntangleAppletGraph &g)
     case Shape::Random: {
         std::uniform_real_distribution<float> coordPicker(-1.0f * scale_, 1.0f * scale_);
         for (auto node : g.GetNodes()) {
-            g.RepositionNode(node.id, {coordPicker(rng), coordPicker(rng)});
+            g.NodeData(node.id) = {coordPicker(rng), coordPicker(rng)};
         }
         break;
     }
@@ -177,7 +177,7 @@ void TangleGraphManipulator::Manipulate(UntangleAppletGraph &g)
         for (auto index : std::views::iota(0, size)) {
             auto nodeId = RemoveRandomElement(nodeIndices, rng);
             auto theta = static_cast<float>(index) * thetaStep - glm::half_pi<float>();
-            g.RepositionNode(nodeId, {glm::cos(theta) * scale_, glm::sin(theta) * scale_});
+            g.NodeData(nodeId) = {glm::cos(theta) * scale_, glm::sin(theta) * scale_};
         }
         break;
     }

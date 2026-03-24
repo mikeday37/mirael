@@ -291,7 +291,7 @@ void GraphInteractionApplet<TDerived, TType, TNodeData, TEdgeData, TInteractionP
     if (dragging_) {
         assert(selectedNodeId_);
 
-        graph_.RepositionNode(selectedNodeId_, ToWorld(mousePos_) - dragOffset_);
+        graph_.NodeData(selectedNodeId_) = ToWorld(mousePos_) - dragOffset_;
     } else {
         auto hit = HitTest(mousePos_);
 

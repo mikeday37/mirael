@@ -43,7 +43,6 @@ public:
     bool ContainsNode(int nodeId) const;
     const Node &GetNode(int nodeId) const;
     std::vector<Node> GetNodes() const;
-    void RepositionNode(int nodeId, glm::vec2 pos);
     void RemoveNode(int nodeId);
 
     template <typename... Args>

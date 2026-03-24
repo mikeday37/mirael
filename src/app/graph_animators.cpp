@@ -18,8 +18,8 @@ void JitterGraphAnimator::Animate(UntangleAppletGraph &g, seconds worldTime, sec
     std::uniform_real_distribution<float> jitter(-jitterMagnitude_ * overallScale_, jitterMagnitude_ * overallScale_);
 
     for (auto node : g.GetNodes()) {
-        g.RepositionNode(node.id,
-                         {node.data.x + jitter(rng_) * horizontalScale_, node.data.y + jitter(rng_) * verticalScale_});
+        g.NodeData(node.id) = {node.data.x + jitter(rng_) * horizontalScale_,
+                               node.data.y + jitter(rng_) * verticalScale_};
     }
 }
 
@@ -82,6 +82,6 @@ void OrbitGraphAnimator::Animate(UntangleAppletGraph &g, seconds worldTime, seco
             std::sin(theta),
             std::cos(theta),
         };
-        g.RepositionNode(node.id, rotation * node.data);
+        g.NodeData(node.id) = rotation * node.data;
     }
 }

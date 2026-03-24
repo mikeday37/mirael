@@ -71,17 +71,6 @@ std::vector<typename Graph<TType, TNodeData, TEdgeData>::Node> Graph<TType, TNod
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
-void Graph<TType, TNodeData, TEdgeData>::RepositionNode(int nodeId, glm::vec2 pos)
-{
-    assert(nodes_.contains(nodeId));
-
-    auto it = nodes_.find(nodeId);
-
-    it->second.data.x = pos.x;
-    it->second.data.y = pos.y;
-}
-
-template <GraphType TType, typename TNodeData, typename TEdgeData>
 void Graph<TType, TNodeData, TEdgeData>::RemoveNode(int nodeId)
 {
     assert(nodes_.contains(nodeId));
