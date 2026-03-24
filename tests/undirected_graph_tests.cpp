@@ -200,8 +200,8 @@ TEST_CASE("Undirected: Basic graph creation and manipulation")
         REQUIRE(g.Nodes().size() == 1);
         REQUIRE(g.GetEdges().size() == 0);
 
-        REQUIRE(g.Nodes()[0].id == nodeId2);
-        REQUIRE(g.Nodes()[0].data == k_node2_pos);
+        REQUIRE(g.Nodes().begin()->id == nodeId2);
+        REQUIRE(g.Nodes().begin()->data == k_node2_pos);
 
         REQUIRE(!g.ContainsEdge(edgeId));
         REQUIRE(!g.ContainsEdge(nodeId1, nodeId2));
@@ -228,8 +228,8 @@ TEST_CASE("Undirected: Basic graph creation and manipulation")
         REQUIRE(g.Nodes().size() == 1);
         REQUIRE(g.GetEdges().size() == 0);
 
-        REQUIRE(g.Nodes()[0].id == nodeId1);
-        REQUIRE(g.Nodes()[0].data == k_node1_pos);
+        REQUIRE(g.Nodes().begin()->id == nodeId1);
+        REQUIRE(g.Nodes().begin()->data == k_node1_pos);
 
         REQUIRE(!g.ContainsEdge(edgeId));
         REQUIRE(!g.ContainsEdge(nodeId1, nodeId2));
