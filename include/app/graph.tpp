@@ -58,7 +58,7 @@ const Graph<TType, TNodeData, TEdgeData>::Node &Graph<TType, TNodeData, TEdgeDat
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
-std::vector<typename Graph<TType, TNodeData, TEdgeData>::Node> Graph<TType, TNodeData, TEdgeData>::GetNodes() const
+std::vector<typename Graph<TType, TNodeData, TEdgeData>::Node> Graph<TType, TNodeData, TEdgeData>::Nodes() const
 {
     std::vector<Graph<TType, TNodeData, TEdgeData>::Node> nodes;
     nodes.reserve(nodes_.size());

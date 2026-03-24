@@ -46,7 +46,7 @@ TEST_CASE("Directed: Empty graph returns expected values")
     CHECK(g.GetNodeCount() == 0);
     CHECK(g.GetEdgeCount() == 0);
 
-    CHECK(g.GetNodes().size() == 0);
+    CHECK(g.Nodes().size() == 0);
     CHECK(g.GetEdges().size() == 0);
 
     CHECK(g.ContainsNode(1) == false);
@@ -102,7 +102,7 @@ TEST_CASE("Directed: Basic graph creation and manipulation")
         CHECK(g.GetNodeCount() == 2);
         CHECK(g.GetEdgeCount() == 1);
 
-        CHECK(g.GetNodes().size() == 2);
+        CHECK(g.Nodes().size() == 2);
         CHECK(g.GetEdges().size() == 1);
 
         CHECK(g.ContainsNode(nodeId1));
@@ -144,7 +144,7 @@ TEST_CASE("Directed: Basic graph creation and manipulation")
         CHECK(g.GetNodeCount() == 2);
         CHECK(g.GetEdgeCount() == 2);
 
-        CHECK(g.GetNodes().size() == 2);
+        CHECK(g.Nodes().size() == 2);
         CHECK(g.GetEdges().size() == 2);
 
         CHECK(g.ContainsNode(nodeId1));
@@ -198,7 +198,7 @@ TEST_CASE("Directed: Basic graph creation and manipulation")
         CHECK(g.GetNodeCount() == 2);
         CHECK(g.GetEdgeCount() == 0);
 
-        CHECK(g.GetNodes().size() == 2);
+        CHECK(g.Nodes().size() == 2);
         CHECK(g.GetEdges().size() == 0);
 
         CHECK(g.ContainsNode(nodeId1));
@@ -225,7 +225,7 @@ TEST_CASE("Directed: Basic graph creation and manipulation")
         CHECK(g.GetNodeCount() == 2);
         CHECK(g.GetEdgeCount() == 0);
 
-        CHECK(g.GetNodes().size() == 2);
+        CHECK(g.Nodes().size() == 2);
         CHECK(g.GetEdges().size() == 0);
 
         CHECK(g.ContainsNode(nodeId1));
@@ -252,7 +252,7 @@ TEST_CASE("Directed: Basic graph creation and manipulation")
         CHECK(g.GetNodeCount() == 0);
         CHECK(g.GetEdgeCount() == 0);
 
-        CHECK(g.GetNodes().size() == 0);
+        CHECK(g.Nodes().size() == 0);
         CHECK(g.GetEdges().size() == 0);
 
         CHECK(!g.ContainsNode(nodeId1));
@@ -274,11 +274,11 @@ TEST_CASE("Directed: Basic graph creation and manipulation")
         CHECK(g.GetNodeCount() == 1);
         CHECK(g.GetEdgeCount() == 0);
 
-        CHECK(g.GetNodes().size() == 1);
+        CHECK(g.Nodes().size() == 1);
         CHECK(g.GetEdges().size() == 0);
 
-        CHECK(g.GetNodes()[0].id == nodeId2);
-        CHECK(g.GetNodes()[0].data == k_node2_pos);
+        CHECK(g.Nodes()[0].id == nodeId2);
+        CHECK(g.Nodes()[0].data == k_node2_pos);
 
         CHECK(!g.ContainsEdge(edgeId));
         CHECK(!g.ContainsEdge(nodeId1, nodeId2));
@@ -302,11 +302,11 @@ TEST_CASE("Directed: Basic graph creation and manipulation")
         CHECK(g.GetNodeCount() == 1);
         CHECK(g.GetEdgeCount() == 0);
 
-        CHECK(g.GetNodes().size() == 1);
+        CHECK(g.Nodes().size() == 1);
         CHECK(g.GetEdges().size() == 0);
 
-        CHECK(g.GetNodes()[0].id == nodeId1);
-        CHECK(g.GetNodes()[0].data == k_node1_pos);
+        CHECK(g.Nodes()[0].id == nodeId1);
+        CHECK(g.Nodes()[0].data == k_node1_pos);
 
         CHECK(!g.ContainsEdge(edgeId));
         CHECK(!g.ContainsEdge(nodeId1, nodeId2));
@@ -331,7 +331,7 @@ TEST_CASE("Directed: Basic graph creation and manipulation")
         CHECK(g.GetNodeCount() == 0);
         CHECK(g.GetEdgeCount() == 0);
 
-        CHECK(g.GetNodes().size() == 0);
+        CHECK(g.Nodes().size() == 0);
         CHECK(g.GetEdges().size() == 0);
 
         CHECK(!g.ContainsEdge(edgeId));
@@ -355,7 +355,7 @@ TEST_CASE("Directed: Basic graph creation and manipulation")
         CHECK(g.GetNodeCount() == 2);
         CHECK(g.GetEdgeCount() == 1);
 
-        CHECK(g.GetNodes().size() == 2);
+        CHECK(g.Nodes().size() == 2);
         CHECK(g.GetEdges().size() == 1);
 
         CHECK(g.ContainsEdge(newEdgeId));
@@ -396,7 +396,7 @@ TEST_CASE("Directed: Basic graph creation and manipulation")
         CHECK(g.GetNodeCount() == 2);
         CHECK(g.GetEdgeCount() == 1);
 
-        CHECK(g.GetNodes().size() == 2);
+        CHECK(g.Nodes().size() == 2);
         CHECK(g.GetEdges().size() == 1);
 
         CHECK(g.ContainsEdge(newEdgeId));

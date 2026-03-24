@@ -159,14 +159,14 @@ void TangleGraphManipulator::Manipulate(UntangleAppletGraph &g)
     switch (shape_) {
     case Shape::Random: {
         std::uniform_real_distribution<float> coordPicker(-1.0f * scale_, 1.0f * scale_);
-        for (const auto &node : g.GetNodes()) {
+        for (const auto &node : g.Nodes()) {
             g.NodeData(node.id) = {coordPicker(rng), coordPicker(rng)};
         }
         break;
     }
 
     case Shape::Circle: {
-        auto nodes = g.GetNodes();
+        auto nodes = g.Nodes();
         std::vector<int> nodeIndices;
         auto size = static_cast<int>(nodes.size());
         nodeIndices.reserve(size);
@@ -192,6 +192,8 @@ void CullGraphManipulator::OnShowControls()
 
 void CullGraphManipulator::Manipulate(UntangleAppletGraph &g)
 {
+    /*
+    // TODO: fix
     std::mt19937 rng(std::random_device{}());
     auto cull = [&g, &rng](bool nodes, int count, float fraction, auto &&getFunc, auto &&removeFunc) {
         using Item = std::ranges::range_value_t<std::invoke_result_t<decltype(getFunc)>>;
@@ -215,6 +217,7 @@ void CullGraphManipulator::Manipulate(UntangleAppletGraph &g)
             removeFunc(item.id);
         }
     };
-    cull(true, g.GetNodeCount(), nodeFraction_, [&g] { return g.GetNodes(); }, [&g](int id) { g.RemoveNode(id); });
+    cull(true, g.GetNodeCount(), nodeFraction_, [&g] { return g.Nodes(); }, [&g](int id) { g.RemoveNode(id); });
     cull(false, g.GetEdgeCount(), edgeFraction_, [&g] { return g.GetEdges(); }, [&g](int id) { g.RemoveEdge(id); });
+    */
 }

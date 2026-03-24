@@ -24,7 +24,7 @@ TEST_CASE("Undirected: Empty graph returns expected values")
     REQUIRE(g.GetNodeCount() == 0);
     REQUIRE(g.GetEdgeCount() == 0);
 
-    REQUIRE(g.GetNodes().size() == 0);
+    REQUIRE(g.Nodes().size() == 0);
     REQUIRE(g.GetEdges().size() == 0);
 
     REQUIRE(g.ContainsNode(1) == false);
@@ -80,7 +80,7 @@ TEST_CASE("Undirected: Basic graph creation and manipulation")
         REQUIRE(g.GetNodeCount() == 2);
         REQUIRE(g.GetEdgeCount() == 1);
 
-        REQUIRE(g.GetNodes().size() == 2);
+        REQUIRE(g.Nodes().size() == 2);
         REQUIRE(g.GetEdges().size() == 1);
 
         REQUIRE(g.ContainsNode(nodeId1));
@@ -121,7 +121,7 @@ TEST_CASE("Undirected: Basic graph creation and manipulation")
         REQUIRE(g.GetNodeCount() == 2);
         REQUIRE(g.GetEdgeCount() == 0);
 
-        REQUIRE(g.GetNodes().size() == 2);
+        REQUIRE(g.Nodes().size() == 2);
         REQUIRE(g.GetEdges().size() == 0);
 
         REQUIRE(g.ContainsNode(nodeId1));
@@ -148,7 +148,7 @@ TEST_CASE("Undirected: Basic graph creation and manipulation")
         REQUIRE(g.GetNodeCount() == 2);
         REQUIRE(g.GetEdgeCount() == 0);
 
-        REQUIRE(g.GetNodes().size() == 2);
+        REQUIRE(g.Nodes().size() == 2);
         REQUIRE(g.GetEdges().size() == 0);
 
         REQUIRE(g.ContainsNode(nodeId1));
@@ -175,7 +175,7 @@ TEST_CASE("Undirected: Basic graph creation and manipulation")
         REQUIRE(g.GetNodeCount() == 0);
         REQUIRE(g.GetEdgeCount() == 0);
 
-        REQUIRE(g.GetNodes().size() == 0);
+        REQUIRE(g.Nodes().size() == 0);
         REQUIRE(g.GetEdges().size() == 0);
 
         REQUIRE(!g.ContainsNode(nodeId1));
@@ -197,11 +197,11 @@ TEST_CASE("Undirected: Basic graph creation and manipulation")
         REQUIRE(g.GetNodeCount() == 1);
         REQUIRE(g.GetEdgeCount() == 0);
 
-        REQUIRE(g.GetNodes().size() == 1);
+        REQUIRE(g.Nodes().size() == 1);
         REQUIRE(g.GetEdges().size() == 0);
 
-        REQUIRE(g.GetNodes()[0].id == nodeId2);
-        REQUIRE(g.GetNodes()[0].data == k_node2_pos);
+        REQUIRE(g.Nodes()[0].id == nodeId2);
+        REQUIRE(g.Nodes()[0].data == k_node2_pos);
 
         REQUIRE(!g.ContainsEdge(edgeId));
         REQUIRE(!g.ContainsEdge(nodeId1, nodeId2));
@@ -225,11 +225,11 @@ TEST_CASE("Undirected: Basic graph creation and manipulation")
         REQUIRE(g.GetNodeCount() == 1);
         REQUIRE(g.GetEdgeCount() == 0);
 
-        REQUIRE(g.GetNodes().size() == 1);
+        REQUIRE(g.Nodes().size() == 1);
         REQUIRE(g.GetEdges().size() == 0);
 
-        REQUIRE(g.GetNodes()[0].id == nodeId1);
-        REQUIRE(g.GetNodes()[0].data == k_node1_pos);
+        REQUIRE(g.Nodes()[0].id == nodeId1);
+        REQUIRE(g.Nodes()[0].data == k_node1_pos);
 
         REQUIRE(!g.ContainsEdge(edgeId));
         REQUIRE(!g.ContainsEdge(nodeId1, nodeId2));
@@ -254,7 +254,7 @@ TEST_CASE("Undirected: Basic graph creation and manipulation")
         REQUIRE(g.GetNodeCount() == 0);
         REQUIRE(g.GetEdgeCount() == 0);
 
-        REQUIRE(g.GetNodes().size() == 0);
+        REQUIRE(g.Nodes().size() == 0);
         REQUIRE(g.GetEdges().size() == 0);
 
         REQUIRE(!g.ContainsEdge(edgeId));
@@ -278,7 +278,7 @@ TEST_CASE("Undirected: Basic graph creation and manipulation")
         REQUIRE(g.GetNodeCount() == 2);
         REQUIRE(g.GetEdgeCount() == 1);
 
-        REQUIRE(g.GetNodes().size() == 2);
+        REQUIRE(g.Nodes().size() == 2);
         REQUIRE(g.GetEdges().size() == 1);
 
         REQUIRE(g.ContainsEdge(newEdgeId));

@@ -42,7 +42,7 @@ public:
 
     bool ContainsNode(int nodeId) const;
     const Node &GetNode(int nodeId) const;
-    std::vector<Node> GetNodes() const;
+    std::vector<Node> Nodes() const;
     void RemoveNode(int nodeId);
 
     template <typename... Args>
