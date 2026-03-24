@@ -17,11 +17,17 @@ struct FractalAppletGraphInteractionPolicy {
     static constexpr bool hoverHighlightsEdges = true;
 };
 
-class FractalApplet : public GraphInteractionApplet<FractalApplet, GraphType::Directed, glm::vec2, Empty,
-                                                    FractalAppletGraphInteractionPolicy>
+class FractalDefinition
 {
 public:
-    using Base = GraphInteractionApplet<FractalApplet, GraphType::Directed, glm::vec2, Empty,
+    enum class LineType { Primary, Secondary, Reversed, Cosmetic };
+};
+
+class FractalApplet : public GraphInteractionApplet<FractalApplet, GraphType::Directed, glm::vec2,
+                                                    FractalDefinition::LineType, FractalAppletGraphInteractionPolicy>
+{
+public:
+    using Base = GraphInteractionApplet<FractalApplet, GraphType::Directed, glm::vec2, FractalDefinition::LineType,
                                         FractalAppletGraphInteractionPolicy>;
 
     FractalApplet(App &app) : GraphInteractionApplet(app) {}

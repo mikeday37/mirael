@@ -21,9 +21,24 @@ void FractalApplet::DrawEdge(Graphics &g, const Graph::Edge &edge) const
     if (edge.id == HighlightedEdgeId()) {
         lineThickness += edgeStyle.highlightThicknessPadding;
     }
-    g.Line(posA, posB, lineThickness, convert(edgeStyle.primaryLineColor));
-    g.LineArrowEnd(posA, posB, lineThickness, convert(edgeStyle.primaryLineColor), edgeStyle.arrowAngle,
-                   edgeStyle.arrowLength * style_.edgeScale);
+    ImVec4 imColor;
+    switch (graph_.EdgeData(edge.id)) {
+    case FractalDefinition::LineType::Primary:
+        imColor = style_.edge.primaryLineColor;
+        break;
+    case FractalDefinition::LineType::Secondary:
+        imColor = style_.edge.secondaryLineColor;
+        break;
+    case FractalDefinition::LineType::Reversed:
+        imColor = style_.edge.reversedLineColor;
+        break;
+    case FractalDefinition::LineType::Cosmetic:
+        imColor = style_.edge.cosmeticLineColor;
+        break;
+    }
+    Color color = convert(imColor);
+    g.Line(posA, posB, lineThickness, color);
+    g.LineArrowEnd(posA, posB, lineThickness, color, edgeStyle.arrowAngle, edgeStyle.arrowLength * style_.edgeScale);
 }
 
 void FractalApplet::OnShowSettingsUI() {}
@@ -92,7 +107,29 @@ void FractalApplet::OnRightClick()
     }
 }
 
-void FractalApplet::CycleEdgeType(int fromNodeId, int toNodeId) {}
+void FractalApplet::CycleEdgeType(int fromNodeId, int toNodeId)
+{
+    if (!graph_.ContainsEdge(fromNodeId, toNodeId)) {
+        graph_.AddEdge(fromNodeId, toNodeId, FractalDefinition::LineType::Secondary);
+    } else {
+        auto edge = graph_.GetEdge(fromNodeId, toNodeId);
+        auto &lineType = graph_.EdgeData(edge.id);
+        switch (lineType) {
+        case FractalDefinition::LineType::Secondary:
+            lineType = FractalDefinition::LineType::Reversed;
+            break;
+        case FractalDefinition::LineType::Reversed:
+            lineType = FractalDefinition::LineType::Cosmetic;
+            break;
+        case FractalDefinition::LineType::Cosmetic:
+            lineType = FractalDefinition::LineType::Primary;
+            break;
+        case FractalDefinition::LineType::Primary:
+            graph_.RemoveEdge(edge.id);
+            break;
+        }
+    }
+}
 
 FractalApplet::Base::HitTestSettings FractalApplet::GetHitTestSettings() const
 {
