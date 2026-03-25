@@ -84,6 +84,21 @@ public:
         size_t size() const { return graph_->nodes_.size(); }
     };
 
+    class EdgeRange
+    {
+    private:
+        const Graph *graph_;
+
+    public:
+        using iterator = ValueIterator<typename std::unordered_map<int, Edge>::const_iterator>;
+
+        EdgeRange(const Graph *g) : graph_(g) {}
+
+        iterator begin() const { return iterator(graph_->edges_.begin()); }
+        iterator end() const { return iterator(graph_->edges_.end()); }
+        size_t size() const { return graph_->edges_.size(); }
+    };
+
     template <typename... Args> int AddNode(Args &&...args); // always returns a new node id
     TNodeData &NodeData(int nodeId);
     const TNodeData &NodeData(int nodeId) const;
@@ -103,8 +118,8 @@ public:
     bool ContainsEdge(int nodeIdA, int nodeIdB) const;
     const Edge &GetEdge(int edgeId) const;
     const Edge &GetEdge(int nodeIdA, int nodeIdB) const;
-    std::vector<Edge> GetEdges() const;
-    std::vector<Edge> GetEdges(int nodeId) const;
+    EdgeRange Edges() const { return EdgeRange(this); }
+    std::vector<Edge> NodeEdges(int nodeId) const;
     void RemoveEdge(int edgeId);
 
     int GetNodeCount() const;

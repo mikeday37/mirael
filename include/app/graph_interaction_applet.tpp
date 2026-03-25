@@ -24,7 +24,7 @@ void GraphInteractionApplet<TDerived, TType, TNodeData, TEdgeData, TInteractionP
 
     // TODO: modify Graph to use iterators
 
-    for (const auto &edge : graph_.GetEdges()) {
+    for (const auto &edge : graph_.Edges()) {
         static_cast<TDerived *>(this)->DrawEdge(g, edge);
     }
 
@@ -207,7 +207,7 @@ GraphInteractionApplet<TDerived, TType, TNodeData, TEdgeData, TInteractionPolicy
 
     float closestPotentialEdgeDist = 0;
     if constexpr (TInteractionPolicy::canSelectEdges || TInteractionPolicy::hoverHighlightsEdges) {
-        for (const auto &edge : graph_.GetEdges()) {
+        for (const auto &edge : graph_.Edges()) {
             auto dist = PointDistanceToLineSegment(screenPos, ToScreen(graph_.GetNode(edge.nodeIdA).data),
                                                    ToScreen(graph_.GetNode(edge.nodeIdB).data));
             auto hitRadius = edge.id == selectedEdgeId_ ? hitTestSettings.edgeHitRadiusSelected
