@@ -40,6 +40,7 @@ public:
 
     using NodeRange = GraphDetail::NodeRange<TType, TNodeData, TEdgeData>;
     using EdgeRange = GraphDetail::EdgeRange<TType, TNodeData, TEdgeData>;
+    using NodeEdgeRange = GraphDetail::NodeEdgeRange<TType, TNodeData, TEdgeData>;
 
     template <typename... Args> int AddNode(Args &&...args); // always returns a new node id
     TNodeData &NodeData(int nodeId);
@@ -61,7 +62,7 @@ public:
     const Edge &GetEdge(int edgeId) const;
     const Edge &GetEdge(int nodeIdA, int nodeIdB) const;
     EdgeRange Edges() const { return EdgeRange(this); }
-    std::vector<Edge> NodeEdges(int nodeId) const;
+    NodeEdgeRange NodeEdges(int nodeId) { return NodeEdgeRange(this, nodeId); }
     void RemoveEdge(int edgeId);
 
     int GetNodeCount() const;
@@ -86,6 +87,8 @@ private:
 
     friend class NodeRange;
     friend class EdgeRange;
+    friend class GraphDetail::NodeEdgeIterator<TType, TNodeData, TEdgeData>;
+    friend class NodeEdgeRange;
 };
 
 template <typename TNodeData = Empty, typename TEdgeData = Empty>

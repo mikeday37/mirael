@@ -131,8 +131,8 @@ TEST_CASE("Directed: Basic graph creation and manipulation")
         CHECK(g.NodeEdges(nodeId2).size() == 1);
         CHECK(CheckDirectedEdgeMatch(*g.NodeEdges(nodeId1).begin(), nodeId1, nodeId2));
         CHECK(CheckDirectedEdgeMatch(*g.NodeEdges(nodeId2).begin(), nodeId1, nodeId2));
-        CHECK(g.NodeEdges(nodeId1)[0].id == edgeId);
-        CHECK(g.NodeEdges(nodeId2)[0].id == edgeId);
+        CHECK(g.NodeEdges(nodeId1).begin()->id == edgeId);
+        CHECK(g.NodeEdges(nodeId2).begin()->id == edgeId);
     }
 
     SECTION("inspection after adding the opposite")

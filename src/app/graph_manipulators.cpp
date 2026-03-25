@@ -5,6 +5,7 @@
 #include "imgui.h"
 #include <random>
 #include <ranges>
+#include <vector>
 
 void GenerateRandomGraphManipulator::OnShowControls()
 {
@@ -192,8 +193,6 @@ void CullGraphManipulator::OnShowControls()
 
 void CullGraphManipulator::Manipulate(UntangleAppletGraph &g)
 {
-    /*
-    // TODO: fix
     std::mt19937 rng(std::random_device{}());
     auto cull = [&g, &rng](bool nodes, int count, float fraction, auto &&getFunc, auto &&removeFunc) {
         using Item = std::ranges::range_value_t<std::invoke_result_t<decltype(getFunc)>>;
@@ -210,7 +209,8 @@ void CullGraphManipulator::Manipulate(UntangleAppletGraph &g)
             return;
         }
 
-        auto items = getFunc();
+        auto range = getFunc();
+        auto items = std::vector<Item>(range.begin(), range.end());
         for (auto _ : std::views::iota(0, num)) {
             unused(_);
             auto item = RemoveRandomElement(items, rng);
@@ -218,6 +218,5 @@ void CullGraphManipulator::Manipulate(UntangleAppletGraph &g)
         }
     };
     cull(true, g.GetNodeCount(), nodeFraction_, [&g] { return g.Nodes(); }, [&g](int id) { g.RemoveNode(id); });
-    cull(false, g.GetEdgeCount(), edgeFraction_, [&g] { return g.GetEdges(); }, [&g](int id) { g.RemoveEdge(id); });
-    */
+    cull(false, g.GetEdgeCount(), edgeFraction_, [&g] { return g.Edges(); }, [&g](int id) { g.RemoveEdge(id); });
 }

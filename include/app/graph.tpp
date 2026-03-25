@@ -168,31 +168,6 @@ const Graph<TType, TNodeData, TEdgeData>::Edge &Graph<TType, TNodeData, TEdgeDat
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
-std::vector<typename Graph<TType, TNodeData, TEdgeData>::Edge>
-Graph<TType, TNodeData, TEdgeData>::NodeEdges(int nodeId) const
-{
-    assert(nodes_.contains(nodeId));
-
-    std::vector<Graph<TType, TNodeData, TEdgeData>::Edge> edges;
-
-    auto edgesIt = nodeEdges_.find(nodeId);
-    if (edgesIt == nodeEdges_.end()) {
-        return edges;
-    }
-
-    auto nodeEdgeIds = edgesIt->second;
-
-    edges.reserve(nodeEdgeIds.size());
-
-    for (const auto edgeId : nodeEdgeIds) {
-        auto &edge = *edges_.find(edgeId);
-        edges.emplace_back(edgeId, edge.second.nodeIdA, edge.second.nodeIdB, edge.second.data);
-    }
-
-    return edges;
-}
-
-template <GraphType TType, typename TNodeData, typename TEdgeData>
 void Graph<TType, TNodeData, TEdgeData>::RemoveEdge(int edgeId)
 {
     assert(edges_.contains(edgeId));
