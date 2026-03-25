@@ -22,8 +22,6 @@ void GraphInteractionApplet<TDerived, TType, TNodeData, TEdgeData, TInteractionP
         zoom_ = size.y / 2.0f;
     }
 
-    // TODO: modify Graph to use iterators
-
     for (const auto &edge : graph_.Edges()) {
         static_cast<TDerived *>(this)->DrawEdge(g, edge);
     }
