@@ -46,7 +46,7 @@ public:
 
     bool ContainsNode(int nodeId) const noexcept;
     const Node &GetNode(int nodeId) const;
-    NodeRange Nodes() const noexcept { return NodeRange(*this); }
+    NodeRange Nodes() const noexcept { return NodeRange(nodes_); }
     void RemoveNode(int nodeId);
 
     template <typename... Args>
@@ -59,8 +59,8 @@ public:
     bool ContainsEdge(int nodeIdA, int nodeIdB) const noexcept;
     const Edge &GetEdge(int edgeId) const;
     const Edge &GetEdge(int nodeIdA, int nodeIdB) const;
-    EdgeRange Edges() const noexcept { return EdgeRange(*this); }
-    NodeEdgeRange NodeEdges(int nodeId) { return NodeEdgeRange(this, nodeId); }
+    EdgeRange Edges() const noexcept { return EdgeRange(edges_); }
+    NodeEdgeRange NodeEdges(int nodeId) { return NodeEdgeRange(*this, nodeId); }
     void RemoveEdge(int edgeId);
 
     int GetNodeCount() const noexcept;

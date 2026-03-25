@@ -47,38 +47,44 @@ template <GraphType TType, typename TNodeData, typename TEdgeData> class NodeRan
 {
 public:
     using GraphType = Graph<TType, TNodeData, TEdgeData>;
-    using iterator = ValueIterator<typename std::map<int, typename GraphType::Node>::const_iterator>;
+    using NodeMapType = std::map<int, typename GraphType::Node>;
+    using iterator = ValueIterator<typename NodeMapType::const_iterator>;
 
-    NodeRange(const GraphType &g) noexcept : graph_(g) {}
+    NodeRange(const NodeMapType &nodes) noexcept : nodes_(nodes) {}
 
-    iterator begin() const noexcept { return iterator(graph_.nodes_.begin()); }
-    iterator end() const noexcept { return iterator(graph_.nodes_.end()); }
-    size_t size() const noexcept { return graph_.nodes_.size(); }
+    iterator begin() const noexcept { return iterator(nodes_.begin()); }
+    iterator end() const noexcept { return iterator(nodes_.end()); }
+    size_t size() const noexcept { return nodes_.size(); }
 
 private:
-    const GraphType &graph_;
+    const NodeMapType &nodes_;
 };
 
 template <GraphType TType, typename TNodeData, typename TEdgeData> class EdgeRange
 {
 public:
     using GraphType = Graph<TType, TNodeData, TEdgeData>;
-    using iterator = ValueIterator<typename std::unordered_map<int, typename GraphType::Edge>::const_iterator>;
+    using EdgeMapType = std::unordered_map<int, typename GraphType::Edge>;
+    using iterator = ValueIterator<typename EdgeMapType::const_iterator>;
 
-    EdgeRange(const GraphType &g) noexcept : graph_(g) {}
+    EdgeRange(const EdgeMapType &edges) noexcept : edges_(edges) {}
 
-    iterator begin() const noexcept { return iterator(graph_.edges_.begin()); }
-    iterator end() const noexcept { return iterator(graph_.edges_.end()); }
-    size_t size() const noexcept { return graph_.edges_.size(); }
+    iterator begin() const noexcept { return iterator(edges_.begin()); }
+    iterator end() const noexcept { return iterator(edges_.end()); }
+    size_t size() const noexcept { return edges_.size(); }
 
 private:
-    const GraphType &graph_;
+    const EdgeMapType &edges_;
 };
 
 template <GraphType TType, typename TNodeData, typename TEdgeData> class NodeEdgeIterator
 {
+    // This iterator returns only the edges for a particular node.
+    // The allEdges map is used to look up the edges from the ids provided by the InnerIterator.
+
 public:
     using GraphType = Graph<TType, TNodeData, TEdgeData>;
+    using EdgeMapType = std::unordered_map<int, typename GraphType::Edge>;
     using InnerIterator = std::unordered_set<int>::const_iterator;
     using iterator_category = std::forward_iterator_tag;
     using value_type = typename GraphType::Edge;
@@ -87,10 +93,10 @@ public:
     using reference = const value_type &;
 
     NodeEdgeIterator() noexcept = default;
-    NodeEdgeIterator(const GraphType *graph, InnerIterator it) noexcept : graph_(graph), it_(it) {}
+    NodeEdgeIterator(const EdgeMapType *allEdges, InnerIterator it) noexcept : allEdges_(allEdges), it_(it) {}
 
-    reference operator*() const { return graph_->edges_.at(*it_); }
-    pointer operator->() const { return &(graph_->edges_.at(*it_)); }
+    reference operator*() const { return allEdges_->at(*it_); }
+    pointer operator->() const { return &allEdges_->at(*it_); }
 
     NodeEdgeIterator &operator++() noexcept
     {
@@ -108,7 +114,7 @@ public:
     bool operator!=(const NodeEdgeIterator &other) const noexcept { return it_ != other.it_; }
 
 private:
-    const GraphType *graph_ = nullptr;
+    const EdgeMapType *allEdges_ = nullptr;
     InnerIterator it_{};
 };
 
@@ -116,20 +122,30 @@ template <GraphType TType, typename TNodeData, typename TEdgeData> class NodeEdg
 {
 public:
     using GraphType = Graph<TType, TNodeData, TEdgeData>;
+    using EdgeMapType = std::unordered_map<int, typename GraphType::Edge>;
+    using EdgeIdSetType = std::unordered_set<int>;
     using iterator = NodeEdgeIterator<TType, TNodeData, TEdgeData>;
 
-    NodeEdgeRange(const GraphType *graph, int nodeId)
-        : graph_(graph), edges_(graph->nodeEdges_.contains(nodeId) ? graph->nodeEdges_.at(nodeId) : emptySet_)
+private:
+    static const EdgeIdSetType &GetMyEdges(const GraphType &graph, int nodeId) noexcept
+    {
+        auto it = graph.nodeEdges_.find(nodeId);
+        return (it != graph.nodeEdges_.end()) ? it->second : emptySet_;
+    }
+
+public:
+    NodeEdgeRange(const GraphType &graph, int nodeId) noexcept
+        : allEdges_(graph.edges_), myEdgeIds_(GetMyEdges(graph, nodeId))
     {
     }
 
-    iterator begin() const noexcept { return iterator(graph_, edges_.begin()); }
-    iterator end() const noexcept { return iterator(graph_, edges_.end()); }
-    size_t size() const noexcept { return edges_.size(); }
+    iterator begin() const noexcept { return iterator(&allEdges_, myEdgeIds_.begin()); }
+    iterator end() const noexcept { return iterator(&allEdges_, myEdgeIds_.end()); }
+    size_t size() const noexcept { return myEdgeIds_.size(); }
 
 private:
-    const GraphType *graph_;
-    const std::unordered_set<int> &edges_;
+    const EdgeMapType &allEdges_;
+    const EdgeIdSetType &myEdgeIds_;
     inline static std::unordered_set<int> emptySet_;
 };
 

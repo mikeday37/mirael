@@ -211,7 +211,11 @@ bool Graph<TType, TNodeData, TEdgeData>::NodeHasEdges(int nodeId) const noexcept
 {
     assert(nodes_.contains(nodeId));
 
-    return nodeEdges_.contains(nodeId) && !nodeEdges_.find(nodeId)->second.empty();
+    if (auto it = nodeEdges_.find(nodeId); it != nodeEdges_.end()) {
+        return !it->second.empty();
+    } else {
+        return false;
+    }
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
