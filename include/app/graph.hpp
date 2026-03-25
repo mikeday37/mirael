@@ -6,10 +6,8 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
+#include <variant>
 #include <vector>
-
-struct Empty {
-};
 
 enum class GraphType { Directed, Undirected };
 
@@ -46,9 +44,9 @@ public:
     TNodeData &NodeData(int nodeId);
     const TNodeData &NodeData(int nodeId) const;
 
-    bool ContainsNode(int nodeId) const;
+    bool ContainsNode(int nodeId) const noexcept;
     const Node &GetNode(int nodeId) const;
-    NodeRange Nodes() const { return NodeRange(this); }
+    NodeRange Nodes() const noexcept { return NodeRange(*this); }
     void RemoveNode(int nodeId);
 
     template <typename... Args>
@@ -57,27 +55,27 @@ public:
     TEdgeData &EdgeData(int edgeId);
     const TEdgeData &EdgeData(int edgeId) const;
 
-    bool ContainsEdge(int edgeId) const;
-    bool ContainsEdge(int nodeIdA, int nodeIdB) const;
+    bool ContainsEdge(int edgeId) const noexcept;
+    bool ContainsEdge(int nodeIdA, int nodeIdB) const noexcept;
     const Edge &GetEdge(int edgeId) const;
     const Edge &GetEdge(int nodeIdA, int nodeIdB) const;
-    EdgeRange Edges() const { return EdgeRange(this); }
+    EdgeRange Edges() const noexcept { return EdgeRange(*this); }
     NodeEdgeRange NodeEdges(int nodeId) { return NodeEdgeRange(this, nodeId); }
     void RemoveEdge(int edgeId);
 
-    int GetNodeCount() const;
-    int GetEdgeCount() const;
+    int GetNodeCount() const noexcept;
+    int GetEdgeCount() const noexcept;
 
-    bool HasNodes() const;
-    bool NodeHasEdges(int nodeId) const;
-    bool HasEdges() const;
-    bool IsEmpty() const;
+    bool HasNodes() const noexcept;
+    bool NodeHasEdges(int nodeId) const noexcept;
+    bool HasEdges() const noexcept;
+    bool IsEmpty() const noexcept;
 
-    void Clear();
-    void ClearEdges();
+    void Clear() noexcept;
+    void ClearEdges() noexcept;
 
 private:
-    std::pair<int, int> CanonicalEdge(int a, int b) const;
+    std::pair<int, int> CanonicalEdge(int a, int b) const noexcept;
 
     int nextId_ = 1;
     std::map<int, Node> nodes_;
@@ -85,16 +83,16 @@ private:
     std::unordered_map<std::pair<int, int>, int, PairHash> edgeMap_; // node ids {a, b} -> edge Id
     std::unordered_map<int, std::unordered_set<int>> nodeEdges_;     // node id -> set of adjacent edge ids
 
-    friend class NodeRange;
-    friend class EdgeRange;
-    friend class GraphDetail::NodeEdgeIterator<TType, TNodeData, TEdgeData>;
-    friend class NodeEdgeRange;
+    friend NodeRange;
+    friend EdgeRange;
+    friend GraphDetail::NodeEdgeIterator<TType, TNodeData, TEdgeData>;
+    friend NodeEdgeRange;
 };
 
-template <typename TNodeData = Empty, typename TEdgeData = Empty>
+template <typename TNodeData = std::monostate, typename TEdgeData = std::monostate>
 using DirectedGraph = Graph<GraphType::Directed, TNodeData, TEdgeData>;
 
-template <typename TNodeData = Empty, typename TEdgeData = Empty>
+template <typename TNodeData = std::monostate, typename TEdgeData = std::monostate>
 using UndirectedGraph = Graph<GraphType::Undirected, TNodeData, TEdgeData>;
 
 #include "app/graph.tpp"

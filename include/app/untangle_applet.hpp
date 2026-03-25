@@ -9,6 +9,7 @@
 #include "app/simulation_timer.hpp"
 #include "imgui.h"
 #include "vec2.hpp"
+#include <variant>
 
 struct UntangleAppletGraphInteractionPolicy {
 
@@ -18,11 +19,11 @@ struct UntangleAppletGraphInteractionPolicy {
     static constexpr bool hoverHighlightsEdges = true;
 };
 
-class UntangleApplet : public GraphInteractionApplet<UntangleApplet, GraphType::Undirected, glm::vec2, Empty,
+class UntangleApplet : public GraphInteractionApplet<UntangleApplet, GraphType::Undirected, glm::vec2, std::monostate,
                                                      UntangleAppletGraphInteractionPolicy>
 {
 public:
-    using Base = GraphInteractionApplet<UntangleApplet, GraphType::Undirected, glm::vec2, Empty,
+    using Base = GraphInteractionApplet<UntangleApplet, GraphType::Undirected, glm::vec2, std::monostate,
                                         UntangleAppletGraphInteractionPolicy>;
 
     UntangleApplet(App &app) : GraphInteractionApplet(app) {}

@@ -7,7 +7,7 @@
 #include <vector>
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
-inline std::pair<int, int> Graph<TType, TNodeData, TEdgeData>::CanonicalEdge(int a, int b) const
+inline std::pair<int, int> Graph<TType, TNodeData, TEdgeData>::CanonicalEdge(int a, int b) const noexcept
 {
     if constexpr (TType == GraphType::Undirected) {
         return a < b ? std::make_pair(a, b) : std::make_pair(b, a);
@@ -45,7 +45,7 @@ const TNodeData &Graph<TType, TNodeData, TEdgeData>::NodeData(int nodeId) const
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
-bool Graph<TType, TNodeData, TEdgeData>::ContainsNode(int nodeId) const
+bool Graph<TType, TNodeData, TEdgeData>::ContainsNode(int nodeId) const noexcept
 {
     return nodes_.contains(nodeId);
 }
@@ -137,13 +137,13 @@ const TEdgeData &Graph<TType, TNodeData, TEdgeData>::EdgeData(int edgeId) const
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
-bool Graph<TType, TNodeData, TEdgeData>::ContainsEdge(int edgeId) const
+bool Graph<TType, TNodeData, TEdgeData>::ContainsEdge(int edgeId) const noexcept
 {
     return edges_.contains(edgeId);
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
-bool Graph<TType, TNodeData, TEdgeData>::ContainsEdge(int nodeIdA, int nodeIdB) const
+bool Graph<TType, TNodeData, TEdgeData>::ContainsEdge(int nodeIdA, int nodeIdB) const noexcept
 {
     assert(nodeIdA != nodeIdB);
 
@@ -189,25 +189,25 @@ void Graph<TType, TNodeData, TEdgeData>::RemoveEdge(int edgeId)
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
-int Graph<TType, TNodeData, TEdgeData>::GetNodeCount() const
+int Graph<TType, TNodeData, TEdgeData>::GetNodeCount() const noexcept
 {
     return static_cast<int>(nodes_.size());
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
-int Graph<TType, TNodeData, TEdgeData>::GetEdgeCount() const
+int Graph<TType, TNodeData, TEdgeData>::GetEdgeCount() const noexcept
 {
     return static_cast<int>(edges_.size());
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
-bool Graph<TType, TNodeData, TEdgeData>::HasNodes() const
+bool Graph<TType, TNodeData, TEdgeData>::HasNodes() const noexcept
 {
     return !nodes_.empty();
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
-bool Graph<TType, TNodeData, TEdgeData>::NodeHasEdges(int nodeId) const
+bool Graph<TType, TNodeData, TEdgeData>::NodeHasEdges(int nodeId) const noexcept
 {
     assert(nodes_.contains(nodeId));
 
@@ -215,18 +215,19 @@ bool Graph<TType, TNodeData, TEdgeData>::NodeHasEdges(int nodeId) const
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
-bool Graph<TType, TNodeData, TEdgeData>::HasEdges() const
+bool Graph<TType, TNodeData, TEdgeData>::HasEdges() const noexcept
 {
     return !edges_.empty();
 }
 
 template <GraphType TType, typename TNodeData, typename TEdgeData>
-bool Graph<TType, TNodeData, TEdgeData>::IsEmpty() const
+bool Graph<TType, TNodeData, TEdgeData>::IsEmpty() const noexcept
 {
     return nodes_.empty() && edges_.empty();
 }
 
-template <GraphType TType, typename TNodeData, typename TEdgeData> void Graph<TType, TNodeData, TEdgeData>::Clear()
+template <GraphType TType, typename TNodeData, typename TEdgeData>
+void Graph<TType, TNodeData, TEdgeData>::Clear() noexcept
 {
     nodeEdges_.clear();
     edges_.clear();
@@ -236,7 +237,8 @@ template <GraphType TType, typename TNodeData, typename TEdgeData> void Graph<TT
     nextId_ = 1;
 }
 
-template <GraphType TType, typename TNodeData, typename TEdgeData> void Graph<TType, TNodeData, TEdgeData>::ClearEdges()
+template <GraphType TType, typename TNodeData, typename TEdgeData>
+void Graph<TType, TNodeData, TEdgeData>::ClearEdges() noexcept
 {
     nodeEdges_.clear();
     edges_.clear();
