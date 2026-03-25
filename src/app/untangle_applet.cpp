@@ -123,14 +123,14 @@ void UntangleApplet::Pause()
 UntangleApplet::NodeStyle UntangleApplet::GetNodeStyle(int nodeId) const
 {
     return (nodeId == SelectedNodeId() ? (nodeId == HighlightedNodeId() ? style_.highlightSelected : style_.selected)
-                                     : (nodeId == HighlightedNodeId() ? style_.highlight : style_.normal))
+                                       : (nodeId == HighlightedNodeId() ? style_.highlight : style_.normal))
         .node;
 }
 
 UntangleApplet::EdgeStyle UntangleApplet::GetEdgeStyle(int edgeId) const
 {
     return (edgeId == SelectedEdgeId() ? (edgeId == HighlightedEdgeId() ? style_.highlightSelected : style_.selected)
-                                     : (edgeId == HighlightedEdgeId() ? style_.highlight : style_.normal))
+                                       : (edgeId == HighlightedEdgeId() ? style_.highlight : style_.normal))
         .edge;
 }
 
