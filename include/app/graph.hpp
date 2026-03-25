@@ -36,13 +36,61 @@ public:
         bool added; // true if it didn't already exist, false if it already existed
     };
 
+    template <typename MapIterator> class ValueIterator
+    {
+    private:
+        MapIterator it_;
+
+    public:
+        using iterator_category = std::forward_iterator_tag;
+        using value_type = typename MapIterator::value_type::second_type;
+        using difference_type = std::ptrdiff_t;
+        using pointer = const value_type *;
+        using reference = const value_type &;
+
+        ValueIterator(MapIterator it) : it_(it) {}
+
+        reference operator*() const { return it_->second; }
+        pointer operator->() const { return &(it_->second); }
+
+        ValueIterator &operator++()
+        {
+            ++it_;
+            return *this;
+        }
+        ValueIterator operator++(int)
+        {
+            auto temp = *this;
+            ++(*this);
+            return temp;
+        }
+
+        bool operator==(const ValueIterator &other) const { return it_ == other.it_; }
+        bool operator!=(const ValueIterator &other) const { return it_ != other.it_; }
+    };
+
+    class NodeRange
+    {
+    private:
+        const Graph *graph_;
+
+    public:
+        using iterator = ValueIterator<typename std::map<int, Node>::const_iterator>;
+
+        NodeRange(const Graph *g) : graph_(g) {}
+
+        iterator begin() const { return iterator(graph_->nodes_.begin()); }
+        iterator end() const { return iterator(graph_->nodes_.end()); }
+        size_t size() const { return graph_->nodes_.size(); }
+    };
+
     template <typename... Args> int AddNode(Args &&...args); // always returns a new node id
     TNodeData &NodeData(int nodeId);
     const TNodeData &NodeData(int nodeId) const;
 
     bool ContainsNode(int nodeId) const;
     const Node &GetNode(int nodeId) const;
-    std::vector<Node> Nodes() const;
+    NodeRange Nodes() const { return NodeRange(this); }
     void RemoveNode(int nodeId);
 
     template <typename... Args>
