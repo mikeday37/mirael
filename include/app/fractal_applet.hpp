@@ -2,6 +2,7 @@
 
 #include "app/applet.hpp"
 #include "app/applet_graph_types.hpp"
+#include "app/fractal.hpp"
 #include "app/graph.hpp"
 #include "app/graph_animators.hpp"
 #include "app/graph_interaction_applet.hpp"
@@ -17,11 +18,7 @@ struct FractalAppletGraphInteractionPolicy {
     static constexpr bool hoverHighlightsEdges = true;
 };
 
-class FractalDefinition
-{
-public:
-    enum class LineType { Primary, Secondary, Reversed, Cosmetic };
-};
+using FractalDefinition = IteratedFractalSystem::Definition;
 
 class FractalApplet : public GraphInteractionApplet<FractalApplet, GraphType::Directed, glm::vec2,
                                                     FractalDefinition::LineType, FractalAppletGraphInteractionPolicy>
@@ -33,6 +30,8 @@ public:
     FractalApplet(App &app) : GraphInteractionApplet(app) {}
 
     const char *GetDisplayName() const override { return "Fractal"; }
+
+    void OnRenderBackground(Graphics &g) override;
 
     void OnShowSettingsUI() override;
     void OnShowStyleUI() override;
@@ -47,6 +46,12 @@ public:
 private:
     void OnRightClick();
     void CycleEdgeType(int fromNodeId, int toNodeId);
+
+    std::optional<FractalDefinition> TryGetFractalDefinition() const;
+    void RenderFractal(Graphics &g, const FractalDefinition &def);
+
+    int maxDepth_ = 4;
+    int maxLines_ = 50000;
 
     struct NodeStyle {
         float radius;
@@ -72,7 +77,6 @@ private:
     };
 
     struct Style {
-
         NodeStyle normalNode;
         NodeStyle selectedNode;
         EdgeStyle edge;

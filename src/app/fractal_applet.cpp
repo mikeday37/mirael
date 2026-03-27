@@ -1,6 +1,8 @@
 #include "app_pch.hpp"
 
 #include "app/fractal_applet.hpp"
+#include <cmath>
+#include <optional>
 
 void FractalApplet::DrawNode(Graphics &g, const Graph::Node &node) const
 {
@@ -41,7 +43,19 @@ void FractalApplet::DrawEdge(Graphics &g, const Graph::Edge &edge) const
     g.LineArrowEnd(posA, posB, lineThickness, color, edgeStyle.arrowAngle, edgeStyle.arrowLength * style_.edgeScale);
 }
 
-void FractalApplet::OnShowSettingsUI() {}
+void FractalApplet::OnRenderBackground(Graphics &g)
+{
+    if (auto result = TryGetFractalDefinition(); result)
+        RenderFractal(g, *result);
+
+    Base::OnRenderBackground(g);
+}
+
+void FractalApplet::OnShowSettingsUI()
+{
+    ImGui::SliderInt("Max Depth", &maxDepth_, 1, 20);
+    ImGui::SliderInt("Max Rendered Lines", &maxLines_, 1, 100000);
+}
 
 void FractalApplet::OnShowStyleUI()
 {
@@ -99,6 +113,18 @@ void FractalApplet::OnEvent(const SDL_Event &e)
     }
 }
 
+FractalApplet::Base::HitTestSettings FractalApplet::GetHitTestSettings() const
+{
+    return {.nodeHitRadiusNormal =
+                (style_.normalNode.radius + style_.normalNode.lineThickness / 2.0f) * style_.nodeScale +
+                style_.nodeHitTestPadding,
+            .nodeHitRadiusSelected =
+                (style_.selectedNode.radius + style_.selectedNode.lineThickness / 2.0f) * style_.nodeScale +
+                style_.nodeHitTestPadding,
+            .edgeHitRadiusNormal = (style_.edge.lineThickness / 2.0f) * style_.edgeScale + style_.edgeHitTestPadding,
+            .edgeHitRadiusSelected = (style_.edge.lineThickness / 2.0f) * style_.edgeScale + style_.edgeHitTestPadding};
+}
+
 void FractalApplet::OnRightClick()
 {
     auto hit = HitTest(GetMousePosition());
@@ -134,14 +160,98 @@ void FractalApplet::CycleEdgeType(int fromNodeId, int toNodeId)
     }
 }
 
-FractalApplet::Base::HitTestSettings FractalApplet::GetHitTestSettings() const
+std::optional<FractalDefinition> FractalApplet::TryGetFractalDefinition() const
 {
-    return {.nodeHitRadiusNormal =
-                (style_.normalNode.radius + style_.normalNode.lineThickness / 2.0f) * style_.nodeScale +
-                style_.nodeHitTestPadding,
-            .nodeHitRadiusSelected =
-                (style_.selectedNode.radius + style_.selectedNode.lineThickness / 2.0f) * style_.nodeScale +
-                style_.nodeHitTestPadding,
-            .edgeHitRadiusNormal = (style_.edge.lineThickness / 2.0f) * style_.edgeScale + style_.edgeHitTestPadding,
-            .edgeHitRadiusSelected = (style_.edge.lineThickness / 2.0f) * style_.edgeScale + style_.edgeHitTestPadding};
+    int primaryCount = 0, controlCount = 0, cosmeticCount = 0;
+
+    for (const auto &edge : graph_.Edges()) {
+        switch (edge.data) {
+        case FractalDefinition::LineType::Secondary:
+            [[fallthrough]];
+        case FractalDefinition::LineType::Reversed:
+            controlCount++;
+            break;
+        case FractalDefinition::LineType::Primary:
+            primaryCount++;
+            [[fallthrough]]; // primary counts as cosmetic as well
+        case FractalDefinition::LineType::Cosmetic:
+            cosmeticCount++;
+            break;
+        }
+    }
+
+    // there must be exactly 1 primary and at least one control
+    const bool isValid = primaryCount == 1 && controlCount >= 1;
+    if (!isValid)
+        return std::nullopt;
+
+    FractalDefinition def;
+    def.controls.reserve(controlCount);
+    def.cosmetics.reserve(cosmeticCount);
+
+    for (const auto &edge : graph_.Edges()) {
+        auto from = ToScreen(graph_.NodeData(edge.nodeIdA));
+        auto to = ToScreen(graph_.NodeData(edge.nodeIdB));
+        switch (edge.data) {
+        case FractalDefinition::LineType::Primary:
+            def.primary = {.from = from, .to = to};
+            [[fallthrough]];
+        case FractalDefinition::LineType::Cosmetic:
+            def.cosmetics.push_back({.from = from, .to = to});
+            break;
+        case FractalDefinition::LineType::Secondary:
+            def.controls.push_back({.from = from, .to = to, .reversed = false});
+            break;
+        case FractalDefinition::LineType::Reversed:
+            def.controls.push_back({.from = from, .to = to, .reversed = true});
+            break;
+        }
+    }
+
+    assert(def.controls.size() == controlCount);
+    assert(def.cosmetics.size() == cosmeticCount);
+
+    return def;
+}
+
+void FractalApplet::RenderFractal(Graphics &g, const FractalDefinition &def)
+{
+    // prepare drawing helper
+    auto width = style_.fractal.lineThickness;
+    auto color = convert(style_.fractal.lineColor);
+    auto drawLine = [this, &g, width, color](glm::vec2 from, glm::vec2 to) { g.Line(from, to, width, color); };
+
+    // calculate one transform per control
+    std::vector<glm::mat3> transforms;
+    transforms.reserve(def.controls.size());
+    for (const auto &control : def.controls) {
+        transforms.emplace_back(
+            CalculateMappingTransform(def.primary.from, def.primary.to, control.from, control.to, control.reversed));
+    }
+
+    // establish a safety exit (user controllable within reason)
+    // TODO: these are temporary measures - the real fix is rendering in a background thread with cancel token - TBD
+    int linesDrawn = 0;
+    const int lineHardLimit = 500000; // just in case the user inputs something enormous
+    const int lineLimit = std::min(maxLines_, lineHardLimit);
+
+    // recursively draw
+    auto step = [&](auto &self, int depth, glm::mat3 curTransform) {
+        for (const auto &cosmetic : def.cosmetics) {
+            auto from = glm::vec2(curTransform * glm::vec3(cosmetic.from, 1.0f));
+            auto to = glm::vec2(curTransform * glm::vec3(cosmetic.to, 1.0f));
+            drawLine(from, to);
+            linesDrawn++;
+        }
+
+        if (depth >= maxDepth_ || linesDrawn > lineLimit) {
+            return;
+        }
+
+        for (const auto &transform : transforms) {
+            self(self, depth + 1, transform * curTransform);
+        };
+    };
+
+    step(step, 0, glm::mat3(1.0f));
 }

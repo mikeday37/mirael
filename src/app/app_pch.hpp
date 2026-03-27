@@ -6,10 +6,12 @@
 #include "gtc/type_ptr.hpp"
 #include "imgui.h"
 #include <array>
+#include <cmath>
 #include <exception>
 #include <format>
 #include <limits>
 #include <map>
+#include <optional>
 #include <random>
 #include <ranges>
 #include <SDL.h>

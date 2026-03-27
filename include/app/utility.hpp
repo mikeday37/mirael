@@ -43,3 +43,6 @@ template <typename T> T RemoveRandomElement(std::vector<T> &v, std::mt19937 &rng
 float PointDistanceToLineSegment(const glm::vec2 &P, const glm::vec2 &A, const glm::vec2 &B);
 
 inline Color convert(ImVec4 color) { return {color.x, color.y, color.z, color.w}; }
+
+glm::mat3 CalculateMappingTransform(glm::vec2 srcStart, glm::vec2 srcEnd, glm::vec2 dstStart, glm::vec2 dstEnd,
+                                    bool mirrored);
