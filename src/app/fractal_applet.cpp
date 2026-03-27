@@ -1,7 +1,6 @@
 #include "app_pch.hpp"
 
 #include "app/fractal_applet.hpp"
-#include <cmath>
 #include <optional>
 
 void FractalApplet::DrawNode(Graphics &g, const Graph::Node &node) const

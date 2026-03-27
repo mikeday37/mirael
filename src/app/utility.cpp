@@ -5,6 +5,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include "gtx/matrix_transform_2d.hpp"
 #include "gtx/norm.hpp"
+#include <cmath>
 
 float PointDistanceToLineSegment(const glm::vec2 &P, const glm::vec2 &A, const glm::vec2 &B)
 {
