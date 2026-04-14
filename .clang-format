@@ -1,0 +1,37 @@
+BasedOnStyle: LLVM
+
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 135
+
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterClass: true
+  AfterControlStatement: Never
+  AfterEnum: false
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: false
+  BeforeCatch: false
+  BeforeElse: false
+  IndentBraces: false
+
+SortIncludes: CaseInsensitive
+IncludeBlocks: Preserve
+
+SpacesInAngles: Never
+SpaceBeforeParens: ControlStatements
+
+BinPackArguments: true
+BinPackParameters: true
+AlignAfterOpenBracket: Align
+
+AccessModifierOffset: -4
+
+AlignConsecutiveAssignments:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+  AlignCompound: false
+  PadOperators: true

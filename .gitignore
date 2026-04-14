@@ -1,2 +1,6 @@
+/.vs/
 /out/
 /user/
+/vcpkg_installed/
+*.idb
+*.pdb

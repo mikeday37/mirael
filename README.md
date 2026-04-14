@@ -19,9 +19,9 @@
 - Simple Node visuals:  Just a box with input pins on the left and output pins on the right.
 - Crucial Fundamentals:
     - Vulkan for graphics
-    - SDL for cross-platform basics
+    - GLFW3 for cross-platform basics
     - ImGui for UI
-    - Multi-Monitor Support
+    - Multi-Monitor Support (using docking branch of ImGui with multi-viewport support)
     - Python Scripting, node behavior and UI can be defined entirely in Python
     - Saving/loading of Projects and Workspaces
     
