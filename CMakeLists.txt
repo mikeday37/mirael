@@ -17,26 +17,13 @@ endif()
 
 
 #
-# === Vulkan ===
+# === Dependencies ===
 #
 
-# Create a dummy interface library since C++ 20 module is disabled (from https://github.com/KhronosGroup/Vulkan-Tutorial/blob/aa561eeb4046b3453044be772a88c29c91b76c02/attachments/template/CMakeLists.txt)
-add_library(VulkanCppModule INTERFACE)
-add_library(Vulkan::cppm ALIAS VulkanCppModule)
-target_link_libraries(VulkanCppModule INTERFACE Vulkan::Vulkan)
-target_compile_definitions(VulkanCppModule
-	INTERFACE VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1 VULKAN_HPP_NO_STRUCT_CONSTRUCTORS=1
-)
-
-
-#
-# === Other Dependencies ===
-#
-
-find_package(glfw3 CONFIG REQUIRED)
-find_package(glm CONFIG REQUIRED)
-find_package(nlohmann_json CONFIG REQUIRED)
-find_package(Vulkan 1.4.335 REQUIRED)
+find_package(glfw3 3.4 CONFIG REQUIRED)
+find_package(glm 1.0 CONFIG REQUIRED)
+find_package(nlohmann_json 3.12 CONFIG REQUIRED)
+find_package(Vulkan 1.4 REQUIRED)
 
 
 #
@@ -77,7 +64,6 @@ function (add_slang_shader_target TARGET)
 endfunction()
 
 
-
 #
 # === Dear ImGui ===
 #
@@ -98,22 +84,39 @@ set(IMGUI_INCLUDES
 
 
 #
-# === Mirael ===
+# === Other Includes ===
 #
 
+set(OTHER_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/external/other")
+
+
+#
+# === Mirael ===
+#
 set(MIRAEL_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 file(GLOB MIRAEL_SOURCES
 	"${MIRAEL_SRC_DIR}/*.cpp"
 	"${MIRAEL_SRC_DIR}/*.h"
 )
 set(MIRAEL_PCH "${MIRAEL_SRC_DIR}/pch.h")
-
-add_executable (Mirael ${MIRAEL_SOURCES} ${IMGUI_SOURCES})
+add_executable (Mirael
+	${MIRAEL_SOURCES}
+	${IMGUI_SOURCES}
+)
 target_precompile_headers(Mirael PRIVATE ${MIRAEL_PCH})
 set_property(TARGET Mirael PROPERTY CXX_STANDARD 20)
-target_link_libraries(Mirael PRIVATE glfw glm::glm nlohmann_json::nlohmann_json Vulkan::cppm )
-target_compile_definitions(Mirael PRIVATE VULKAN_HPP_HANDLE_ERROR_OUT_OF_DATE_AS_SUCCESS)
-target_include_directories(Mirael PRIVATE ${IMGUI_INCLUDES})
+target_link_libraries(Mirael PRIVATE
+	glfw
+	glm::glm
+	nlohmann_json::nlohmann_json
+	Vulkan::Vulkan
+)
+target_compile_definitions(Mirael PRIVATE
+	VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1
+	VULKAN_HPP_NO_STRUCT_CONSTRUCTORS=1
+	VULKAN_HPP_HANDLE_ERROR_OUT_OF_DATE_AS_SUCCESS
+)
+target_include_directories(Mirael PRIVATE ${IMGUI_INCLUDES} ${OTHER_INCLUDES})
 
 
 #

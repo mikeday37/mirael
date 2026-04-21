@@ -38,6 +38,14 @@ constexpr bool enableValidationLayers = true;
 
 constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
+App::App()
+{
+    if (appInstance) {
+        throw std::runtime_error("Mirael::App singleton already constructed.");
+    }
+    appInstance = this;
+}
+
 void App::run()
 {
     preInitImGui();
@@ -107,10 +115,10 @@ void App::initWindow()
 
     glfwSetWindowUserPointer(window, this);
     glfwSetFramebufferSizeCallback(window, frameBufferResizeCallback);
-
     glfwSetWindowPosCallback(window, windowPosCallback);
     glfwSetWindowSizeCallback(window, windowSizeCallback);
     glfwSetWindowMaximizeCallback(window, windowMaximizeCallback);
+    glfwSetWindowCloseCallback(window, windowCloseCallback);
 }
 
 void App::initVulkan()
@@ -158,12 +166,12 @@ void App::mainLoop()
         glfwPollEvents();
         drawFrame();
     }
-
-    device.waitIdle();
 }
 
 void App::cleanup()
 {
+    device.waitIdle();
+
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
@@ -174,10 +182,89 @@ void App::cleanup()
     // the vulkan objects we created are all raii, so they take care of themselves.
 }
 
+void App::exit() { closeRequested = true; }
+
+void App::setDestructiveAction(std::string label, std::string message, std::function<void()> postConfirmAction,
+                               std::function<void()> postCancelAction)
+{
+    destructiveAction = {.modalTitle        = label,
+                         .modalMessage      = message,
+                         .modalCenter       = ImGui::GetWindowViewport()->GetCenter(),
+                         .postConfirmAction = postConfirmAction,
+                         .postCancelAction  = postCancelAction};
+}
+
 void App::showImGui()
 {
-    if (showDemo) {
-        ImGui::ShowDemoWindow(&showDemo);
+    ImGui::DockSpaceOverViewport(0, nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
+
+    showBackgroundContextMenu();
+
+    if (mainWindowSettings.explorer) {
+        project.showExplorer(mainWindowSettings.explorer);
+    }
+
+    if (mainWindowSettings.demo) {
+        ImGui::ShowDemoWindow(&mainWindowSettings.demo);
+    }
+
+    if (closeRequested) {
+        closeRequested = false;
+        if (project.isModified()) {
+            setDestructiveAction(
+                "Exit with Unsaved Changes?", "Are you sure you want to discard all unsaved changes?  This cannot be undone.",
+                [this]() {
+                    closeConfirmed = true;
+                    glfwSetWindowShouldClose(window, GLFW_TRUE);
+                },
+                [this]() { closeRequested = false; });
+        } else {
+            closeConfirmed = true;
+            glfwSetWindowShouldClose(window, GLFW_TRUE);
+        }
+    }
+
+    if (destructiveAction) {
+        auto &actionInfo = *destructiveAction;
+        if (!actionInfo.opened) {
+            ImGui::OpenPopup(actionInfo.modalTitle.c_str());
+            actionInfo.opened = true;
+        }
+        ImGui::SetNextWindowPos(actionInfo.modalCenter, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        if (ImGui::BeginPopupModal(actionInfo.modalTitle.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text(actionInfo.modalMessage.c_str());
+            ImGui::Separator();
+            bool reset        = false;
+            float buttonWidth = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) / 2.0f;
+            if (ImGui::Button("OK", ImVec2(buttonWidth, 0.0f))) {
+                if (actionInfo.postConfirmAction)
+                    actionInfo.postConfirmAction();
+                reset = true;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel", ImVec2(buttonWidth, 0.0f))) {
+                reset = true;
+            }
+            if (reset) {
+                if (actionInfo.postCancelAction)
+                    actionInfo.postCancelAction();
+                destructiveAction.reset();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+    }
+}
+
+void App::showBackgroundContextMenu()
+{
+    if (ImGui::BeginPopupContextVoid("##mainwindow_background_context_menu")) {
+        ImGui::MenuItem("Project Explorer", nullptr, &mainWindowSettings.explorer);
+        ImGui::Separator();
+        if (ImGui::MenuItem("Exit")) {
+            exit();
+        }
+        ImGui::EndPopup();
     }
 }
 
@@ -202,6 +289,8 @@ void App::imGuiSettings_WriteAll(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *h
     out_buf->appendf("Pos=%d,%d\n", state.x, state.y);
     out_buf->appendf("Size=%d,%d\n", state.w, state.h);
     out_buf->appendf("Maximized=%d\n", (int)state.maximized);
+    out_buf->appendf("Explorer=%d\n", (int)state.explorer);
+    out_buf->appendf("ImGuiDemo=%d\n", (int)state.demo);
     out_buf->appendf("\n");
 }
 
@@ -215,7 +304,7 @@ void App::imGuiSettings_ReadLine(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *h
     assert(entry == handler->UserData);
     App &app = *static_cast<App *>(handler->UserData);
 
-    int x, y, w, h, m;
+    int x, y, w, h, m, e, d;
     if (sscanf_s(line, "Pos=%d,%d", &x, &y) == 2) {
         app.mainWindowSettings.x = x;
         app.mainWindowSettings.y = y;
@@ -224,12 +313,15 @@ void App::imGuiSettings_ReadLine(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *h
         app.mainWindowSettings.h = h;
     } else if (sscanf_s(line, "Maximized=%d", &m) == 1) {
         app.mainWindowSettings.maximized = m != 0;
+    } else if (sscanf_s(line, "Explorer=%d", &e) == 1) {
+        app.mainWindowSettings.explorer = e != 0;
+    } else if (sscanf_s(line, "ImGuiDemo=%d", &d) == 1) {
+        app.mainWindowSettings.demo = d != 0;
     }
 }
 
-void App::frameBufferResizeCallback(GLFWwindow *window, int width, int height)
+void App::frameBufferResizeCallback(GLFWwindow *window, int /*width*/, int /*height*/)
 {
-    std::cout << "frameBufferResizeCallback: w=" << width << ", h=" << height << std::endl;
     auto app                = reinterpret_cast<App *>(glfwGetWindowUserPointer(window));
     app->frameBufferResized = true;
 }
@@ -276,6 +368,18 @@ void App::windowMaximizeCallback(GLFWwindow *window, int maximized)
         return;
     }
     app->mainWindowSettings.maximized = maximized != GLFW_FALSE;
+}
+
+void App::windowCloseCallback(GLFWwindow *window)
+{
+    auto app = reinterpret_cast<App *>(glfwGetWindowUserPointer(window));
+    if (!app) {
+        return;
+    }
+    if (!app->closeConfirmed) {
+        app->closeRequested = true;
+        glfwSetWindowShouldClose(window, GLFW_FALSE);
+    }
 }
 
 void App::createInstance()

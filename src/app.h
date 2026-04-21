@@ -19,12 +19,16 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
+#include "project.h"
+
 namespace Mirael
 {
 
 class App
 {
 public:
+    App();
+
     //
     // entry point
     //
@@ -42,24 +46,50 @@ private:
     void cleanup();
 
     //
-    // UI logic
+    // UI
     //
-    bool showDemo = true;
+public:
+    static App &get() { return *appInstance; }
+    void exit();
+    bool *getImGuiDemoFlag() { return &mainWindowSettings.demo; }
+    void setDestructiveAction(std::string label, std::string message, std::function<void()> postConfirmAction,
+                              std::function<void()> postCancelAction = nullptr);
+
+private:
+    static inline App *appInstance = nullptr;
+    // static void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods);
     void showImGui();
+    void showBackgroundContextMenu();
+    Project project;
+    bool closeRequested = false;
+    bool closeConfirmed = false;
+
+    // desctructive actions
+    struct DestructiveAction {
+        std::string modalTitle;
+        std::string modalMessage;
+        ImVec2 modalCenter;
+        std::function<void()> postConfirmAction;
+        std::function<void()> postCancelAction = nullptr;
+        bool opened                            = false;
+    };
+    std::optional<DestructiveAction> destructiveAction;
 
     //
     // main window settings persistence
     //
     struct MainWindowSettings {
         int x, y, w, h; // screen coordinates
-        bool maximized;
+        bool maximized, explorer, demo;
     };
     MainWindowSettings mainWindowSettings = {
         .x = std::numeric_limits<int>::min(), // ::min() is used to represent 'uninitialized' so that a default can be used instead
         .y = std::numeric_limits<int>::min(),
         .w = std::numeric_limits<int>::min(),
         .h = std::numeric_limits<int>::min(),
-        .maximized = false};
+        .maximized = false,
+        .explorer  = true,
+        .demo      = false};
     ImGuiSettingsHandler getImGuiSettingsHandler();
     static void imGuiSettings_WriteAll(ImGuiContext *ctx, ImGuiSettingsHandler *handler, ImGuiTextBuffer *out_buf);
     static void *imGuiSettings_ReadOpen(ImGuiContext *ctx, ImGuiSettingsHandler *handler, const char *name);
@@ -74,8 +104,9 @@ private:
     static void windowPosCallback(GLFWwindow *window, int x, int y);
     static void windowSizeCallback(GLFWwindow *window, int width, int height);
     static void windowMaximizeCallback(GLFWwindow *window, int maximized);
+    static void windowCloseCallback(GLFWwindow *window);
     // super state = iconified, maximized, or full screen, where pos/size should be ignored
-    static bool isWindowInSuperState(GLFWwindow *window); 
+    static bool isWindowInSuperState(GLFWwindow *window);
 
     //
     // Vulkan objects and variables
