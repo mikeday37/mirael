@@ -6,6 +6,10 @@
 namespace Mirael
 {
 
+//
+// These types are used only for serialization.
+//
+
 using GraphId = uint64_t;
 
 struct GraphData {

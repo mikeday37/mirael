@@ -27,6 +27,15 @@ find_package(Vulkan 1.4 REQUIRED)
 
 
 #
+# === Native File Dialog Extended ===
+#
+
+add_subdirectory("external/nfde")
+# TODO: will need to link differently depending on platform when supporting more than Windows
+set(NFDE_LIB_DEPENDENCIES ole32.lib uuid.lib shell32.lib)
+
+
+#
 # === Shader Compiler ===
 #
 
@@ -108,8 +117,10 @@ set_property(TARGET Mirael PROPERTY CXX_STANDARD 20)
 target_link_libraries(Mirael PRIVATE
 	glfw
 	glm::glm
+	nfd
 	nlohmann_json::nlohmann_json
 	Vulkan::Vulkan
+	${NFDE_LIB_DEPENDENCIES}
 )
 target_compile_definitions(Mirael PRIVATE
 	VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1

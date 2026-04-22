@@ -54,17 +54,17 @@ public:
     bool *getImGuiDemoFlag() { return &mainWindowSettings.demo; }
     void setDestructiveAction(std::string label, std::string message, std::function<void()> postConfirmAction,
                               std::function<void()> postCancelAction = nullptr);
+    void showError(std::string message);
 
 private:
     static inline App *appInstance = nullptr;
-    // static void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods);
     void showImGui();
     void showBackgroundContextMenu();
     Project project;
     bool closeRequested = false;
     bool closeConfirmed = false;
 
-    // desctructive actions
+    // desctructive action (for requiring user confirmation)
     struct DestructiveAction {
         std::string modalTitle;
         std::string modalMessage;
@@ -81,6 +81,7 @@ private:
     struct MainWindowSettings {
         int x, y, w, h; // screen coordinates
         bool maximized, explorer, demo;
+        std::string lastProjectPath;
     };
     MainWindowSettings mainWindowSettings = {
         .x = std::numeric_limits<int>::min(), // ::min() is used to represent 'uninitialized' so that a default can be used instead

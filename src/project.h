@@ -24,27 +24,42 @@ public:
 
     void showExplorer(bool &open);
     bool isModified() const { return isModifiedFlag; }
+    void resumeLastProject(std::filesystem::path filepath);
+    std::string getLastFilePath() const {return lastFilepath ? lastFilepath->string() : "";}
 
 private:
+    // main data
+    std::string name    = "Project";
+    GraphId nextGraphId = 1;
+    std::unordered_map<GraphId, Graph> graphMap;
+
+    // graph management
     Graph &addGraph(Graph &&graph);
     Graph &addNewGraph();
     void removeGraph(GraphId id);
     Graph &getGraph(GraphId id) { return graphMap.at(id); }
     const Graph &getGraph(GraphId id) const { return graphMap.at(id); }
 
+    // modification tracking
+    bool isModifiedFlag = false;
+    void watchGraphChanges(Graph &graph);
+
+    // ui entry points to serialization
+    void onUserNew();
+    void onUserOpen();
+    void onUserSave();
+    void onUserSaveAs();
+
+    // serialization support
+    void openViaFileDialog();
+    void saveViaFileDialog();
     void clear();
     void save(const std::filesystem::path &filepath);
     void load(const std::filesystem::path &filepath);
-
+    std::optional<std::filesystem::path> lastFilepath;
     ProjectData toData() const;
     static Project fromData(const ProjectData &data);
     void connectCallbacks();
-
-    std::string name    = "Project";
-    GraphId nextGraphId = 1;
-    std::unordered_map<GraphId, Graph> graphMap;
-    bool isModifiedFlag = false;
-    void watchGraphChanges(Graph &graph);
 
     // display ordering
     std::vector<GraphId> displayOrder;
@@ -56,10 +71,6 @@ private:
     bool firstRenameFrame   = false;
     GraphId renamingGraphId = ~0;
     std::string renameBuffer;
-
-    // temp
-    void onUserOpen();
-    void onUserSave();
 };
 
 }; // namespace Mirael

@@ -8,6 +8,7 @@
 
 #include "app.h"
 #include "graph.h"
+#include "nfd_shim.h"
 #include "project.h"
 
 namespace Mirael
@@ -25,23 +26,16 @@ void Project::showExplorer(bool &open)
         if (ImGui::BeginMenuBar()) {
             if (ImGui::BeginMenu("File")) {
                 if (ImGui::MenuItem("New")) {
-                    if (isModifiedFlag) {
-                        App::get().setDestructiveAction("Discard Changes?",
-                                                        "Discard ALL unsaved changes?  This operation cannot be undone.",
-                                                        [this]() { clear(); });
-                    } else
-                        clear();
+                    onUserNew();
                 }
                 if (ImGui::MenuItem("Open")) {
-                    if (isModifiedFlag) {
-                        App::get().setDestructiveAction("Discard Changes?",
-                                                        "Discard ALL unsaved changes?  This operation cannot be undone.",
-                                                        [this]() { onUserOpen(); });
-                    } else
-                        onUserOpen();
+                    onUserOpen();
                 }
                 if (ImGui::MenuItem("Save")) {
                     onUserSave();
+                }
+                if (ImGui::MenuItem("Save As")) {
+                    onUserSaveAs();
                 }
                 ImGui::Separator();
                 if (ImGui::MenuItem("Exit")) {
@@ -108,6 +102,12 @@ void Project::showExplorer(bool &open)
     ImGui::End();
 }
 
+void Project::resumeLastProject(std::filesystem::path filepath)
+{
+    if (!filepath.empty() && std::filesystem::exists(filepath))
+        load(filepath);
+}
+
 Graph &Project::addGraph(Graph &&graph)
 {
     auto id             = nextGraphId++;
@@ -135,12 +135,73 @@ void Project::removeGraph(GraphId id)
     }
 }
 
+void Project::watchGraphChanges(Graph &graph)
+{
+    graph.onModified = [this](Graph::ChangeImpact impact) {
+        isModifiedFlag = true;
+        if (impact == Graph::ChangeImpact::Name)
+            orderDirty = true;
+    };
+}
+
+void Project::onUserNew()
+{
+    if (isModifiedFlag) {
+        App::get().setDestructiveAction("Discard Changes?", "Discard ALL unsaved changes?  This operation cannot be undone.",
+                                        [this]() { clear(); });
+    } else
+        clear();
+}
+
+void Project::onUserOpen()
+{
+    if (isModifiedFlag) {
+        App::get().setDestructiveAction("Discard Changes?", "Discard ALL unsaved changes?  This operation cannot be undone.",
+                                        [this]() { openViaFileDialog(); });
+    } else
+        openViaFileDialog();
+}
+
+void Project::onUserSave()
+{
+    if (lastFilepath)
+        save(*lastFilepath);
+    else
+        saveViaFileDialog();
+}
+
+void Project::onUserSaveAs() { saveViaFileDialog(); }
+
+void Project::openViaFileDialog()
+{
+    NfdShim::OpenArgs args = {.filters = {{"Mirael Projects", "mir"}}};
+    auto results = NfdShim::getOpenFilePath(args);
+    if (results.good())
+        load(results.filepath);
+    else if (results.bad()) {
+        App::get().showError("Unable to choose path to open: " + results.errorMessage);
+    }
+}
+
+void Project::saveViaFileDialog()
+{
+    NfdShim::SaveArgs args = {.filters = {{"Mirael Projects", "mir"}}, .defaultName = "project.mir"};
+    auto results = NfdShim::getSaveAsFilePath(args);
+    if (results.good())
+        save(results.filepath);
+    else if (results.bad()) {
+        App::get().showError("Unable to choose file path to save as: " + results.errorMessage);
+    }
+}
+
 void Project::clear()
 {
     name        = "Project";
     nextGraphId = 1;
     graphMap.clear();
     isModifiedFlag = false;
+
+    lastFilepath.reset();
 
     displayOrder.clear();
     orderDirty = false;
@@ -161,6 +222,7 @@ void Project::save(const std::filesystem::path &filepath)
     if (!o.good())
         throw std::runtime_error("Failed to write data to: " + filepath.string());
     isModifiedFlag = false;
+    lastFilepath = filepath;
 }
 
 void Project::load(const std::filesystem::path &filepath)
@@ -174,6 +236,7 @@ void Project::load(const std::filesystem::path &filepath)
     // TODO: catch parse errors and fail gracefully with user notice
     *this = fromData(data);
     connectCallbacks();
+    lastFilepath = filepath;
 }
 
 ProjectData Project::toData() const
@@ -209,15 +272,6 @@ void Project::connectCallbacks()
         watchGraphChanges(graph);
 }
 
-void Project::watchGraphChanges(Graph &graph)
-{
-    graph.onModified = [this](Graph::ChangeImpact impact) {
-        isModifiedFlag = true;
-        if (impact == Graph::ChangeImpact::Name)
-            orderDirty = true;
-    };
-}
-
 void Project::updateDisplayOrder()
 {
     if (!orderDirty)
@@ -235,17 +289,5 @@ void Project::updateDisplayOrder()
 
     orderDirty = false;
 }
-
-const char *defaultFilename = "default.mir";
-
-void Project::onUserOpen()
-{
-    if (!fs::exists(defaultFilename))
-        return;
-
-    load(defaultFilename);
-}
-
-void Project::onUserSave() { save(defaultFilename); }
 
 }; // namespace Mirael

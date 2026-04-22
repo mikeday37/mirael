@@ -15,6 +15,7 @@
 #include "imgui_internal.h"
 
 #include "app.h"
+#include "nfd_shim.h"
 #include "util.h"
 
 #ifndef IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING
@@ -52,6 +53,7 @@ void App::run()
     initWindow();
     initVulkan();
     finishInitImGui();
+    NfdShim::Init();
     mainLoop();
     cleanup();
 }
@@ -67,6 +69,8 @@ void App::preInitImGui()
     auto settingsHandler = getImGuiSettingsHandler();
     ImGui::AddSettingsHandler(&settingsHandler);
     ImGui::LoadIniSettingsFromDisk(ImGui::GetIO().IniFilename);
+
+    project.resumeLastProject(mainWindowSettings.lastProjectPath);
 
     auto &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
@@ -170,6 +174,8 @@ void App::mainLoop()
 
 void App::cleanup()
 {
+    NfdShim::Quit();
+
     device.waitIdle();
 
     ImGui_ImplVulkan_Shutdown();
@@ -192,6 +198,12 @@ void App::setDestructiveAction(std::string label, std::string message, std::func
                          .modalCenter       = ImGui::GetWindowViewport()->GetCenter(),
                          .postConfirmAction = postConfirmAction,
                          .postCancelAction  = postCancelAction};
+}
+
+void App::showError(std::string message)
+{
+    // TODO: implement UI for this
+    std::cerr << "Error: " << message << std::endl;
 }
 
 void App::showImGui()
@@ -284,6 +296,7 @@ ImGuiSettingsHandler App::getImGuiSettingsHandler()
 void App::imGuiSettings_WriteAll(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *handler, ImGuiTextBuffer *out_buf)
 {
     App &app          = *static_cast<App *>(handler->UserData);
+    app.mainWindowSettings.lastProjectPath = app.project.getLastFilePath();
     const auto &state = app.mainWindowSettings;
     out_buf->appendf("[%s][MainWindow]\n", handler->TypeName);
     out_buf->appendf("Pos=%d,%d\n", state.x, state.y);
@@ -291,6 +304,9 @@ void App::imGuiSettings_WriteAll(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *h
     out_buf->appendf("Maximized=%d\n", (int)state.maximized);
     out_buf->appendf("Explorer=%d\n", (int)state.explorer);
     out_buf->appendf("ImGuiDemo=%d\n", (int)state.demo);
+    out_buf->appendf("LastProjectPathLen=%d\n", state.lastProjectPath.size());
+    if (state.lastProjectPath.size() > 0)
+        out_buf->appendf("LastProjectPath=%s\n", state.lastProjectPath.c_str());
     out_buf->appendf("\n");
 }
 
@@ -303,20 +319,28 @@ void App::imGuiSettings_ReadLine(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *h
 {
     assert(entry == handler->UserData);
     App &app = *static_cast<App *>(handler->UserData);
+    auto &settings = app.mainWindowSettings;
 
-    int x, y, w, h, m, e, d;
+    int x, y, w, h, m, e, d, len;
+    std::string path;
+    path.resize(settings.lastProjectPath.size() + 1);
     if (sscanf_s(line, "Pos=%d,%d", &x, &y) == 2) {
-        app.mainWindowSettings.x = x;
-        app.mainWindowSettings.y = y;
+        settings.x = x;
+        settings.y = y;
     } else if (sscanf_s(line, "Size=%d,%d", &w, &h) == 2) {
-        app.mainWindowSettings.w = w;
-        app.mainWindowSettings.h = h;
+        settings.w = w;
+        settings.h = h;
     } else if (sscanf_s(line, "Maximized=%d", &m) == 1) {
-        app.mainWindowSettings.maximized = m != 0;
+        settings.maximized = m != 0;
     } else if (sscanf_s(line, "Explorer=%d", &e) == 1) {
-        app.mainWindowSettings.explorer = e != 0;
+        settings.explorer = e != 0;
     } else if (sscanf_s(line, "ImGuiDemo=%d", &d) == 1) {
-        app.mainWindowSettings.demo = d != 0;
+        settings.demo = d != 0;
+    } else if (sscanf_s(line, "LastProjectPathLen=%d", &len) == 1) {
+        settings.lastProjectPath.resize(len);
+    } else 
+    if (sscanf_s(line, "LastProjectPath=%s", path.data(), (unsigned)path.size()) == 1) {
+        settings.lastProjectPath = path;
     }
 }
 
