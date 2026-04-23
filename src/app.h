@@ -13,7 +13,10 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <filesystem>
 #include <limits>
+#include <optional>
+#include <string>
 #include <vector>
 
 #include "imgui.h"
@@ -55,6 +58,7 @@ public:
     void setDestructiveAction(std::string label, std::string message, std::function<void()> postConfirmAction,
                               std::function<void()> postCancelAction = nullptr);
     void showError(std::string message);
+    ImGuiID getDockspaceId() const {return dockspaceId;}
 
 private:
     static inline App *appInstance = nullptr;
@@ -63,6 +67,7 @@ private:
     Project project;
     bool closeRequested = false;
     bool closeConfirmed = false;
+    ImGuiID dockspaceId{};
 
     // desctructive action (for requiring user confirmation)
     struct DestructiveAction {
@@ -79,18 +84,15 @@ private:
     // main window settings persistence
     //
     struct MainWindowSettings {
-        int x, y, w, h; // screen coordinates
-        bool maximized, explorer, demo;
-        std::string lastProjectPath;
+        std::optional<int> x, y, width, height; // screen coordinates
+        bool maximized, explorer, demo, firstRun;
+        std::optional<std::filesystem::path> lastProjectPath;
     };
     MainWindowSettings mainWindowSettings = {
-        .x = std::numeric_limits<int>::min(), // ::min() is used to represent 'uninitialized' so that a default can be used instead
-        .y = std::numeric_limits<int>::min(),
-        .w = std::numeric_limits<int>::min(),
-        .h = std::numeric_limits<int>::min(),
         .maximized = false,
         .explorer  = true,
-        .demo      = false};
+        .demo      = false,
+        .firstRun  = true};
     ImGuiSettingsHandler getImGuiSettingsHandler();
     static void imGuiSettings_WriteAll(ImGuiContext *ctx, ImGuiSettingsHandler *handler, ImGuiTextBuffer *out_buf);
     static void *imGuiSettings_ReadOpen(ImGuiContext *ctx, ImGuiSettingsHandler *handler, const char *name);

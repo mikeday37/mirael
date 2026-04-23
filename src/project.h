@@ -23,9 +23,10 @@ public:
     Project &operator=(Project &&)      = default;
 
     void showExplorer(bool &open);
+    void showGraphs();
     bool isModified() const { return isModifiedFlag; }
     void resumeLastProject(std::filesystem::path filepath);
-    std::string getLastFilePath() const {return lastFilepath ? lastFilepath->string() : "";}
+    std::optional<std::filesystem::path> getLastFilePath() const { return lastFilepath; }
 
 private:
     // main data

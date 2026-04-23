@@ -31,9 +31,14 @@ public:
     GraphData toData() const;
     static Graph fromData(const GraphData &data);
 
+    void setVisible(bool visible);
+
+    void showView(GraphId id);
+    void raiseModified(ChangeImpact impact) const;
+
 private:
-    std::string name{"Graph"};
-    bool visible{true};
+    std::string name = "Graph";
+    bool visible     = true;
 };
 
 }; // namespace Mirael

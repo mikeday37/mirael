@@ -25,9 +25,6 @@
 namespace Mirael
 {
 
-constexpr uint32_t WIDTH  = 800;
-constexpr uint32_t HEIGHT = 600;
-
 const std::vector<char const *> validationLayers         = {"VK_LAYER_KHRONOS_validation"};
 const std::vector<const char *> requiredDeviceExtensions = {vk::KHRSwapchainExtensionName};
 
@@ -66,11 +63,14 @@ void App::preInitImGui()
         throw std::runtime_error("Unable to create ImGui context.");
     }
 
+    mainWindowSettings.firstRun = !std::filesystem::exists("imgui.ini");
+
     auto settingsHandler = getImGuiSettingsHandler();
     ImGui::AddSettingsHandler(&settingsHandler);
     ImGui::LoadIniSettingsFromDisk(ImGui::GetIO().IniFilename);
 
-    project.resumeLastProject(mainWindowSettings.lastProjectPath);
+    if (mainWindowSettings.lastProjectPath)
+        project.resumeLastProject(*mainWindowSettings.lastProjectPath);
 
     auto &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
@@ -95,20 +95,20 @@ void App::initWindow()
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
-    if (mainWindowSettings.x != std::numeric_limits<int>::min()) {
-        glfwWindowHint(GLFW_POSITION_X, mainWindowSettings.x);
+    if (mainWindowSettings.x) {
+        glfwWindowHint(GLFW_POSITION_X, *mainWindowSettings.x);
     }
-    if (mainWindowSettings.y != std::numeric_limits<int>::min()) {
-        glfwWindowHint(GLFW_POSITION_Y, mainWindowSettings.y);
+    if (mainWindowSettings.y) {
+        glfwWindowHint(GLFW_POSITION_Y, *mainWindowSettings.y);
     }
     if (mainWindowSettings.maximized) {
         glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
     }
-    if (mainWindowSettings.w == std::numeric_limits<int>::min() || mainWindowSettings.h == std::numeric_limits<int>::min()) {
-        mainWindowSettings.w = 800;
-        mainWindowSettings.h = 600;
+    if (!mainWindowSettings.width || !mainWindowSettings.height) {
+        mainWindowSettings.width  = 1280;
+        mainWindowSettings.height = 720;
     }
-    window = glfwCreateWindow(mainWindowSettings.w, mainWindowSettings.h, "Mirael", nullptr, nullptr);
+    window = glfwCreateWindow(*mainWindowSettings.width, *mainWindowSettings.height, "Mirael", nullptr, nullptr);
     if (window == NULL) {
         throw std::runtime_error("GLFW: failed to create main window.");
     }
@@ -208,13 +208,22 @@ void App::showError(std::string message)
 
 void App::showImGui()
 {
-    ImGui::DockSpaceOverViewport(0, nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
+    dockspaceId = ImGui::DockSpaceOverViewport(0, nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
+
+    if (mainWindowSettings.firstRun) {
+        mainWindowSettings.firstRun = false;
+        auto leftId                 = ImGui::DockBuilderSplitNode(dockspaceId, ImGuiDir_Left, 0.2f, nullptr, nullptr);
+        ImGui::DockBuilderDockWindow("Project Explorer", leftId);
+        ImGui::DockBuilderFinish(dockspaceId);
+    }
 
     showBackgroundContextMenu();
 
     if (mainWindowSettings.explorer) {
         project.showExplorer(mainWindowSettings.explorer);
     }
+
+    project.showGraphs();
 
     if (mainWindowSettings.demo) {
         ImGui::ShowDemoWindow(&mainWindowSettings.demo);
@@ -295,18 +304,20 @@ ImGuiSettingsHandler App::getImGuiSettingsHandler()
 
 void App::imGuiSettings_WriteAll(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *handler, ImGuiTextBuffer *out_buf)
 {
-    App &app          = *static_cast<App *>(handler->UserData);
+    App &app                               = *static_cast<App *>(handler->UserData);
     app.mainWindowSettings.lastProjectPath = app.project.getLastFilePath();
-    const auto &state = app.mainWindowSettings;
+    const auto &settings                   = app.mainWindowSettings;
+
     out_buf->appendf("[%s][MainWindow]\n", handler->TypeName);
-    out_buf->appendf("Pos=%d,%d\n", state.x, state.y);
-    out_buf->appendf("Size=%d,%d\n", state.w, state.h);
-    out_buf->appendf("Maximized=%d\n", (int)state.maximized);
-    out_buf->appendf("Explorer=%d\n", (int)state.explorer);
-    out_buf->appendf("ImGuiDemo=%d\n", (int)state.demo);
-    out_buf->appendf("LastProjectPathLen=%d\n", state.lastProjectPath.size());
-    if (state.lastProjectPath.size() > 0)
-        out_buf->appendf("LastProjectPath=%s\n", state.lastProjectPath.c_str());
+    if (settings.x && settings.y)
+        out_buf->appendf("Pos=%d,%d\n", *settings.x, *settings.y);
+    if (settings.width && settings.height)
+        out_buf->appendf("Size=%d,%d\n", *settings.width, *settings.height);
+    out_buf->appendf("Maximized=%d\n", (int)settings.maximized);
+    out_buf->appendf("Explorer=%d\n", (int)settings.explorer);
+    out_buf->appendf("ImGuiDemo=%d\n", (int)settings.demo);
+    if (settings.lastProjectPath)
+        out_buf->appendf("LastProjectPath=%s\n", settings.lastProjectPath->string().c_str());
     out_buf->appendf("\n");
 }
 
@@ -318,29 +329,28 @@ void *App::imGuiSettings_ReadOpen(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *
 void App::imGuiSettings_ReadLine(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *handler, void *entry, const char *line)
 {
     assert(entry == handler->UserData);
-    App &app = *static_cast<App *>(handler->UserData);
+    App &app       = *static_cast<App *>(handler->UserData);
     auto &settings = app.mainWindowSettings;
 
-    int x, y, w, h, m, e, d, len;
-    std::string path;
-    path.resize(settings.lastProjectPath.size() + 1);
+    int x, y, width, height, maximized, explorer, demo;
     if (sscanf_s(line, "Pos=%d,%d", &x, &y) == 2) {
         settings.x = x;
         settings.y = y;
-    } else if (sscanf_s(line, "Size=%d,%d", &w, &h) == 2) {
-        settings.w = w;
-        settings.h = h;
-    } else if (sscanf_s(line, "Maximized=%d", &m) == 1) {
-        settings.maximized = m != 0;
-    } else if (sscanf_s(line, "Explorer=%d", &e) == 1) {
-        settings.explorer = e != 0;
-    } else if (sscanf_s(line, "ImGuiDemo=%d", &d) == 1) {
-        settings.demo = d != 0;
-    } else if (sscanf_s(line, "LastProjectPathLen=%d", &len) == 1) {
-        settings.lastProjectPath.resize(len);
-    } else 
-    if (sscanf_s(line, "LastProjectPath=%s", path.data(), (unsigned)path.size()) == 1) {
-        settings.lastProjectPath = path;
+    } else if (sscanf_s(line, "Size=%d,%d", &width, &height) == 2) {
+        settings.width  = width;
+        settings.height = height;
+    } else if (sscanf_s(line, "Maximized=%d", &maximized) == 1) {
+        settings.maximized = maximized != 0;
+    } else if (sscanf_s(line, "Explorer=%d", &explorer) == 1) {
+        settings.explorer = explorer != 0;
+    } else if (sscanf_s(line, "ImGuiDemo=%d", &demo) == 1) {
+        settings.demo = demo != 0;
+    } else {
+        std::string path;
+        path.resize(strlen(line) + 1);
+        if (sscanf_s(line, "LastProjectPath=%s", path.data(), (unsigned)path.size()) == 1) {
+            settings.lastProjectPath = path;
+        }
     }
 }
 
@@ -381,8 +391,8 @@ void App::windowSizeCallback(GLFWwindow *window, int width, int height)
     if (!app) {
         return;
     }
-    app->mainWindowSettings.w = width;
-    app->mainWindowSettings.h = height;
+    app->mainWindowSettings.width  = width;
+    app->mainWindowSettings.height = height;
 }
 
 void App::windowMaximizeCallback(GLFWwindow *window, int maximized)

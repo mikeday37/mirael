@@ -81,7 +81,17 @@ void Project::showExplorer(bool &open)
                 firstRenameFrame = false;
             } else {
                 ImGui::TreeNodeEx((void *)(intptr_t)id, leafFlags, "%.*s", name.size(), name.data());
+                if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                    graph.setVisible(true);
+                }
                 if (ImGui::BeginPopupContextItem()) {
+                    if (ImGui::MenuItem("Show")) {
+                        graph.setVisible(true);
+                    }
+                    if (ImGui::MenuItem("Hide")) {
+                        graph.setVisible(false);
+                    }
+                    ImGui::Separator();
                     if (ImGui::MenuItem("Rename")) {
                         renaming         = true;
                         renamingGraphId  = id;
@@ -100,6 +110,13 @@ void Project::showExplorer(bool &open)
         }
     }
     ImGui::End();
+}
+
+void Project::showGraphs()
+{
+    for (auto &[id, graph] : graphMap) {
+        graph.showView(id);
+    }
 }
 
 void Project::resumeLastProject(std::filesystem::path filepath)
@@ -175,7 +192,7 @@ void Project::onUserSaveAs() { saveViaFileDialog(); }
 void Project::openViaFileDialog()
 {
     NfdShim::OpenArgs args = {.filters = {{"Mirael Projects", "mir"}}};
-    auto results = NfdShim::getOpenFilePath(args);
+    auto results           = NfdShim::getOpenFilePath(args);
     if (results.good())
         load(results.filepath);
     else if (results.bad()) {
@@ -186,7 +203,7 @@ void Project::openViaFileDialog()
 void Project::saveViaFileDialog()
 {
     NfdShim::SaveArgs args = {.filters = {{"Mirael Projects", "mir"}}, .defaultName = "project.mir"};
-    auto results = NfdShim::getSaveAsFilePath(args);
+    auto results           = NfdShim::getSaveAsFilePath(args);
     if (results.good())
         save(results.filepath);
     else if (results.bad()) {
@@ -222,7 +239,7 @@ void Project::save(const std::filesystem::path &filepath)
     if (!o.good())
         throw std::runtime_error("Failed to write data to: " + filepath.string());
     isModifiedFlag = false;
-    lastFilepath = filepath;
+    lastFilepath   = filepath;
 }
 
 void Project::load(const std::filesystem::path &filepath)
