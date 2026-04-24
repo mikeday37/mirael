@@ -107,10 +107,15 @@ file(GLOB MIRAEL_SOURCES
 	"${MIRAEL_SRC_DIR}/*.cpp"
 	"${MIRAEL_SRC_DIR}/*.h"
 )
+set(MIRAEL_RES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/res")
+file(GLOB MIRAEL_EMBEDDED_RESOURCES
+	"${MIRAEL_RES_DIR}/fonts/*.cpp"
+)
 set(MIRAEL_PCH "${MIRAEL_SRC_DIR}/pch.h")
 add_executable (Mirael
 	${MIRAEL_SOURCES}
 	${IMGUI_SOURCES}
+	${MIRAEL_EMBEDDED_RESOURCES}
 )
 target_precompile_headers(Mirael PRIVATE ${MIRAEL_PCH})
 set_property(TARGET Mirael PROPERTY CXX_STANDARD 20)

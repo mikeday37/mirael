@@ -15,6 +15,7 @@
 #include "imgui_internal.h"
 
 #include "app.h"
+#include "fonts.h"
 #include "nfd_shim.h"
 #include "util.h"
 
@@ -76,6 +77,8 @@ void App::preInitImGui()
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
+    io.Fonts->AddFontFromMemoryCompressedBase85TTF(Fonts::getInterRegularTtfBase85());
 
     ImGui::StyleColorsDark();
 
