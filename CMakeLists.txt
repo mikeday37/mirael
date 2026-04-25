@@ -93,6 +93,22 @@ set(IMGUI_INCLUDES
 
 
 #
+# === ImGui Node Editor ===
+#
+
+set(INE_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/imgui-node-editor")
+file(GLOB INE_SOURCES
+	"${INE_SRC_DIR}/*.cpp"
+#	"${INE_SRC_DIR}/*.h"
+#	"${INE_SRC_DIR}/*.inl"
+)
+set_source_files_properties(${INE_SOURCES} PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+set(INE_INCLUDES
+	"${INE_SRC_DIR}"
+)
+
+
+#
 # === Other Includes ===
 #
 
@@ -115,6 +131,7 @@ set(MIRAEL_PCH "${MIRAEL_SRC_DIR}/pch.h")
 add_executable (Mirael
 	${MIRAEL_SOURCES}
 	${IMGUI_SOURCES}
+	${INE_SOURCES}
 	${MIRAEL_EMBEDDED_RESOURCES}
 )
 target_precompile_headers(Mirael PRIVATE ${MIRAEL_PCH})
@@ -132,7 +149,11 @@ target_compile_definitions(Mirael PRIVATE
 	VULKAN_HPP_NO_STRUCT_CONSTRUCTORS=1
 	VULKAN_HPP_HANDLE_ERROR_OUT_OF_DATE_AS_SUCCESS
 )
-target_include_directories(Mirael PRIVATE ${IMGUI_INCLUDES} ${OTHER_INCLUDES})
+target_include_directories(Mirael PRIVATE
+	${IMGUI_INCLUDES}
+	${INE_INCLUDES}
+	${OTHER_INCLUDES}
+)
 
 
 #

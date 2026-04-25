@@ -22,7 +22,7 @@ public:
     Project(Project &&)                 = default;
     Project &operator=(Project &&)      = default;
 
-    void showExplorer(bool &open);
+    void showExplorer();
     void showGraphs();
     bool isModified() const { return isModifiedFlag; }
     void resumeLastProject(std::filesystem::path filepath);

@@ -63,7 +63,6 @@ public:
 private:
     static inline App *appInstance = nullptr;
     void showImGui();
-    void showBackgroundContextMenu();
     Project project;
     bool closeRequested = false;
     bool closeConfirmed = false;
@@ -85,12 +84,11 @@ private:
     //
     struct MainWindowSettings {
         std::optional<int> x, y, width, height; // screen coordinates
-        bool maximized, explorer, demo, firstRun;
+        bool maximized, demo, firstRun;
         std::optional<std::filesystem::path> lastProjectPath;
     };
     MainWindowSettings mainWindowSettings = {
         .maximized = false,
-        .explorer  = true,
         .demo      = false,
         .firstRun  = true};
     ImGuiSettingsHandler getImGuiSettingsHandler();

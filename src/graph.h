@@ -1,12 +1,20 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include <string_view>
 
 #include "data.h"
 
+namespace ax::NodeEditor
+{
+struct EditorContext;
+};
+
 namespace Mirael
 {
+
+using EditorContext = ::ax::NodeEditor::EditorContext;
 
 class Graph
 {
@@ -39,6 +47,11 @@ public:
 private:
     std::string name = "Graph";
     bool visible     = true;
+
+    struct EditorDeleter {
+        void operator()(EditorContext *context) const;
+    };
+    std::unique_ptr<EditorContext, EditorDeleter> context;
 };
 
 }; // namespace Mirael

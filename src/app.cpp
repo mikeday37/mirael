@@ -220,11 +220,7 @@ void App::showImGui()
         ImGui::DockBuilderFinish(dockspaceId);
     }
 
-    showBackgroundContextMenu();
-
-    if (mainWindowSettings.explorer) {
-        project.showExplorer(mainWindowSettings.explorer);
-    }
+    project.showExplorer();
 
     project.showGraphs();
 
@@ -280,18 +276,6 @@ void App::showImGui()
     }
 }
 
-void App::showBackgroundContextMenu()
-{
-    if (ImGui::BeginPopupContextVoid("##mainwindow_background_context_menu")) {
-        ImGui::MenuItem("Project Explorer", nullptr, &mainWindowSettings.explorer);
-        ImGui::Separator();
-        if (ImGui::MenuItem("Exit")) {
-            exit();
-        }
-        ImGui::EndPopup();
-    }
-}
-
 ImGuiSettingsHandler App::getImGuiSettingsHandler()
 {
     const char *settingsKey = "Mirael";
@@ -317,7 +301,6 @@ void App::imGuiSettings_WriteAll(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *h
     if (settings.width && settings.height)
         out_buf->appendf("Size=%d,%d\n", *settings.width, *settings.height);
     out_buf->appendf("Maximized=%d\n", (int)settings.maximized);
-    out_buf->appendf("Explorer=%d\n", (int)settings.explorer);
     out_buf->appendf("ImGuiDemo=%d\n", (int)settings.demo);
     if (settings.lastProjectPath)
         out_buf->appendf("LastProjectPath=%s\n", settings.lastProjectPath->string().c_str());
@@ -335,7 +318,7 @@ void App::imGuiSettings_ReadLine(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *h
     App &app       = *static_cast<App *>(handler->UserData);
     auto &settings = app.mainWindowSettings;
 
-    int x, y, width, height, maximized, explorer, demo;
+    int x, y, width, height, maximized, demo;
     if (sscanf_s(line, "Pos=%d,%d", &x, &y) == 2) {
         settings.x = x;
         settings.y = y;
@@ -344,8 +327,6 @@ void App::imGuiSettings_ReadLine(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *h
         settings.height = height;
     } else if (sscanf_s(line, "Maximized=%d", &maximized) == 1) {
         settings.maximized = maximized != 0;
-    } else if (sscanf_s(line, "Explorer=%d", &explorer) == 1) {
-        settings.explorer = explorer != 0;
     } else if (sscanf_s(line, "ImGuiDemo=%d", &demo) == 1) {
         settings.demo = demo != 0;
     } else {

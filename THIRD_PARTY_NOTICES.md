@@ -5,6 +5,7 @@ Portions of this software make use of the following third party libraries and re
 | Code | Dear ImGui                  | https://github.com/ocornut/imgui                  | [MIT](https://github.com/ocornut/imgui/blob/master/LICENSE.txt)                         |
 | Code | GLFW                        | https://github.com/glfw/glfw                      | [zlib](https://github.com/glfw/glfw/blob/master/LICENSE.md)                             |
 | Code | GLM                         | https://github.com/g-truc/glm                     | [MIT / Happy Bunny](https://github.com/g-truc/glm/blob/master/copying.txt)              |
+| Code | Imgui Node Editor           | https://github.com/thedmd/imgui-node-editor       | [MIT](https://github.com/thedmd/imgui-node-editor/blob/master/LICENSE)                  |
 | Code | Native File Dialog Extended | https://github.com/btzy/nativefiledialog-extended | [zlib](https://github.com/btzy/nativefiledialog-extended/blob/master/LICENSE)           |
 | Code | NaturalSort                 | https://github.com/scopeInfinity/NaturalSort      | [MIT](https://github.com/scopeInfinity/NaturalSort/blob/master/LICENSE.md)              |
 | Code | nlohmann-json               | https://github.com/nlohmann/json                  | [MIT](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT)                        |

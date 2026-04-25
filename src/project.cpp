@@ -17,11 +17,11 @@ namespace Mirael
 namespace fs = std::filesystem;
 using json   = nlohmann::json;
 
-void Project::showExplorer(bool &open)
+void Project::showExplorer()
 {
     auto windowFlags = ImGuiWindowFlags_MenuBar | (isModifiedFlag ? ImGuiWindowFlags_UnsavedDocument : 0);
 
-    if (ImGui::Begin("Project Explorer", &open, windowFlags)) {
+    if (ImGui::Begin("Project Explorer", nullptr, windowFlags)) {
 
         if (ImGui::BeginMenuBar()) {
             if (ImGui::BeginMenu("File")) {
