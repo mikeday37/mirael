@@ -18,9 +18,9 @@ void Graph::rename(std::string newName)
 
 GraphData Graph::toData() const { return {name, visible}; }
 
-Graph Graph::fromData(const GraphData &data)
+Graph Graph::fromData(GraphId id, const GraphData &data)
 {
-    Graph graph;
+    Graph graph(id);
     graph.name    = data.name;
     graph.visible = data.visible;
     return graph;
@@ -34,6 +34,30 @@ void Graph::setVisible(bool visible)
         raiseModified(ChangeImpact::Other);
 }
 
+std::string Graph::getWindowName() const
+{
+    return std::format("{}###graph{}", name, id);
+}
+
+void Graph::bringWindowForward() const
+{
+    auto windowName = getWindowName();
+    ImGui::SetWindowFocus(windowName.c_str());
+    auto *window = ImGui::FindWindowByName(windowName.c_str());
+    if (window && window->Viewport) {
+        auto *viewport = window->Viewport;
+        if (viewport->PlatformWindowCreated) {
+            ImGui::GetPlatformIO().Platform_SetWindowFocus(viewport);
+        }
+    }
+}
+
+void Graph::activate()
+{
+    setVisible(true);
+    bringWindowForward();
+}
+
 void Graph::showView(GraphId id)
 {
     if (!visible)
@@ -45,7 +69,7 @@ void Graph::showView(GraphId id)
     }
 
     ImGui::SetNextWindowDockID(App::get().getDockspaceId(), ImGuiCond_FirstUseEver);
-    if (ImGui::Begin(std::format("{}###graph{}", name, id).c_str(), &visible)) {
+    if (ImGui::Begin(getWindowName().c_str(), &visible)) {
         ed::SetCurrentEditor(&*context);
         ed::Begin("Graph Editor");
         int uniqueId = 1;

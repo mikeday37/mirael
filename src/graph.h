@@ -20,7 +20,7 @@ class Graph
 {
 public:
     // forbid copy, allow move
-    Graph()                         = default;
+    explicit Graph(GraphId id) : id(id) {}
     Graph(const Graph &)            = delete;
     Graph &operator=(const Graph &) = delete;
     Graph(Graph &&)                 = default;
@@ -37,14 +37,18 @@ public:
     std::string_view getName() const { return name; }
 
     GraphData toData() const;
-    static Graph fromData(const GraphData &data);
+    static Graph fromData(GraphId id, const GraphData &data);
 
     void setVisible(bool visible);
+    std::string getWindowName() const;
+    void bringWindowForward() const;
+    void activate(); // sets visible and brings forward
 
     void showView(GraphId id);
     void raiseModified(ChangeImpact impact) const;
 
 private:
+    GraphId id;
     std::string name = "Graph";
     bool visible     = true;
 

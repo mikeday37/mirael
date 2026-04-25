@@ -82,11 +82,11 @@ void Project::showExplorer()
             } else {
                 ImGui::TreeNodeEx((void *)(intptr_t)id, leafFlags, "%.*s", name.size(), name.data());
                 if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-                    graph.setVisible(true);
-                }
+                    graph.activate();
+            }
                 if (ImGui::BeginPopupContextItem()) {
                     if (ImGui::MenuItem("Show")) {
-                        graph.setVisible(true);
+                        graph.activate();
                     }
                     if (ImGui::MenuItem("Hide")) {
                         graph.setVisible(false);
@@ -139,7 +139,7 @@ Graph &Project::addGraph(Graph &&graph)
 Graph &Project::addNewGraph()
 {
     auto id      = nextGraphId;
-    Graph &graph = addGraph(Graph{});
+    Graph &graph = addGraph(Graph(id));
     graph.rename(std::format("Graph {}", id));
     return graph;
 }
@@ -271,7 +271,7 @@ Project Project::fromData(const ProjectData &data)
     Project project;
     GraphId lastId = 0;
     for (const auto &[id, graphData] : data.graphs) {
-        auto [it, inserted] = project.graphMap.try_emplace(id, Graph::fromData(graphData));
+        auto [it, inserted] = project.graphMap.try_emplace(id, Graph::fromData(id, graphData));
         if (!inserted)
             throw std::runtime_error(std::format("Graph Id {} not inserted during deserialization.", id));
         if (id > lastId)
