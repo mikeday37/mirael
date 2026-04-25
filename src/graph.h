@@ -40,17 +40,21 @@ public:
     static Graph fromData(GraphId id, const GraphData &data);
 
     void setVisible(bool visible);
-    std::string getWindowName() const;
+    std::string getWindowName() const { return windowName; }
     void bringWindowForward() const;
     void activate(); // sets visible and brings forward
 
-    void showView(GraphId id);
+    void showView();
     void raiseModified(ChangeImpact impact) const;
 
 private:
     GraphId id;
-    std::string name = "Graph";
+    std::string name;
     bool visible     = true;
+
+    std::string windowName; // derived from id and name, but cached so it doesn't reallocate every frame
+    void rebuildWindowName();
+    std::string settingsFileName; // must be cached or the pointer in editor config would dangle
 
     struct EditorDeleter {
         void operator()(EditorContext *context) const;

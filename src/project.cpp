@@ -83,7 +83,7 @@ void Project::showExplorer()
                 ImGui::TreeNodeEx((void *)(intptr_t)id, leafFlags, "%.*s", name.size(), name.data());
                 if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
                     graph.activate();
-            }
+                }
                 if (ImGui::BeginPopupContextItem()) {
                     if (ImGui::MenuItem("Show")) {
                         graph.activate();
@@ -115,7 +115,7 @@ void Project::showExplorer()
 void Project::showGraphs()
 {
     for (auto &[id, graph] : graphMap) {
-        graph.showView(id);
+        graph.showView();
     }
 }
 

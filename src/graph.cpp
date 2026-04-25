@@ -5,7 +5,7 @@
 #include "app.h"
 #include "graph.h"
 
-namespace ed = ax::NodeEditor;
+namespace ne = ax::NodeEditor;
 
 namespace Mirael
 {
@@ -13,6 +13,7 @@ namespace Mirael
 void Graph::rename(std::string newName)
 {
     name = std::move(newName);
+    rebuildWindowName();
     raiseModified(ChangeImpact::Name);
 }
 
@@ -22,6 +23,7 @@ Graph Graph::fromData(GraphId id, const GraphData &data)
 {
     Graph graph(id);
     graph.name    = data.name;
+    graph.rebuildWindowName();
     graph.visible = data.visible;
     return graph;
 }
@@ -32,11 +34,6 @@ void Graph::setVisible(bool visible)
     this->visible = visible;
     if (oldValue != this->visible)
         raiseModified(ChangeImpact::Other);
-}
-
-std::string Graph::getWindowName() const
-{
-    return std::format("{}###graph{}", name, id);
 }
 
 void Graph::bringWindowForward() const
@@ -58,34 +55,38 @@ void Graph::activate()
     bringWindowForward();
 }
 
-void Graph::showView(GraphId id)
+void Graph::showView()
 {
     if (!visible)
         return;
 
     if (!context) {
-        //ed::Config config;
-        context.reset(ed::CreateEditor(/*&config*/));
+        ne::Config config{};
+        settingsFileName = std::format("node-editor-graph{}.json", id);
+        config.SettingsFile = settingsFileName.c_str();
+        config.CanvasSizeMode = ne::CanvasSizeMode::CenterOnly;
+        config.EnableSnapToGrid = false;
+        context.reset(ne::CreateEditor(&config));
     }
 
     ImGui::SetNextWindowDockID(App::get().getDockspaceId(), ImGuiCond_FirstUseEver);
     if (ImGui::Begin(getWindowName().c_str(), &visible)) {
-        ed::SetCurrentEditor(&*context);
-        ed::Begin("Graph Editor");
+        ne::SetCurrentEditor(&*context);
+        ne::Begin("Graph Editor");
         int uniqueId = 1;
         // Start drawing nodes.
-        ed::BeginNode(uniqueId++);
-            ImGui::Text("Node A");
-            ed::BeginPin(uniqueId++, ed::PinKind::Input);
-                ImGui::Text("-> In");
-            ed::EndPin();
-            ImGui::SameLine();
-            ed::BeginPin(uniqueId++, ed::PinKind::Output);
-                ImGui::Text("Out ->");
-            ed::EndPin();
-        ed::EndNode();
-        ed::End();
-        ed::SetCurrentEditor(nullptr);
+        ne::BeginNode(uniqueId++);
+        ImGui::Text("Node A");
+        ne::BeginPin(uniqueId++, ne::PinKind::Input);
+        ImGui::Text("-> In");
+        ne::EndPin();
+        ImGui::SameLine();
+        ne::BeginPin(uniqueId++, ne::PinKind::Output);
+        ImGui::Text("Out ->");
+        ne::EndPin();
+        ne::EndNode();
+        ne::End();
+        ne::SetCurrentEditor(nullptr);
     }
     ImGui::End();
 
@@ -99,9 +100,11 @@ void Graph::raiseModified(ChangeImpact impact) const
         onModified(impact);
 }
 
-void Graph::EditorDeleter::operator()(EditorContext *context) const
+void Graph::rebuildWindowName()
 {
-    ed::DestroyEditor(context);
+    windowName = std::format("{}###graph{}", name, id);
 }
+
+void Graph::EditorDeleter::operator()(EditorContext *context) const { ne::DestroyEditor(context); }
 
 }; // namespace Mirael
