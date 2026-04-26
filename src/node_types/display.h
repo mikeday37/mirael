@@ -9,6 +9,12 @@ class Display : public Node
 {
 public:
     static const char *typeName() { return "display"; }
+
+    void onInit() override;
+    void onShow() override;
+
+private:
+    PinId inPinId{};
 };
 
 }; // namespace Mirael::NodeTypes

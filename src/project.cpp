@@ -125,6 +125,15 @@ void Project::resumeLastProject(std::filesystem::path filepath)
         load(filepath);
 }
 
+Project &Project::get() { return App::get().getProject(); }
+
+void Project::createNodeInLastFocusedGraphIfVisible(const char *nodeTypeName)
+{
+    auto it = graphMap.find(lastFocusedGraphId);
+    if (it != graphMap.end() && it->second.isVisible())
+        it->second.userCreateNode(nodeTypeName);
+}
+
 Graph &Project::addGraph(Graph &&graph)
 {
     auto id             = nextGraphId++;

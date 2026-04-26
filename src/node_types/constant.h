@@ -9,6 +9,12 @@ class Constant : public Node
 {
 public:
     static const char *typeName() { return "constant"; }
+
+    void onInit() override;
+    void onShow() override;
+
+private:
+    PinId outPinId{};
 };
 
 }; // namespace Mirael::NodeTypes

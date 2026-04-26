@@ -6,8 +6,8 @@
 #include <string>
 #include <unordered_map>
 
-#include "registry.h"
 #include "node.h"
+#include "registry.h"
 
 namespace Mirael
 {
@@ -15,9 +15,8 @@ namespace Mirael
 class Library
 {
 public:
-    static const char* explorerWindowName() {return "Node Library";}
+    static const char *explorerWindowName() { return "Node Library"; }
     void showExplorer();
 };
-
 
 }; // namespace Mirael

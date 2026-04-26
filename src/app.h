@@ -22,8 +22,8 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
-#include "project.h"
 #include "library.h"
+#include "project.h"
 #include "registry.h"
 
 namespace Mirael
@@ -55,22 +55,26 @@ private:
     //
 public:
     static App &get() { return *appInstance; }
+    Project &getProject() { return project; }
+    Library &getLibrary() { return library; }
     void exit();
     bool *getImGuiDemoFlag() { return &mainWindowSettings.demo; }
     void setDestructiveAction(std::string label, std::string message, std::function<void()> postConfirmAction,
                               std::function<void()> postCancelAction = nullptr);
     void showError(std::string message);
-    ImGuiID getDockspaceId() const {return dockspaceId;}
-    const NodeTypeRegistry &nodeTypes() const {return nodeTypeRegistry;}
+    ImGuiID getDockspaceId() const { return dockspaceId; }
+    const NodeTypeRegistry &nodeTypes() const { return nodeTypeRegistry; }
 
 private:
     static inline App *appInstance = nullptr;
     void showImGui();
     Project project;
     Library library;
+    ImGuiID dockspaceId{};
+
+    // interaction
     bool closeRequested = false;
     bool closeConfirmed = false;
-    ImGuiID dockspaceId{};
 
     // registries
     NodeTypeRegistry nodeTypeRegistry;
@@ -94,10 +98,7 @@ private:
         bool maximized, demo, firstRun;
         std::optional<std::filesystem::path> lastProjectPath;
     };
-    MainWindowSettings mainWindowSettings = {
-        .maximized = false,
-        .demo      = false,
-        .firstRun  = true};
+    MainWindowSettings mainWindowSettings = {.maximized = false, .demo = false, .firstRun = true};
     ImGuiSettingsHandler getImGuiSettingsHandler();
     static void imGuiSettings_WriteAll(ImGuiContext *ctx, ImGuiSettingsHandler *handler, ImGuiTextBuffer *out_buf);
     static void *imGuiSettings_ReadOpen(ImGuiContext *ctx, ImGuiSettingsHandler *handler, const char *name);

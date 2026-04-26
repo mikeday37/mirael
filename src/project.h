@@ -15,7 +15,7 @@ namespace Mirael
 class Project
 {
 public:
-    Project()                           = default;
+    Project() = default;
 
     // forbid copy, allow move
     Project(const Project &)            = delete;
@@ -23,13 +23,18 @@ public:
     Project(Project &&)                 = default;
     Project &operator=(Project &&)      = default;
 
-    static const char* explorerWindowName() {return "Project Explorer";}
+    static const char *explorerWindowName() { return "Project Explorer"; }
     void showExplorer();
 
     void showGraphs();
     bool isModified() const { return isModifiedFlag; }
     void resumeLastProject(std::filesystem::path filepath);
     std::optional<std::filesystem::path> getLastFilePath() const { return lastFilepath; }
+
+    static Project &get();
+
+    void setLastFocusedGraphId(GraphId id) { lastFocusedGraphId = id; }
+    void createNodeInLastFocusedGraphIfVisible(const char *nodeTypeName);
 
 private:
     // main data
@@ -43,6 +48,9 @@ private:
     void removeGraph(GraphId id);
     Graph &getGraph(GraphId id) { return graphMap.at(id); }
     const Graph &getGraph(GraphId id) const { return graphMap.at(id); }
+
+    // interaction
+    GraphId lastFocusedGraphId{};
 
     // modification tracking
     bool isModifiedFlag = false;

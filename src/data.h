@@ -10,7 +10,11 @@ namespace Mirael
 // These types are used only for serialization.
 //
 
-using GraphId = uint64_t;
+using GraphId        = uint32_t;
+using GraphElementId = uint32_t;
+using NodeId         = GraphElementId;
+using LinkId         = GraphElementId;
+using PinId          = GraphElementId;
 
 struct GraphData {
     std::string name;
@@ -20,7 +24,7 @@ struct GraphData {
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(GraphData, name, visible);
 
 struct ProjectData {
-    std::map<GraphId, GraphData> graphs;
+    std::unordered_map<GraphId, GraphData> graphs;
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ProjectData, graphs);

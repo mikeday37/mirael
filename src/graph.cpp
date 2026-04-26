@@ -1,9 +1,12 @@
 #include "pch.h"
 
+#include <ranges>
+
 #include "imgui_node_editor.h"
 
 #include "app.h"
 #include "graph.h"
+#include "registry.h"
 
 namespace ne = ax::NodeEditor;
 
@@ -22,7 +25,7 @@ GraphData Graph::toData() const { return {name, visible}; }
 Graph Graph::fromData(GraphId id, const GraphData &data)
 {
     Graph graph(id);
-    graph.name    = data.name;
+    graph.name = data.name;
     graph.rebuildWindowName();
     graph.visible = data.visible;
     return graph;
@@ -62,29 +65,21 @@ void Graph::showView()
 
     if (!context) {
         ne::Config config{};
-        settingsFileName = std::format("node-editor-graph{}.json", id);
-        config.SettingsFile = settingsFileName.c_str();
-        config.CanvasSizeMode = ne::CanvasSizeMode::CenterOnly;
+        settingsFileName        = std::format("node-editor-graph{}.json", id);
+        config.SettingsFile     = settingsFileName.c_str();
+        config.CanvasSizeMode   = ne::CanvasSizeMode::CenterOnly;
         config.EnableSnapToGrid = false;
         context.reset(ne::CreateEditor(&config));
     }
 
     ImGui::SetNextWindowDockID(App::get().getDockspaceId(), ImGuiCond_FirstUseEver);
     if (ImGui::Begin(getWindowName().c_str(), &visible)) {
+        if (ImGui::IsWindowFocused())
+            Project::get().setLastFocusedGraphId(id);
         ne::SetCurrentEditor(&*context);
         ne::Begin("Graph Editor");
-        int uniqueId = 1;
-        // Start drawing nodes.
-        ne::BeginNode(uniqueId++);
-        ImGui::Text("Node A");
-        ne::BeginPin(uniqueId++, ne::PinKind::Input);
-        ImGui::Text("-> In");
-        ne::EndPin();
-        ImGui::SameLine();
-        ne::BeginPin(uniqueId++, ne::PinKind::Output);
-        ImGui::Text("Out ->");
-        ne::EndPin();
-        ne::EndNode();
+        for (const auto &node : nodes | std::views::values)
+            node->show();
         ne::End();
         ne::SetCurrentEditor(nullptr);
     }
@@ -100,10 +95,16 @@ void Graph::raiseModified(ChangeImpact impact) const
         onModified(impact);
 }
 
-void Graph::rebuildWindowName()
+void Graph::userCreateNode(const char *nodeTypeName)
 {
-    windowName = std::format("{}###graph{}", name, id);
+    activate();
+    auto node = App::get().nodeTypes().createNode(nodeTypeName);
+    node->init(*this);
+    nodes[node->getId()] = std::move(node);
+    raiseModified(ChangeImpact::Other);
 }
+
+void Graph::rebuildWindowName() { windowName = std::format("{}###graph{}", name, id); }
 
 void Graph::EditorDeleter::operator()(EditorContext *context) const { ne::DestroyEditor(context); }
 

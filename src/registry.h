@@ -1,20 +1,25 @@
 #pragma once
 
-#include "node.h"
-
 #include <concepts>
 #include <functional>
 #include <memory>
+#include <ranges>
+#include <string>
 #include <string_view>
-#include <vector>
+#include <unordered_map>
+
+#include "node.h"
+#include "util.h"
 
 namespace Mirael
 {
 
+class Graph;
+
 template <typename T>
 concept NodeType = std::derived_from<T, Node> && requires {
     T();
-    { T::typeName() } -> std::convertible_to<const char *>;
+    { T::typeName() } -> std::convertible_to<std::string>;
 };
 
 class NodeTypeRegistry
@@ -22,19 +27,23 @@ class NodeTypeRegistry
 public:
     NodeTypeRegistry();
 
+    const std::vector<const char *> &names() const { return namesOrdered; }
+
+    std::unique_ptr<Node> createNode(std::string_view typeName) const;
+
+private:
     struct Entry {
-        const char *name;
+        const char *name = nullptr;
         std::function<std::unique_ptr<Node>()> factory;
     };
 
-    std::span<const Entry> all() const { return entries; }
-
-private:
-    std::vector<Entry> entries;
+    std::unordered_map<std::string, Entry, TransparentStringHash, std::equal_to<>> entries;
+    std::vector<const char *> namesOrdered;
 
     template <NodeType T> void registerType()
     {
-        entries.push_back({.name = T::typeName(), .factory = []() { return std::make_unique<T>(); }});
+        auto name     = T::typeName();
+        entries[name] = {.name = name, .factory = []() { return std::make_unique<T>(); }};
     }
 };
 

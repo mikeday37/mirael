@@ -5,6 +5,7 @@
 #include <string_view>
 
 #include "data.h"
+#include "node.h"
 
 namespace ax::NodeEditor
 {
@@ -41,6 +42,7 @@ public:
     static Graph fromData(GraphId id, const GraphData &data);
 
     void setVisible(bool visible);
+    bool isVisible() const { return visible; }
     std::string getWindowName() const { return windowName; }
     void bringWindowForward() const;
     void activate(); // sets visible and brings forward
@@ -48,10 +50,18 @@ public:
     void showView();
     void raiseModified(ChangeImpact impact) const;
 
+    struct Link {
+        NodeId a, b; // a -> b, usually, though in the future we may support undirected or bidirectional links
+    };
+
+    GraphElementId getNextElementId() { return nextElementId++; }
+
+    void userCreateNode(const char *typeName);
+
 private:
     GraphId id;
     std::string name;
-    bool visible     = true;
+    bool visible = true;
 
     std::string windowName; // derived from id and name, but cached so it doesn't reallocate every frame
     void rebuildWindowName();
@@ -61,6 +71,10 @@ private:
         void operator()(EditorContext *context) const;
     };
     std::unique_ptr<EditorContext, EditorDeleter> context;
+
+    GraphElementId nextElementId = 1;
+    std::unordered_map<NodeId, std::unique_ptr<Node>> nodes;
+    std::unordered_map<LinkId, Link> links;
 };
 
 }; // namespace Mirael
