@@ -22,11 +22,14 @@
 #include <nlohmann/json.hpp>
 
 #include <algorithm>
+#include <concepts>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
+#include <format>
 #include <filesystem>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <limits>
 #include <memory>
@@ -36,4 +39,5 @@
 #include <string>
 #include <string_view>
 #include <unordered_set>
+#include <unordered_map>
 #include <vector>
