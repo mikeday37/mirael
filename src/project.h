@@ -15,14 +15,17 @@ namespace Mirael
 class Project
 {
 public:
-    // forbid copy, allow move
     Project()                           = default;
+
+    // forbid copy, allow move
     Project(const Project &)            = delete;
     Project &operator=(const Project &) = delete;
     Project(Project &&)                 = default;
     Project &operator=(Project &&)      = default;
 
+    static const char* explorerWindowName() {return "Project Explorer";}
     void showExplorer();
+
     void showGraphs();
     bool isModified() const { return isModifiedFlag; }
     void resumeLastProject(std::filesystem::path filepath);

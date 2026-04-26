@@ -215,12 +215,16 @@ void App::showImGui()
 
     if (mainWindowSettings.firstRun) {
         mainWindowSettings.firstRun = false;
-        auto leftId                 = ImGui::DockBuilderSplitNode(dockspaceId, ImGuiDir_Left, 0.2f, nullptr, nullptr);
-        ImGui::DockBuilderDockWindow("Project Explorer", leftId);
+        ImGuiID leftBottomId{};
+        ImGuiID leftId    = ImGui::DockBuilderSplitNode(dockspaceId, ImGuiDir_Left, 0.2f, nullptr, nullptr);
+        ImGuiID leftTopId = ImGui::DockBuilderSplitNode(leftId, ImGuiDir_Up, 0.5f, nullptr, &leftBottomId);
+        ImGui::DockBuilderDockWindow(Project::explorerWindowName(), leftTopId);
+        ImGui::DockBuilderDockWindow(Library::explorerWindowName(), leftBottomId);
         ImGui::DockBuilderFinish(dockspaceId);
     }
 
     project.showExplorer();
+    library.showExplorer();
 
     project.showGraphs();
 

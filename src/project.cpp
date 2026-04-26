@@ -21,7 +21,7 @@ void Project::showExplorer()
 {
     auto windowFlags = ImGuiWindowFlags_MenuBar | (isModifiedFlag ? ImGuiWindowFlags_UnsavedDocument : 0);
 
-    if (ImGui::Begin("Project Explorer", nullptr, windowFlags)) {
+    if (ImGui::Begin(explorerWindowName(), nullptr, windowFlags)) {
 
         if (ImGui::BeginMenuBar()) {
             if (ImGui::BeginMenu("File")) {

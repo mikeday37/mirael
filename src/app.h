@@ -23,6 +23,8 @@
 #include "imgui_internal.h"
 
 #include "project.h"
+#include "library.h"
+#include "registry.h"
 
 namespace Mirael
 {
@@ -59,14 +61,19 @@ public:
                               std::function<void()> postCancelAction = nullptr);
     void showError(std::string message);
     ImGuiID getDockspaceId() const {return dockspaceId;}
+    const NodeTypeRegistry &nodeTypes() const {return nodeTypeRegistry;}
 
 private:
     static inline App *appInstance = nullptr;
     void showImGui();
     Project project;
+    Library library;
     bool closeRequested = false;
     bool closeConfirmed = false;
     ImGuiID dockspaceId{};
+
+    // registries
+    NodeTypeRegistry nodeTypeRegistry;
 
     // desctructive action (for requiring user confirmation)
     struct DestructiveAction {

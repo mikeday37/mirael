@@ -122,6 +122,12 @@ set(MIRAEL_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 file(GLOB MIRAEL_SOURCES
 	"${MIRAEL_SRC_DIR}/*.cpp"
 	"${MIRAEL_SRC_DIR}/*.h"
+	"${MIRAEL_SRC_DIR}/node_types/*.cpp"
+	"${MIRAEL_SRC_DIR}/node_types/*.h"
+)
+set(MIRAEL_INCLUDES
+	"${MIRAEL_SRC_DIR}"
+	"${MIRAEL_SRC_DIR}/node_types"
 )
 set(MIRAEL_RES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/res")
 file(GLOB MIRAEL_EMBEDDED_RESOURCES
@@ -150,6 +156,7 @@ target_compile_definitions(Mirael PRIVATE
 	VULKAN_HPP_HANDLE_ERROR_OUT_OF_DATE_AS_SUCCESS
 )
 target_include_directories(Mirael PRIVATE
+	${MIRAEL_INCLUDES}
 	${IMGUI_INCLUDES}
 	${INE_INCLUDES}
 	${OTHER_INCLUDES}

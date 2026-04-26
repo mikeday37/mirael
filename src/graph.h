@@ -19,8 +19,9 @@ using EditorContext = ::ax::NodeEditor::EditorContext;
 class Graph
 {
 public:
-    // forbid copy, allow move
     explicit Graph(GraphId id) : id(id) {}
+
+    // forbid copy, allow move
     Graph(const Graph &)            = delete;
     Graph &operator=(const Graph &) = delete;
     Graph(Graph &&)                 = default;
