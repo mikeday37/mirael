@@ -1,6 +1,5 @@
 #pragma once
 
-#include <fstream>
 #include <ranges>
 #include <unordered_set>
 #include <vector>
@@ -34,34 +33,7 @@ bool areAllRequiredStringsPresent(R1 &&required, R2 &&available)
     return required.end() == findFirstMissingString(required, available);
 }
 
-std::vector<char> readSmallFile(const std::string &filepath) // intended for reading files < 100 MB
-{
-    std::ifstream file(filepath, std::ios::ate | std::ios::binary);
-    if (!file.is_open()) {
-        throw std::runtime_error(std::format("Failed to open file: {}", filepath));
-    }
-
-    const auto rawSize = file.tellg();
-    if (rawSize < 0) {
-        throw std::runtime_error(std::format("Could not determine size of file: {}", filepath));
-    }
-
-    const size_t fileSize                = static_cast<size_t>(rawSize);
-    constexpr size_t fileSizeSanityLimit = 100 * 1024 * 1024; // 100 MB
-    if (fileSize > fileSizeSanityLimit) {
-        throw std::runtime_error(std::format("File \"{}\" is too large at {} bytes.", filepath, fileSize));
-    }
-
-    std::vector<char> buffer(fileSize);
-    if (fileSize > 0) {
-        file.seekg(0, std::ios::beg);
-        if (!file.read(buffer.data(), static_cast<std::streamsize>(fileSize))) {
-            throw std::runtime_error(std::format("Failed to read file: {}", filepath));
-        }
-    }
-
-    return buffer;
-}
+std::vector<char> readSmallFile(const std::string &filepath);
 
 glm::mat3 calculateMappingTransform(glm::vec2 srcStart, glm::vec2 srcEnd, glm::vec2 dstStart, glm::vec2 dstEnd, bool mirrored);
 
