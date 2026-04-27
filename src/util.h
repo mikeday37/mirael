@@ -33,7 +33,7 @@ bool areAllRequiredStringsPresent(R1 &&required, R2 &&available)
     return required.end() == findFirstMissingString(required, available);
 }
 
-std::vector<char> readSmallFile(const std::string &filepath);
+std::vector<char> readSmallFile(const std::string &filepath); // intended for small files, 100 MB max
 
 glm::mat3 calculateMappingTransform(glm::vec2 srcStart, glm::vec2 srcEnd, glm::vec2 dstStart, glm::vec2 dstEnd, bool mirrored);
 

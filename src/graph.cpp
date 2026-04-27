@@ -20,14 +20,18 @@ void Graph::rename(std::string newName)
     raiseModified(ChangeImpact::Name);
 }
 
-GraphData Graph::toData() const { return {name, visible}; }
+void Graph::serialize(nlohmann::json &j) const
+{
+    j["name"]    = name;
+    j["visible"] = visible;
+}
 
-Graph Graph::fromData(GraphId id, const GraphData &data)
+Graph Graph::deserialize(GraphId id, const nlohmann::json &j)
 {
     Graph graph(id);
-    graph.name = data.name;
+    graph.name = j["name"].get<std::string>();
     graph.rebuildWindowName();
-    graph.visible = data.visible;
+    graph.visible = j["visible"].get<bool>();
     return graph;
 }
 

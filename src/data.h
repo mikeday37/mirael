@@ -1,32 +1,21 @@
 #pragma once
 
-#include <map>
-#include <string>
-
 namespace Mirael
 {
 
-//
-// These types are used only for serialization.
-//
-
-using GraphId        = uint32_t;
-using GraphElementId = uint32_t;
+using GraphId        = uint64_t;
+using GraphElementId = uint64_t;
 using NodeId         = GraphElementId;
 using LinkId         = GraphElementId;
 using PinId          = GraphElementId;
 
-struct GraphData {
-    std::string name;
-    bool visible;
+struct PinRef {
+    NodeId node;
+    PinId pin;
 };
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(GraphData, name, visible);
-
-struct ProjectData {
-    std::unordered_map<GraphId, GraphData> graphs;
+struct Link {
+    PinRef a, b; // a -> b, usually, though in the future we may support undirected or bidirectional links
 };
-
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ProjectData, graphs);
 
 }; // namespace Mirael

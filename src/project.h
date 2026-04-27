@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <map>
+#include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -69,8 +70,8 @@ private:
     void save(const std::filesystem::path &filepath);
     void load(const std::filesystem::path &filepath);
     std::optional<std::filesystem::path> lastFilepath;
-    ProjectData toData() const;
-    static Project fromData(const ProjectData &data);
+    void serialize(nlohmann::json &j) const;
+    static Project deserialize(const nlohmann::json &j);
     void connectCallbacks();
 
     // display ordering

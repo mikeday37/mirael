@@ -240,11 +240,12 @@ void Project::clear()
 
 void Project::save(const std::filesystem::path &filepath)
 {
-    const auto data = toData();
+    json j;
+    serialize(j);
     std::ofstream o(filepath);
     if (!o.is_open())
         throw std::runtime_error("Failed to open file for writing: " + filepath.string());
-    o << std::setw(4) << json(data);
+    o << std::setw(4) << j;
     if (!o.good())
         throw std::runtime_error("Failed to write data to: " + filepath.string());
     isModifiedFlag = false;
@@ -258,29 +259,34 @@ void Project::load(const std::filesystem::path &filepath)
         throw std::runtime_error("Failed to open file for reading: " + filepath.string());
     json j;
     i >> j;
-    auto data = j.get<ProjectData>();
     // TODO: catch parse errors and fail gracefully with user notice
-    *this = fromData(data);
+    *this = deserialize(j);
     connectCallbacks();
     lastFilepath = filepath;
 }
 
-ProjectData Project::toData() const
+void Project::serialize(nlohmann::json &j) const
 {
     assert(!orderDirty);
-    ProjectData data;
+    j["graphs"] = json::object();
     for (const auto &[id, graph] : graphMap) {
-        data.graphs.try_emplace(id, graph.toData());
+        json graph_json;
+        graph.serialize(graph_json);
+        j["graphs"][std::to_string(id)] = graph_json;
     }
-    return data;
 }
 
-Project Project::fromData(const ProjectData &data)
+Project Project::deserialize(const nlohmann::json &j)
 {
     Project project;
-    GraphId lastId = 0;
-    for (const auto &[id, graphData] : data.graphs) {
-        auto [it, inserted] = project.graphMap.try_emplace(id, Graph::fromData(id, graphData));
+    GraphId lastId         = 0;
+    const auto &graphs_obj = j.at("graphs");
+    if (!graphs_obj.is_object())
+        throw std::runtime_error("Project json parsing error: 'graphs' is not an object.");
+
+    for (const auto &[key, value] : graphs_obj.items()) {
+        GraphId id         = static_cast<GraphId>(std::stoull(key));
+        auto [_, inserted] = project.graphMap.try_emplace(id, Graph::deserialize(id, value));
         if (!inserted)
             throw std::runtime_error(std::format("Graph Id {} not inserted during deserialization.", id));
         if (id > lastId)

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <string_view>
 
@@ -38,8 +39,8 @@ public:
     void rename(std::string newName);
     std::string_view getName() const { return name; }
 
-    GraphData toData() const;
-    static Graph fromData(GraphId id, const GraphData &data);
+    void serialize(nlohmann::json &j) const;
+    static Graph deserialize(GraphId id, const nlohmann::json &j);
 
     void setVisible(bool visible);
     bool isVisible() const { return visible; }
@@ -49,10 +50,6 @@ public:
 
     void showView();
     void raiseModified(ChangeImpact impact) const;
-
-    struct Link {
-        NodeId a, b; // a -> b, usually, though in the future we may support undirected or bidirectional links
-    };
 
     GraphElementId getNextElementId() { return nextElementId++; }
 
