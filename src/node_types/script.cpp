@@ -11,9 +11,9 @@ namespace Mirael::NodeTypes
 
 void Script::onInit()
 {
-    inPinId1 = getNextPinId();
-    inPinId2 = getNextPinId();
-    outPinId = getNextPinId();
+    inPinId1 = getPinId("in1");
+    inPinId2 = getPinId("in2");
+    outPinId = getPinId("out");
 }
 
 void Script::onShow()

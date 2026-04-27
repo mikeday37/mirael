@@ -7,19 +7,39 @@
 #include "graph.h"
 #include "node.h"
 
+using json = nlohmann::json;
+
 namespace Mirael
 {
 
-PinId Node::getNextPinId() { return static_cast<PinId>(graph->getNextElementId()); }
+PinId Node::getPinId(std::string_view pinKey)
+{
+    auto it = pinKeyToId.find(pinKey);
+    if (it != pinKeyToId.end()) {
+        return it->second;
+    } else {
+        PinId newId = static_cast<PinId>(graph->getNextElementId());
+        pinKeyToId.emplace(std::string(pinKey), newId);
+        return newId;
+    }
+}
 
-void Node::init(Graph &owner, std::string_view nodeTypeName)
+GraphElementId Node::getMaxElementId() const
+{
+    if (pinKeyToId.empty())
+        return id;
+    else
+        return std::max(id, std::ranges::max(pinKeyToId | std::views::values));
+}
+
+void Node::init(Graph &owner, NodeId id, std::string_view nodeTypeName)
 {
     if (initialized)
         throw std::runtime_error("Node already initialized");
     initialized = true;
 
     graph    = &owner;
-    this->id = static_cast<NodeId>(graph->getNextElementId());
+    this->id = id;
     typeName = nodeTypeName;
 
     onInit();
@@ -27,13 +47,28 @@ void Node::init(Graph &owner, std::string_view nodeTypeName)
 
 void Node::show() { onShow(); }
 
-void Node::serialize(nlohmann::json &j) const { j["type"] = typeName; }
+void Node::serialize(nlohmann::json &j) const
+{
+    j["type"]     = typeName;
+    json pinsJson = json::object();
+    for (const auto &[key, id] : pinKeyToId)
+        pinsJson[key] = id;
+    j["pins"]       = pinsJson;
+    json configJson = json::object();
+    onSerialize(configJson);
+    if (!configJson.empty())
+        j["config"] = configJson;
+}
 
-std::unique_ptr<Node> Node::deserialize(Graph &owner, const nlohmann::json &j)
+std::unique_ptr<Node> Node::deserialize(Graph &owner, NodeId id, const nlohmann::json &j)
 {
     auto typeName = j["type"].get<std::string>();
     auto node     = App::get().nodeTypes().createNode(typeName);
-    node->init(owner, typeName);
+    for (const auto &[key, value] : j["pins"].items())
+        node->pinKeyToId[key] = value.get<uint64_t>();
+    if (j.contains("config"))
+        node->onDeserialize(j["config"]);
+    node->init(owner, id, typeName);
     return node;
 }
 

@@ -9,7 +9,7 @@ namespace ne = ax::NodeEditor;
 namespace Mirael::NodeTypes
 {
 
-void Constant::onInit() { outPinId = getNextPinId(); }
+void Constant::onInit() { outPinId = getPinId("out"); }
 
 void Constant::onShow()
 {

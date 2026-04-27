@@ -44,19 +44,19 @@ Graph Graph::deserialize(GraphId id, const nlohmann::json &j)
     if (!nodesObj.is_object())
         throw std::runtime_error("Graph json parsing error: 'nodes' is not an object.");
 
-    GraphElementId maxNextElementId = 0;
+    GraphElementId maxElementId = 0;
 
     for (const auto &[key, value] : nodesObj.items()) {
         GraphElementId id   = static_cast<GraphElementId>(std::stoull(key));
-        graph.nextElementId = id; // TODO: this works only if pins are static per node type - will need a more dynamic approach
-        auto [_, inserted]  = graph.nodes.try_emplace(id, Node::deserialize(graph, value));
+        auto [it, inserted] = graph.nodes.try_emplace(id, Node::deserialize(graph, id, value));
         if (!inserted)
             throw std::runtime_error(std::format("Node Id {} not inserted into Graph Id {} during deserialization.", id, graph.id));
-        if (graph.nextElementId > maxNextElementId)
-            maxNextElementId = graph.nextElementId;
+        auto maxElementIdInNode = it->second->getMaxElementId();
+        if (maxElementIdInNode > maxElementId)
+            maxElementId = maxElementIdInNode;
     }
 
-    graph.nextElementId = maxNextElementId;
+    graph.nextElementId = maxElementId + 1;
 
     return graph;
 }
@@ -138,8 +138,9 @@ void Graph::userCreateNode(const char *nodeTypeName)
 {
     activate();
     auto node = App::get().nodeTypes().createNode(nodeTypeName);
-    node->init(*this, nodeTypeName);
-    nodes[node->getId()] = std::move(node);
+    auto id   = static_cast<NodeId>(getNextElementId());
+    node->init(*this, id, nodeTypeName);
+    nodes.emplace(id, std::move(node));
     raiseModified(ChangeImpact::Other);
 }
 
