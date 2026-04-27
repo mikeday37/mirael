@@ -9,6 +9,7 @@
 #include "registry.h"
 
 namespace ne = ax::NodeEditor;
+using json   = nlohmann::json;
 
 namespace Mirael
 {
@@ -24,6 +25,12 @@ void Graph::serialize(nlohmann::json &j) const
 {
     j["name"]    = name;
     j["visible"] = visible;
+    j["nodes"]   = json::object();
+    for (const auto &[id, node] : nodes) {
+        json nodeJson;
+        node->serialize(nodeJson);
+        j["nodes"][std::to_string(id)] = nodeJson;
+    }
 }
 
 Graph Graph::deserialize(GraphId id, const nlohmann::json &j)
@@ -32,6 +39,25 @@ Graph Graph::deserialize(GraphId id, const nlohmann::json &j)
     graph.name = j["name"].get<std::string>();
     graph.rebuildWindowName();
     graph.visible = j["visible"].get<bool>();
+
+    const auto &nodesObj = j.at("nodes");
+    if (!nodesObj.is_object())
+        throw std::runtime_error("Graph json parsing error: 'nodes' is not an object.");
+
+    GraphElementId maxNextElementId = 0;
+
+    for (const auto &[key, value] : nodesObj.items()) {
+        GraphElementId id   = static_cast<GraphElementId>(std::stoull(key));
+        graph.nextElementId = id; // TODO: this works only if pins are static per node type - will need a more dynamic approach
+        auto [_, inserted]  = graph.nodes.try_emplace(id, Node::deserialize(graph, value));
+        if (!inserted)
+            throw std::runtime_error(std::format("Node Id {} not inserted into Graph Id {} during deserialization.", id, graph.id));
+        if (graph.nextElementId > maxNextElementId)
+            maxNextElementId = graph.nextElementId;
+    }
+
+    graph.nextElementId = maxNextElementId;
+
     return graph;
 }
 
@@ -82,8 +108,17 @@ void Graph::showView()
             Project::get().setLastFocusedGraphId(id);
         ne::SetCurrentEditor(&*context);
         ne::Begin("Graph Editor");
+
         for (const auto &node : nodes | std::views::values)
             node->show();
+
+        if (ne::BeginCreate()) {
+
+            // TODO: continue link implementation here
+
+            ne::EndCreate();
+        }
+
         ne::End();
         ne::SetCurrentEditor(nullptr);
     }
@@ -103,7 +138,7 @@ void Graph::userCreateNode(const char *nodeTypeName)
 {
     activate();
     auto node = App::get().nodeTypes().createNode(nodeTypeName);
-    node->init(*this);
+    node->init(*this, nodeTypeName);
     nodes[node->getId()] = std::move(node);
     raiseModified(ChangeImpact::Other);
 }

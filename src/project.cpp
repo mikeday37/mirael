@@ -270,21 +270,21 @@ void Project::serialize(nlohmann::json &j) const
     assert(!orderDirty);
     j["graphs"] = json::object();
     for (const auto &[id, graph] : graphMap) {
-        json graph_json;
-        graph.serialize(graph_json);
-        j["graphs"][std::to_string(id)] = graph_json;
+        json graphJson;
+        graph.serialize(graphJson);
+        j["graphs"][std::to_string(id)] = graphJson;
     }
 }
 
 Project Project::deserialize(const nlohmann::json &j)
 {
     Project project;
-    GraphId lastId         = 0;
-    const auto &graphs_obj = j.at("graphs");
-    if (!graphs_obj.is_object())
+    GraphId lastId        = 0;
+    const auto &graphsObj = j.at("graphs");
+    if (!graphsObj.is_object())
         throw std::runtime_error("Project json parsing error: 'graphs' is not an object.");
 
-    for (const auto &[key, value] : graphs_obj.items()) {
+    for (const auto &[key, value] : graphsObj.items()) {
         GraphId id         = static_cast<GraphId>(std::stoull(key));
         auto [_, inserted] = project.graphMap.try_emplace(id, Graph::deserialize(id, value));
         if (!inserted)
