@@ -16,7 +16,7 @@ void Display::onShow()
     ne::BeginNode(getId());
     ImGui::Text("Display");
     ne::BeginPin(inPinId, ne::PinKind::Input);
-    ImGui::Text("-> In");
+    ImGui::Text("-> in");
     ne::EndPin();
     ne::EndNode();
 }

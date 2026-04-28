@@ -26,6 +26,7 @@ protected:
     virtual void onSerialize(nlohmann::json &j) const {}
 
     NodeId getId() const { return id; }
+    void *getIdAsPointer() const { return (void *)(uintptr_t)(uint64_t)(id); } // this is necessary for using ImGui::PushID()
     PinId getPinId(std::string_view pinKey);
     GraphElementId getMaxElementId() const;
 

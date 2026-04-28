@@ -9,23 +9,24 @@ namespace ne = ax::NodeEditor;
 
 namespace Mirael::NodeTypes
 {
+
 void Comment::onDeserialize(const nlohmann::json &j)
 {
     if (!j.empty())
-        comment = j["comment"];
+        comment = j["comment"].get<std::string>();
 }
 
-void Comment::onInit()
-{
-    label = std::format("###comment{}", getId());
-}
+void Comment::onInit() {}
 
 void Comment::onShow()
 {
     ne::BeginNode(getId());
+    ImGui::PushID(getIdAsPointer());
     ImGui::Text("Comment:");
     ImGui::SameLine();
-    ImGui::InputText(label.c_str(), &comment);
+    ImGui::SetNextItemWidth(50.0f * ImGui::CalcTextSize("W").x);
+    ImGui::InputText("###comment", &comment);
+    ImGui::PopID();
     ne::EndNode();
 }
 

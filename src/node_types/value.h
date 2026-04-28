@@ -5,10 +5,10 @@
 namespace Mirael::NodeTypes
 {
 
-class Comment : public Node
+class Value : public Node
 {
 public:
-    static const char *typeName() { return "comment"; }
+    static const char *typeName() { return "value"; }
 
     virtual void onDeserialize(const nlohmann::json &j);
     void onInit() override;
@@ -16,7 +16,8 @@ public:
     virtual void onSerialize(nlohmann::json &j) const;
 
 private:
-    std::string comment;
+    std::string value;
+    PinId outPinId{};
 };
 
 }; // namespace Mirael::NodeTypes

@@ -21,13 +21,13 @@ void Script::onShow()
     ne::BeginNode(getId());
     ImGui::Text("Script");
     ne::BeginPin(inPinId1, ne::PinKind::Input);
-    ImGui::Text("-> In1");
+    ImGui::Text("-> in1");
     ne::EndPin();
     ne::BeginPin(inPinId2, ne::PinKind::Input);
-    ImGui::Text("-> In2");
+    ImGui::Text("-> in2");
     ne::EndPin();
     ne::BeginPin(outPinId, ne::PinKind::Output);
-    ImGui::Text("Out ->");
+    ImGui::Text("out ->");
     ne::EndPin();
     ne::EndNode();
 }
