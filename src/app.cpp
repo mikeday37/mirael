@@ -644,9 +644,12 @@ vk::SurfaceFormatKHR App::chooseSwapSurfaceFormat(std::vector<vk::SurfaceFormatK
 
 vk::PresentModeKHR App::chooseSwapPresentMode(std::vector<vk::PresentModeKHR> const &availablePresentModes)
 {
+    /* TOOD: consider making eMailbox a user option when available
     bool isMailboxAvailable =
         std::ranges::any_of(availablePresentModes, [](const auto value) { return vk::PresentModeKHR::eMailbox == value; });
     return isMailboxAvailable ? vk::PresentModeKHR::eMailbox : vk::PresentModeKHR::eFifo;
+    */
+    return vk::PresentModeKHR::eFifo;
 }
 
 vk::Extent2D App::chooseSwapExtent(vk::SurfaceCapabilitiesKHR const &capabilities)
