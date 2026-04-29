@@ -41,14 +41,14 @@ private:
     // main data
     std::string name    = "Project";
     GraphId nextGraphId = 1;
-    std::unordered_map<GraphId, Graph> graphMap;
+    std::unordered_map<GraphId, std::unique_ptr<Graph>> graphMap;
 
     // graph management
-    Graph &addGraph(Graph &&graph);
+    Graph &addGraph(std::unique_ptr<Graph> &&graph);
     Graph &addNewGraph();
     void removeGraph(GraphId id);
-    Graph &getGraph(GraphId id) { return graphMap.at(id); }
-    const Graph &getGraph(GraphId id) const { return graphMap.at(id); }
+    Graph &getGraph(GraphId id) { return *graphMap.at(id); }
+    const Graph &getGraph(GraphId id) const { return *graphMap.at(id); }
 
     // interaction
     GraphId lastFocusedGraphId{};

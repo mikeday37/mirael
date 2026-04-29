@@ -23,15 +23,15 @@ class Graph
 public:
     explicit Graph(GraphId id) : id(id) {}
 
-    // forbid copy, allow move
+    // forbid copy, move
     Graph(const Graph &)            = delete;
     Graph &operator=(const Graph &) = delete;
-    Graph(Graph &&)                 = default;
-    Graph &operator=(Graph &&)      = default;
+    Graph(Graph &&)                 = delete;
+    Graph &operator=(Graph &&)      = delete;
 
     enum class ChangeImpact {
-        Name, // used if the name changed (may include other changes)
-        Other // used only if the name did not change
+        Name, // used if the name of the graph changed (may include other changes)
+        Other // used only if the name of the graph did not change
     };
     using ChangeCallback = std::function<void(ChangeImpact)>;
     ChangeCallback onModified;
@@ -40,7 +40,7 @@ public:
     std::string_view getName() const { return name; }
 
     void serialize(nlohmann::json &j) const;
-    static Graph deserialize(GraphId id, const nlohmann::json &j);
+    static std::unique_ptr<Graph> deserialize(GraphId id, const nlohmann::json &j);
 
     void setVisible(bool visible);
     bool isVisible() const { return visible; }
@@ -68,6 +68,8 @@ private:
         void operator()(EditorContext *context) const;
     };
     std::unique_ptr<EditorContext, EditorDeleter> context;
+    void initEditorContext();
+    void adjustEditorStyle();
 
     GraphElementId nextElementId = 1;
     std::unordered_map<NodeId, std::unique_ptr<Node>> nodes;

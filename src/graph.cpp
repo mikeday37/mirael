@@ -33,12 +33,12 @@ void Graph::serialize(nlohmann::json &j) const
     }
 }
 
-Graph Graph::deserialize(GraphId id, const nlohmann::json &j)
+std::unique_ptr<Graph> Graph::deserialize(GraphId id, const nlohmann::json &j)
 {
-    Graph graph(id);
-    graph.name = j["name"].get<std::string>();
-    graph.rebuildWindowName();
-    graph.visible = j["visible"].get<bool>();
+    auto graph = std::make_unique<Graph>(id);
+    graph->name = j["name"].get<std::string>();
+    graph->rebuildWindowName();
+    graph->visible = j["visible"].get<bool>();
 
     const auto &nodesObj = j.at("nodes");
     if (!nodesObj.is_object())
@@ -48,15 +48,14 @@ Graph Graph::deserialize(GraphId id, const nlohmann::json &j)
 
     for (const auto &[key, value] : nodesObj.items()) {
         GraphElementId id   = static_cast<GraphElementId>(std::stoull(key));
-        auto [it, inserted] = graph.nodes.try_emplace(id, Node::deserialize(graph, id, value));
+        auto [it, inserted] = graph->nodes.try_emplace(id, Node::deserialize(*graph, id, value));
         if (!inserted)
-            throw std::runtime_error(std::format("Node Id {} not inserted into Graph Id {} during deserialization.", id, graph.id));
+            throw std::runtime_error(std::format("Node Id {} not inserted into Graph Id {} during deserialization.", id, graph->id));
         auto maxElementIdInNode = it->second->getMaxElementId();
-        if (maxElementIdInNode > maxElementId)
-            maxElementId = maxElementIdInNode;
+        maxElementId            = std::max(maxElementId, maxElementIdInNode);
     }
 
-    graph.nextElementId = maxElementId + 1;
+    graph->nextElementId = maxElementId + 1;
 
     return graph;
 }
@@ -93,20 +92,15 @@ void Graph::showView()
     if (!visible)
         return;
 
-    if (!context) {
-        ne::Config config{};
-        settingsFileName        = std::format("node-editor-graph{}.json", id);
-        config.SettingsFile     = settingsFileName.c_str();
-        config.CanvasSizeMode   = ne::CanvasSizeMode::CenterOnly;
-        config.EnableSnapToGrid = false;
-        context.reset(ne::CreateEditor(&config));
-    }
+    if (!context)
+        initEditorContext();
 
     ImGui::SetNextWindowDockID(App::get().getDockspaceId(), ImGuiCond_FirstUseEver);
     if (ImGui::Begin(getWindowName().c_str(), &visible)) {
         if (ImGui::IsWindowFocused())
             Project::get().setLastFocusedGraphId(id);
         ne::SetCurrentEditor(&*context);
+        adjustEditorStyle();
         ne::Begin("Graph Editor");
 
         for (const auto &node : nodes | std::views::values)
@@ -145,6 +139,23 @@ void Graph::userCreateNode(const char *nodeTypeName)
 }
 
 void Graph::rebuildWindowName() { windowName = std::format("{}###graph{}", name, id); }
+
+void Graph::initEditorContext()
+{
+    ne::Config config{};
+    settingsFileName        = std::format("node-editor-graph{}.json", id);
+    config.SettingsFile     = settingsFileName.c_str();
+    config.CanvasSizeMode   = ne::CanvasSizeMode::CenterOnly;
+    config.EnableSnapToGrid = false;
+    context.reset(ne::CreateEditor(&config));
+}
+
+void Graph::adjustEditorStyle()
+{
+    auto &style                                = ne::GetStyle();
+    style.Colors[ne::StyleColor_HovNodeBorder] = ImColor(0, 0, 0, 0); // disable hover highlight
+    style.Colors[ne::StyleColor_SelNodeBorder] = ImColor(50, 176, 255, 255);
+}
 
 void Graph::EditorDeleter::operator()(EditorContext *context) const { ne::DestroyEditor(context); }
 

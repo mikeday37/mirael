@@ -115,7 +115,7 @@ void Project::showExplorer()
 void Project::showGraphs()
 {
     for (auto &[id, graph] : graphMap) {
-        graph.showView();
+        graph->showView();
     }
 }
 
@@ -130,15 +130,15 @@ Project &Project::get() { return App::get().getProject(); }
 void Project::createNodeInLastFocusedGraphIfVisible(const char *nodeTypeName)
 {
     auto it = graphMap.find(lastFocusedGraphId);
-    if (it != graphMap.end() && it->second.isVisible())
-        it->second.userCreateNode(nodeTypeName);
+    if (it != graphMap.end() && it->second->isVisible())
+        it->second->userCreateNode(nodeTypeName);
 }
 
-Graph &Project::addGraph(Graph &&graph)
+Graph &Project::addGraph(std::unique_ptr<Graph> &&graph)
 {
     auto id             = nextGraphId++;
     auto [it, inserted] = graphMap.emplace(id, std::move(graph));
-    Graph &storedGraph  = it->second;
+    Graph &storedGraph  = *it->second;
     watchGraphChanges(storedGraph);
     isModifiedFlag = true;
     orderDirty     = true;
@@ -148,7 +148,7 @@ Graph &Project::addGraph(Graph &&graph)
 Graph &Project::addNewGraph()
 {
     auto id      = nextGraphId;
-    Graph &graph = addGraph(Graph(id));
+    Graph &graph = addGraph(std::make_unique<Graph>(id));
     graph.rename(std::format("Graph {}", id));
     return graph;
 }
@@ -271,7 +271,7 @@ void Project::serialize(nlohmann::json &j) const
     j["graphs"] = json::object();
     for (const auto &[id, graph] : graphMap) {
         json graphJson;
-        graph.serialize(graphJson);
+        graph->serialize(graphJson);
         j["graphs"][std::to_string(id)] = graphJson;
     }
 }
@@ -292,16 +292,18 @@ Project Project::deserialize(const nlohmann::json &j)
         if (id > lastId)
             lastId = id;
     }
+
     project.nextGraphId    = lastId + 1;
     project.isModifiedFlag = false;
     project.orderDirty     = true;
+
     return project;
 }
 
 void Project::connectCallbacks()
 {
     for (auto &[id, graph] : graphMap)
-        watchGraphChanges(graph);
+        watchGraphChanges(*graph);
 }
 
 void Project::updateDisplayOrder()
@@ -317,7 +319,7 @@ void Project::updateDisplayOrder()
     }
 
     std::sort(displayOrder.begin(), displayOrder.end(),
-              [this](GraphId a, GraphId b) { return SI::natural::compare(graphMap.at(a).getName(), graphMap.at(b).getName()); });
+              [this](GraphId a, GraphId b) { return SI::natural::compare(graphMap.at(a)->getName(), graphMap.at(b)->getName()); });
 
     orderDirty = false;
 }

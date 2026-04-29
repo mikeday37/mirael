@@ -35,6 +35,11 @@ GraphElementId Node::getMaxElementId() const
         return std::max(id, std::ranges::max(pinKeyToId | std::views::values));
 }
 
+void Node::raiseModified()
+{
+    graph->raiseModified(Graph::ChangeImpact::Other);
+}
+
 void Node::init(Graph &owner, NodeId id, std::string_view nodeTypeName)
 {
     if (initialized)

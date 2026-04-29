@@ -19,7 +19,7 @@ private:
     bool enabled = true;
     bool dynamic = true;
     int inputCount = 2;
-    int manualChoice = 1;
+    int manualChoice = 0;
     PinId choicePinId{}, outPinId{};
     struct InputPin {
         int n;

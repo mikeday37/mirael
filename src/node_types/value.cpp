@@ -27,7 +27,8 @@ void Value::onShow()
     ImGui::Text("Value:");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(24.0f * ImGui::CalcTextSize("0").x);
-    ImGui::InputText("###value", &value);
+    if (ImGui::InputText("###value", &value))
+        raiseModified();
     ImGui::SameLine();
     ne::BeginPin(outPinId, ne::PinKind::Output);
     ImGui::Text("out ->");

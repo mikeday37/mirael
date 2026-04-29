@@ -22,10 +22,12 @@ void Comment::onShow()
 {
     ne::BeginNode(getId());
     ImGui::PushID(getIdAsPointer());
+    ImGui::AlignTextToFramePadding();
     ImGui::Text("Comment:");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(50.0f * ImGui::CalcTextSize("W").x);
-    ImGui::InputText("###comment", &comment);
+    if (ImGui::InputText("###comment", &comment))
+        raiseModified();
     ImGui::PopID();
     ne::EndNode();
 }

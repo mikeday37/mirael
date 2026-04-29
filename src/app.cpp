@@ -78,7 +78,10 @@ void App::preInitImGui()
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
-    io.Fonts->AddFontFromMemoryCompressedBase85TTF(Fonts::getInterRegularTtfBase85());
+    ImFontConfig fontConfig{};
+    fontConfig.OversampleH = 4;
+    fontConfig.OversampleV = 4;
+    io.Fonts->AddFontFromMemoryCompressedBase85TTF(Fonts::getInterRegularTtfBase85(), 0, &fontConfig);
 
     ImGui::StyleColorsDark();
 

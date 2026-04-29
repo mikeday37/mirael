@@ -99,6 +99,7 @@ set(IMGUI_INCLUDES
 set(INE_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/imgui-node-editor")
 file(GLOB INE_SOURCES
 	"${INE_SRC_DIR}/*.cpp"
+	"${INE_SRC_DIR}/utilities/*.cpp"
 )
 set_source_files_properties(${INE_SOURCES} PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
 set(INE_INCLUDES
