@@ -18,6 +18,9 @@ PinId Node::getPinId(std::string_view pinKey)
     if (it != pinKeyToId.end()) {
         return it->second;
     } else {
+        if (deserializing)
+            throw std::runtime_error(std::format(
+                "Node (id={}, type={}) attempted to access an unknown pin (key={}) during deserialization.", id, typeName, pinKey));
         PinId newId = static_cast<PinId>(graph->getNextElementId());
         pinKeyToId.emplace(std::string(pinKey), newId);
         return newId;
@@ -62,13 +65,21 @@ void Node::serialize(nlohmann::json &j) const
 
 std::unique_ptr<Node> Node::deserialize(Graph &owner, NodeId id, const nlohmann::json &j)
 {
-    auto typeName = j["type"].get<std::string>();
-    auto node     = App::get().nodeTypes().createNode(typeName);
+    auto typeName       = j["type"].get<std::string>();
+    auto node           = App::get().nodeTypes().createNode(typeName);
+    node->deserializing = true;
     for (const auto &[key, value] : j["pins"].items())
         node->pinKeyToId[key] = value.get<uint64_t>();
+    auto pinCountDeserialized = node->pinKeyToId.size();
     if (j.contains("config"))
         node->onDeserialize(j["config"]);
     node->init(owner, id, typeName);
+    auto pinCountInitialized = node->pinKeyToId.size();
+    if (pinCountDeserialized != pinCountInitialized)
+        throw std::runtime_error(
+            std::format("Node (id={}, type={}) deserialized with pin count mismatch (deserialized={}, initialized={}).", id,
+                        typeName.c_str(), pinCountDeserialized, pinCountInitialized));
+    node->deserializing = false;
     return node;
 }
 

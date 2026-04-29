@@ -42,6 +42,7 @@ private:
 
     void serialize(nlohmann::json &j) const;
     static std::unique_ptr<Node> deserialize(Graph &owner, NodeId id, const nlohmann::json &j);
+    bool deserializing = false;
 
     friend Graph;
 };
