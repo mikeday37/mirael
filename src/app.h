@@ -67,6 +67,8 @@ public:
     ImGuiID getDockspaceId() const { return dockspaceId; }
     const NodeTypeRegistry &nodeTypes() const { return nodeTypeRegistry; }
 
+    std::string getNewUuidAsString() const;
+
 private:
     static inline App *appInstance = nullptr;
     void showImGui();

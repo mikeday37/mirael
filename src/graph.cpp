@@ -23,6 +23,7 @@ void Graph::rename(std::string newName)
 
 void Graph::serialize(nlohmann::json &j) const
 {
+    j["uid"]     = uid;
     j["name"]    = name;
     j["visible"] = visible;
     j["nodes"]   = json::object();
@@ -33,9 +34,11 @@ void Graph::serialize(nlohmann::json &j) const
     }
 }
 
-std::unique_ptr<Graph> Graph::deserialize(GraphId id, const nlohmann::json &j)
+std::unique_ptr<Graph> Graph::deserialize(GraphId id, std::string_view uid, const nlohmann::json &j)
 {
-    auto graph = std::make_unique<Graph>(id);
+    assert(uid == j["uid"].get<std::string>()); // during deserialization, the uid is parsed by the Project in advance
+
+    auto graph  = std::make_unique<Graph>(id, uid);
     graph->name = j["name"].get<std::string>();
     graph->rebuildWindowName();
     graph->visible = j["visible"].get<bool>();
@@ -138,12 +141,12 @@ void Graph::userCreateNode(const char *nodeTypeName)
     raiseModified(ChangeImpact::Other);
 }
 
-void Graph::rebuildWindowName() { windowName = std::format("{}###graph{}", name, id); }
+void Graph::rebuildWindowName() { windowName = std::format("{}###graph-{}", name, uid); }
 
 void Graph::initEditorContext()
 {
     ne::Config config{};
-    settingsFileName        = std::format("node-editor-graph{}.json", id);
+    settingsFileName        = std::format("node-editor-graph-{}.json", uid);
     config.SettingsFile     = settingsFileName.c_str();
     config.CanvasSizeMode   = ne::CanvasSizeMode::CenterOnly;
     config.EnableSnapToGrid = false;

@@ -7,6 +7,7 @@
 #include <limits>
 #include <ranges>
 #include <stdexcept>
+#include <uuid.h>
 #include <vector>
 
 #include "imgui.h"
@@ -224,6 +225,8 @@ void App::showError(std::string message)
     // TODO: implement UI for this
     std::cerr << "Error: " << message << std::endl;
 }
+
+std::string App::getNewUuidAsString() const { return uuids::to_string(uuids::uuid_system_generator()()); }
 
 void App::showImGui()
 {

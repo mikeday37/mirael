@@ -23,6 +23,7 @@ endif()
 find_package(glfw3 3.4 CONFIG REQUIRED)
 find_package(glm 1.0 CONFIG REQUIRED)
 find_package(nlohmann_json 3.12 CONFIG REQUIRED)
+find_package(stduuid CONFIG REQUIRED)
 find_package(Vulkan 1.4 REQUIRED)
 
 
@@ -144,6 +145,7 @@ target_link_libraries(Mirael PRIVATE
 	glm::glm
 	nfd
 	nlohmann_json::nlohmann_json
+	stduuid
 	Vulkan::Vulkan
 	${NFDE_LIB_DEPENDENCIES}
 )
@@ -151,6 +153,7 @@ target_compile_definitions(Mirael PRIVATE
 	VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1
 	VULKAN_HPP_NO_STRUCT_CONSTRUCTORS=1
 	VULKAN_HPP_HANDLE_ERROR_OUT_OF_DATE_AS_SUCCESS
+	UUID_SYSTEM_GENERATOR=1
 )
 target_include_directories(Mirael PRIVATE
 	${MIRAEL_INCLUDES}

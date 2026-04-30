@@ -32,8 +32,9 @@ void Project::createNodeInLastFocusedGraphIfVisible(const char *nodeTypeName)
 
 Graph &Project::addNewGraph()
 {
+    auto uid            = App::get().getNewUuidAsString();
     auto id             = nextGraphId++;
-    auto [it, inserted] = graphMap.emplace(id, std::make_unique<Graph>(id));
+    auto [it, inserted] = graphMap.emplace(id, std::make_unique<Graph>(id, uid));
     Graph &storedGraph  = *it->second;
     watchGraphChanges(storedGraph);
     isModifiedFlag = true;
@@ -113,7 +114,8 @@ void Project::serialize(nlohmann::json &j) const
 
     for (const auto &[key, value] : graphsObj.items()) {
         GraphId id          = static_cast<GraphId>(std::stoull(key));
-        auto [it, inserted] = project->graphMap.try_emplace(id, Graph::deserialize(id, value));
+        auto uid            = value["uid"].get<std::string>();
+        auto [it, inserted] = project->graphMap.try_emplace(id, Graph::deserialize(id, uid, value));
         if (!inserted)
             throw std::runtime_error(std::format("Graph Id {} not inserted during deserialization.", id));
 

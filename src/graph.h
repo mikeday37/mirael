@@ -21,7 +21,7 @@ using EditorContext = ::ax::NodeEditor::EditorContext;
 class Graph
 {
 public:
-    explicit Graph(GraphId id) : id(id) {}
+    explicit Graph(GraphId id, std::string_view uid) : id(id), uid(uid) {}
 
     // forbid copy, move
     Graph(const Graph &)            = delete;
@@ -40,7 +40,7 @@ public:
     std::string_view getName() const { return name; }
 
     void serialize(nlohmann::json &j) const;
-    static std::unique_ptr<Graph> deserialize(GraphId id, const nlohmann::json &j);
+    static std::unique_ptr<Graph> deserialize(GraphId id, std::string_view uid, const nlohmann::json &j);
 
     void setVisible(bool visible);
     bool isVisible() const { return visible; }
@@ -57,6 +57,7 @@ public:
 
 private:
     GraphId id;
+    std::string uid;
     std::string name;
     bool visible = true;
 
