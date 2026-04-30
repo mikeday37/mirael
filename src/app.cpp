@@ -21,12 +21,18 @@
 #include "project_explorer.h"
 #include "util.h"
 
+#ifdef WIN32
+#include "os_win32.h"
+#endif
+
 #ifndef IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING
 #error "Dynamic rendering not supported."
 #endif
 
 namespace Mirael
 {
+
+//#define SHOW_DEBUG_TRIANGLE
 
 const std::vector<char const *> validationLayers         = {"VK_LAYER_KHRONOS_validation"};
 const std::vector<const char *> requiredDeviceExtensions = {vk::KHRSwapchainExtensionName};
@@ -101,6 +107,7 @@ void App::initWindow()
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
     if (mainWindowSettings.x) {
         glfwWindowHint(GLFW_POSITION_X, *mainWindowSettings.x);
@@ -119,6 +126,10 @@ void App::initWindow()
     if (window == NULL) {
         throw std::runtime_error("GLFW: failed to create main window.");
     }
+
+#ifdef WIN32
+    WindowsOnly::customizeMainWindow(window);
+#endif
 
     if (mainWindowSettings.fullscreen) {
         applyFullscreenSetting();
@@ -180,6 +191,11 @@ void App::mainLoop()
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
         drawFrame();
+
+        if (initialShowWindowPending) {
+            glfwShowWindow(window);
+            initialShowWindowPending = false;
+        }
     }
 }
 
@@ -948,11 +964,12 @@ void App::recordCommandBuffer(uint32_t imageIndex)
 
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *graphicsPipeline);
 
+#ifdef SHOW_DEBUG_TRIANGLE
     commandBuffer.setViewport(
         0, vk::Viewport(0.0f, 0.0f, static_cast<float>(swapchainExtent.width), static_cast<float>(swapchainExtent.height)));
     commandBuffer.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), swapchainExtent));
-
     commandBuffer.draw(3, 1, 0, 0);
+#endif
 
     auto drawData = ImGui::GetDrawData();
     ImGui_ImplVulkan_RenderDrawData(drawData, *commandBuffer);

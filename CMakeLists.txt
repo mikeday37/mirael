@@ -32,8 +32,7 @@ find_package(Vulkan 1.4 REQUIRED)
 #
 
 add_subdirectory("external/nfde")
-# TODO: will need to link differently depending on platform when supporting more than Windows
-set(NFDE_LIB_DEPENDENCIES ole32.lib uuid.lib shell32.lib)
+set(NFDE_LIB_DEPENDENCIES ole32.lib uuid.lib shell32.lib) # TODO: portability
 
 
 #
@@ -119,19 +118,25 @@ set(OTHER_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/external/other")
 # === Mirael ===
 #
 set(MIRAEL_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
+set(MIRAEL_RES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/res")
+set(MIRAEL_PCH "${MIRAEL_SRC_DIR}/pch.h")
+
 file(GLOB MIRAEL_SOURCES
 	"${MIRAEL_SRC_DIR}/*.cpp"
 	"${MIRAEL_SRC_DIR}/node_types/*.cpp"
+	"${MIRAEL_SRC_DIR}/os_specific/*.cpp"
 )
 set(MIRAEL_INCLUDES
 	"${MIRAEL_SRC_DIR}"
 	"${MIRAEL_SRC_DIR}/node_types"
+	"${MIRAEL_SRC_DIR}/os_specific"
+	"${MIRAEL_RES_DIR}/win32" # TODO: portability
 )
-set(MIRAEL_RES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/res")
 file(GLOB MIRAEL_EMBEDDED_RESOURCES
 	"${MIRAEL_RES_DIR}/fonts/*.cpp"
+	"${MIRAEL_RES_DIR}/win32/mirael.rc" # TODO: portability
 )
-set(MIRAEL_PCH "${MIRAEL_SRC_DIR}/pch.h")
+
 add_executable (Mirael
 	${MIRAEL_SOURCES}
 	${IMGUI_SOURCES}
@@ -148,6 +153,7 @@ target_link_libraries(Mirael PRIVATE
 	stduuid
 	Vulkan::Vulkan
 	${NFDE_LIB_DEPENDENCIES}
+	dwmapi.lib # TODO: portability
 )
 target_compile_definitions(Mirael PRIVATE
 	VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1

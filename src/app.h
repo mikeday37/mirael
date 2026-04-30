@@ -110,8 +110,11 @@ private:
     static void imGuiSettings_WriteAll(ImGuiContext *ctx, ImGuiSettingsHandler *handler, ImGuiTextBuffer *out_buf);
     static void *imGuiSettings_ReadOpen(ImGuiContext *ctx, ImGuiSettingsHandler *handler, const char *name);
     static void imGuiSettings_ReadLine(ImGuiContext *ctx, ImGuiSettingsHandler *handler, void *entry, const char *line);
+
+    // main window handling
     GLFWmonitor *getCurrentMonitor();
     bool togglingFullscreen = false;
+    bool initialShowWindowPending = true;
 
     //
     // GLFW setup, management and hooks
