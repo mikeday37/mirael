@@ -24,6 +24,7 @@
 
 #include "library.h"
 #include "project.h"
+#include "project_explorer.h"
 #include "registry.h"
 
 namespace Mirael
@@ -55,7 +56,8 @@ private:
     //
 public:
     static App &get() { return *appInstance; }
-    Project &getProject() { return project; }
+    void attemptReloadLastProject();
+    Project &getProject() { return projectExplorer.getProject(); }
     Library &getLibrary() { return library; }
     void exit();
     bool *getImGuiDemoFlag() { return &mainWindowSettings.demo; }
@@ -68,7 +70,7 @@ public:
 private:
     static inline App *appInstance = nullptr;
     void showImGui();
-    Project project;
+    ProjectExplorer projectExplorer;
     Library library;
     ImGuiID dockspaceId{};
 

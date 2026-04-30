@@ -17,6 +17,7 @@
 #include "app.h"
 #include "fonts.h"
 #include "nfd_shim.h"
+#include "project_explorer.h"
 #include "util.h"
 
 #ifndef IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING
@@ -70,8 +71,7 @@ void App::preInitImGui()
     ImGui::AddSettingsHandler(&settingsHandler);
     ImGui::LoadIniSettingsFromDisk(ImGui::GetIO().IniFilename);
 
-    if (mainWindowSettings.lastProjectPath)
-        project.resumeLastProject(*mainWindowSettings.lastProjectPath);
+    attemptReloadLastProject();
 
     auto &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
@@ -194,6 +194,19 @@ void App::cleanup()
     // the vulkan objects we created are all raii, so they take care of themselves.
 }
 
+void App::attemptReloadLastProject()
+{
+    if (!mainWindowSettings.lastProjectPath)
+        return;
+
+    const auto &filepath = *mainWindowSettings.lastProjectPath;
+
+    if (filepath.empty() || !std::filesystem::exists(filepath))
+        return;
+
+    projectExplorer.load(filepath);
+}
+
 void App::exit() { closeRequested = true; }
 
 void App::setDestructiveAction(std::string label, std::string message, std::function<void()> postConfirmAction,
@@ -221,15 +234,15 @@ void App::showImGui()
         ImGuiID leftBottomId{};
         ImGuiID leftId    = ImGui::DockBuilderSplitNode(dockspaceId, ImGuiDir_Left, 0.2f, nullptr, nullptr);
         ImGuiID leftTopId = ImGui::DockBuilderSplitNode(leftId, ImGuiDir_Up, 0.5f, nullptr, &leftBottomId);
-        ImGui::DockBuilderDockWindow(Project::explorerWindowName(), leftTopId);
+        ImGui::DockBuilderDockWindow(ProjectExplorer::explorerWindowName(), leftTopId);
         ImGui::DockBuilderDockWindow(Library::explorerWindowName(), leftBottomId);
         ImGui::DockBuilderFinish(dockspaceId);
     }
 
-    project.showExplorer();
+    projectExplorer.showExplorer();
     library.showExplorer();
 
-    project.showGraphs();
+    getProject().showGraphs();
 
     if (mainWindowSettings.demo) {
         ImGui::ShowDemoWindow(&mainWindowSettings.demo);
@@ -237,7 +250,7 @@ void App::showImGui()
 
     if (closeRequested) {
         closeRequested = false;
-        if (project.isModified()) {
+        if (getProject().isModified()) {
             setDestructiveAction(
                 "Exit with Unsaved Changes?", "Are you sure you want to discard all unsaved changes?  This cannot be undone.",
                 [this]() {
@@ -299,7 +312,7 @@ ImGuiSettingsHandler App::getImGuiSettingsHandler()
 void App::imGuiSettings_WriteAll(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *handler, ImGuiTextBuffer *out_buf)
 {
     App &app                               = *static_cast<App *>(handler->UserData);
-    app.mainWindowSettings.lastProjectPath = app.project.getLastFilePath();
+    app.mainWindowSettings.lastProjectPath = app.getProject().getLastFilepath();
     const auto &settings                   = app.mainWindowSettings;
 
     out_buf->appendf("[%s][MainWindow]\n", handler->TypeName);
