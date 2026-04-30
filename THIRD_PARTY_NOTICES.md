@@ -9,5 +9,6 @@ Portions of this software make use of the following third party libraries and re
 | Code | Native File Dialog Extended | https://github.com/btzy/nativefiledialog-extended | [zlib](https://github.com/btzy/nativefiledialog-extended/blob/master/LICENSE)           |
 | Code | NaturalSort                 | https://github.com/scopeInfinity/NaturalSort      | [MIT](https://github.com/scopeInfinity/NaturalSort/blob/master/LICENSE.md)              |
 | Code | nlohmann-json               | https://github.com/nlohmann/json                  | [MIT](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT)                        |
+| Code | stduuid                     | https://github.com/mariusbancila/stduuid          | [MIT](https://github.com/mariusbancila/stduuid/blob/master/LICENSE)                     |
 | Code | Vulkan Headers / SDK        | https://github.com/KhronosGroup/Vulkan-Headers    | [MIT / Apache-2.0](https://github.com/KhronosGroup/Vulkan-Headers/blob/main/LICENSE.md) |
 | Font | Inter-Regular TTF           | https://github.com/rsms/inter                     | [SIL Open Font License 1.1](https://github.com/rsms/inter/blob/master/LICENSE.txt)      |
