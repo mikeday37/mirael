@@ -120,6 +120,10 @@ void App::initWindow()
         throw std::runtime_error("GLFW: failed to create main window.");
     }
 
+    if (mainWindowSettings.fullscreen) {
+        applyFullscreenSetting();
+    }
+
     if (!glfwVulkanSupported()) {
         throw std::runtime_error("GLFW: Vulkan not supported.");
     }
@@ -209,6 +213,37 @@ void App::attemptReloadLastProject()
 }
 
 void App::exit() { closeRequested = true; }
+
+void App::applyFullscreenSetting()
+{
+    togglingFullscreen = true;
+
+    if (mainWindowSettings.fullscreen) {
+        auto *monitor           = getCurrentMonitor();
+        const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+        int monitorX, monitorY;
+        glfwGetMonitorPos(monitor, &monitorX, &monitorY);
+        glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_FALSE);
+        glfwSetWindowAttrib(window, GLFW_FLOATING, GLFW_TRUE);
+        glfwSetWindowMonitor(window, nullptr, monitorX, monitorY, mode->width, mode->height, mode->refreshRate);
+
+    } else {
+        const auto &s = mainWindowSettings;
+        glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_TRUE);
+        glfwSetWindowAttrib(window, GLFW_FLOATING, GLFW_FALSE);
+        if (s.maximized) {
+            glfwHideWindow(window);
+        }
+        glfwSetWindowMonitor(window, nullptr, *s.x, *s.y, *s.width, *s.height, GLFW_DONT_CARE);
+        if (s.maximized) {
+            glfwPollEvents();
+            glfwMaximizeWindow(window);
+            glfwShowWindow(window);
+        }
+    }
+
+    togglingFullscreen = false;
+}
 
 void App::setDestructiveAction(std::string label, std::string message, std::function<void()> postConfirmAction,
                                std::function<void()> postCancelAction)
@@ -324,6 +359,7 @@ void App::imGuiSettings_WriteAll(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *h
     if (settings.width && settings.height)
         out_buf->appendf("Size=%d,%d\n", *settings.width, *settings.height);
     out_buf->appendf("Maximized=%d\n", (int)settings.maximized);
+    out_buf->appendf("Fullscreen=%d\n", (int)settings.fullscreen);
     out_buf->appendf("ImGuiDemo=%d\n", (int)settings.demo);
     if (settings.lastProjectPath)
         out_buf->appendf("LastProjectPath=%s\n", settings.lastProjectPath->string().c_str());
@@ -341,7 +377,7 @@ void App::imGuiSettings_ReadLine(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *h
     App &app       = *static_cast<App *>(handler->UserData);
     auto &settings = app.mainWindowSettings;
 
-    int x, y, width, height, maximized, demo;
+    int x, y, width, height, maximized, fullscreen, demo;
     if (sscanf_s(line, "Pos=%d,%d", &x, &y) == 2) {
         settings.x = x;
         settings.y = y;
@@ -350,6 +386,8 @@ void App::imGuiSettings_ReadLine(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *h
         settings.height = height;
     } else if (sscanf_s(line, "Maximized=%d", &maximized) == 1) {
         settings.maximized = maximized != 0;
+    } else if (sscanf_s(line, "Fullscreen=%d", &fullscreen) == 1) {
+        settings.fullscreen = fullscreen != 0;
     } else if (sscanf_s(line, "ImGuiDemo=%d", &demo) == 1) {
         settings.demo = demo != 0;
     } else {
@@ -361,6 +399,38 @@ void App::imGuiSettings_ReadLine(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *h
     }
 }
 
+GLFWmonitor *App::getCurrentMonitor()
+{
+    int windowX, windowY, windowWidth, windowHeight;
+    glfwGetWindowPos(window, &windowX, &windowY);
+    glfwGetWindowSize(window, &windowWidth, &windowHeight);
+
+    int monitorCount;
+    GLFWmonitor **monitors = glfwGetMonitors(&monitorCount);
+    if (monitorCount < 1)
+        throw std::runtime_error(std::format("Unable to get monitor count.  GLFW returned: {}", monitorCount));
+
+    GLFWmonitor *bestMonitor = nullptr;
+    int maxOverlap           = 0;
+
+    for (int i : std::views::iota(0, monitorCount)) {
+        const GLFWvidmode *mode = glfwGetVideoMode(monitors[i]);
+        int monitorX, monitorY;
+        glfwGetMonitorPos(monitors[i], &monitorX, &monitorY);
+
+        int overlapX = std::max(0, std::min(windowX + windowWidth, monitorX + mode->width) - std::max(windowX, monitorX));
+        int overlapY = std::max(0, std::min(windowY + windowHeight, monitorY + mode->height) - std::max(windowY, monitorY));
+        int overlap  = overlapX * overlapY;
+
+        if (overlap > maxOverlap) {
+            maxOverlap  = overlap;
+            bestMonitor = monitors[i];
+        }
+    }
+
+    return bestMonitor ? bestMonitor : glfwGetPrimaryMonitor();
+}
+
 void App::frameBufferResizeCallback(GLFWwindow *window, int /*width*/, int /*height*/)
 {
     auto app                = reinterpret_cast<App *>(glfwGetWindowUserPointer(window));
@@ -369,9 +439,10 @@ void App::frameBufferResizeCallback(GLFWwindow *window, int /*width*/, int /*hei
 
 bool App::isWindowInSuperState(GLFWwindow *window)
 {
+    auto app       = reinterpret_cast<App *>(glfwGetWindowUserPointer(window));
     bool maximized = glfwGetWindowAttrib(window, GLFW_MAXIMIZED) != GLFW_FALSE;
     bool iconified = glfwGetWindowAttrib(window, GLFW_ICONIFIED) != GLFW_FALSE;
-    return maximized || iconified;
+    return maximized || iconified || app->mainWindowSettings.fullscreen || app->togglingFullscreen;
 }
 
 void App::windowPosCallback(GLFWwindow *window, int x, int y)

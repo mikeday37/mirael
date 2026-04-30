@@ -61,6 +61,9 @@ public:
     Library &getLibrary() { return library; }
     void exit();
     bool *getImGuiDemoFlag() { return &mainWindowSettings.demo; }
+    bool *getFullscreenFlag() { return &mainWindowSettings.fullscreen; }
+    void applyFullscreenSetting();
+    
     void setDestructiveAction(std::string label, std::string message, std::function<void()> postConfirmAction,
                               std::function<void()> postCancelAction = nullptr);
     void showError(std::string message);
@@ -99,14 +102,16 @@ private:
     //
     struct MainWindowSettings {
         std::optional<int> x, y, width, height; // screen coordinates
-        bool maximized, demo, firstRun;
+        bool maximized, fullscreen, demo, firstRun;
         std::optional<std::filesystem::path> lastProjectPath;
     };
-    MainWindowSettings mainWindowSettings = {.maximized = false, .demo = false, .firstRun = true};
+    MainWindowSettings mainWindowSettings = {.maximized = false, .fullscreen = false, .demo = false, .firstRun = true};
     ImGuiSettingsHandler getImGuiSettingsHandler();
     static void imGuiSettings_WriteAll(ImGuiContext *ctx, ImGuiSettingsHandler *handler, ImGuiTextBuffer *out_buf);
     static void *imGuiSettings_ReadOpen(ImGuiContext *ctx, ImGuiSettingsHandler *handler, const char *name);
     static void imGuiSettings_ReadLine(ImGuiContext *ctx, ImGuiSettingsHandler *handler, void *entry, const char *line);
+    GLFWmonitor *getCurrentMonitor();
+    bool togglingFullscreen = false;
 
     //
     // GLFW setup, management and hooks

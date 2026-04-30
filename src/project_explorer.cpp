@@ -48,7 +48,10 @@ void ProjectExplorer::showExplorer()
                 }
                 ImGui::EndMenu();
             }
-            if (ImGui::BeginMenu("Debug")) {
+            if (ImGui::BeginMenu("View")) {
+                if (ImGui::MenuItem("Fullscreen", nullptr, App::get().getFullscreenFlag())) {
+                    App::get().applyFullscreenSetting();
+                }
                 ImGui::MenuItem("Show Dear ImGui Demo", nullptr, App::get().getImGuiDemoFlag());
                 ImGui::EndMenu();
             }
