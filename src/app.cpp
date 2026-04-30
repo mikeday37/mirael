@@ -224,8 +224,7 @@ void App::applyFullscreenSetting()
         int monitorX, monitorY;
         glfwGetMonitorPos(monitor, &monitorX, &monitorY);
         glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_FALSE);
-        glfwSetWindowAttrib(window, GLFW_FLOATING, GLFW_TRUE);
-        glfwSetWindowMonitor(window, nullptr, monitorX, monitorY, mode->width, mode->height, mode->refreshRate);
+        glfwSetWindowMonitor(window, nullptr, monitorX, monitorY, mode->width, mode->height, GLFW_DONT_CARE);
 
     } else {
         const auto &s = mainWindowSettings;
