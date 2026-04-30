@@ -63,7 +63,7 @@ void ProjectExplorer::showExplorer()
         for (auto id : project->getGraphIdsInDisplayOrder()) {
             auto &graph = project->getGraph(id);
             auto name   = graph.getName();
-            if (renaming && renamingGraphId == id) {
+            if (renamingGraphId && *renamingGraphId == id) {
                 ImGui::TreeNodeEx("##renaming_item", leafFlags);
                 ImGui::SameLine();
                 ImGui::SetNextItemWidth(-FLT_MIN);
@@ -72,9 +72,9 @@ void ProjectExplorer::showExplorer()
                 if (ImGui::InputText("##rename", &renameBuffer,
                                      ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
                     graph.rename(renameBuffer);
-                    renaming = false;
+                    renamingGraphId.reset();
                 } else if (ImGui::IsKeyPressed(ImGuiKey_Escape) || (!firstRenameFrame && !ImGui::IsItemActive())) {
-                    renaming = false;
+                    renamingGraphId.reset();
                 }
                 firstRenameFrame = false;
             } else {
@@ -91,7 +91,6 @@ void ProjectExplorer::showExplorer()
                     }
                     ImGui::Separator();
                     if (ImGui::MenuItem("Rename")) {
-                        renaming         = true;
                         renamingGraphId  = id;
                         renameBuffer     = name;
                         firstRenameFrame = true;

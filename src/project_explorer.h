@@ -1,11 +1,9 @@
 #pragma once
 
 #include <filesystem>
-#include <map>
 #include <memory>
 #include <optional>
 #include <string>
-#include <unordered_map>
 
 #include "data.h"
 
@@ -47,9 +45,8 @@ private:
     void saveViaFileDialog();
 
     // graph renaming
-    bool renaming           = false;
+    std::optional<GraphId> renamingGraphId = ~0;
     bool firstRenameFrame   = false;
-    GraphId renamingGraphId = ~0;
     std::string renameBuffer;
 };
 
