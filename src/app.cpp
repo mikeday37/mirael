@@ -17,6 +17,7 @@
 
 #include "app.h"
 #include "fonts.h"
+#include "imguiex.h"
 #include "nfd_shim.h"
 #include "project_explorer.h"
 #include "util.h"
@@ -32,7 +33,7 @@
 namespace Mirael
 {
 
-//#define SHOW_DEBUG_TRIANGLE
+// #define SHOW_DEBUG_TRIANGLE
 
 const std::vector<char const *> validationLayers         = {"VK_LAYER_KHRONOS_validation"};
 const std::vector<const char *> requiredDeviceExtensions = {vk::KHRSwapchainExtensionName};
@@ -189,6 +190,8 @@ void App::finishInitImGui()
 void App::mainLoop()
 {
     while (!glfwWindowShouldClose(window)) {
+        ++metrics.mainLoopIteration;
+
         glfwPollEvents();
         drawFrame();
 
@@ -278,6 +281,15 @@ void App::showError(std::string message)
 
 std::string App::getNewUuidAsString() const { return uuids::to_string(uuids::uuid_system_generator()()); }
 
+void App::showDiagnosticRows()
+{
+    ImGuiEx::DiagnosticLabel("Main Loop Iteration");
+    ImGui::Text("%u", metrics.mainLoopIteration);
+
+    ImGuiEx::DiagnosticLabel("Swapchain Build Count");
+    ImGui::Text("%u", metrics.swapChainBuildCount);
+}
+
 void App::showImGui()
 {
     dockspaceId = ImGui::DockSpaceOverViewport(0, nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
@@ -285,8 +297,8 @@ void App::showImGui()
     if (mainWindowSettings.firstRun) {
         mainWindowSettings.firstRun = false;
         ImGuiID leftMiddleBottomId{}, leftBottomId{};
-        ImGuiID leftId    = ImGui::DockBuilderSplitNode(dockspaceId, ImGuiDir_Left, 0.2f, nullptr, nullptr);
-        ImGuiID leftTopId = ImGui::DockBuilderSplitNode(leftId, ImGuiDir_Up, 0.33f, nullptr, &leftMiddleBottomId);
+        ImGuiID leftId       = ImGui::DockBuilderSplitNode(dockspaceId, ImGuiDir_Left, 0.2f, nullptr, nullptr);
+        ImGuiID leftTopId    = ImGui::DockBuilderSplitNode(leftId, ImGuiDir_Up, 0.33f, nullptr, &leftMiddleBottomId);
         ImGuiID leftMiddleId = ImGui::DockBuilderSplitNode(leftMiddleBottomId, ImGuiDir_Up, 0.5f, nullptr, &leftBottomId);
         ImGui::DockBuilderDockWindow(ProjectExplorer::windowName(), leftTopId);
         ImGui::DockBuilderDockWindow(Library::windowName(), leftMiddleId);
@@ -407,7 +419,7 @@ void *App::imGuiSettings_ReadOpen(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *
 void App::imGuiSettings_ReadLine(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *handler, void *entry, const char *line)
 {
     assert(entry == handler->UserData);
-    App &app       = *static_cast<App *>(handler->UserData);
+    App &app  = *static_cast<App *>(handler->UserData);
     auto &mws = app.mainWindowSettings;
 
     int x, y, width, height, maximized, fullscreen, library, properties, settings, diagnostics, demo;
@@ -714,6 +726,8 @@ void App::createLogicalDevice()
 
 void App::createSwapchain()
 {
+    ++metrics.swapChainBuildCount;
+
     vk::SurfaceCapabilitiesKHR surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
     swapchainExtent                                = chooseSwapExtent(surfaceCapabilities);
     minImageCount                                  = chooseSwapMinImageCount(surfaceCapabilities);

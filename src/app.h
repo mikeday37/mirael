@@ -79,6 +79,12 @@ public:
 
     std::string getNewUuidAsString() const;
 
+    struct Metrics {
+        uint64_t mainLoopIteration, swapChainBuildCount;
+    };
+    Metrics metrics{};
+    void showDiagnosticRows();
+
 private:
     static inline App *appInstance = nullptr;
     void showImGui();

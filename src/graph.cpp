@@ -6,6 +6,7 @@
 
 #include "app.h"
 #include "graph.h"
+#include "imguiex.h"
 #include "registry.h"
 
 namespace ne = ax::NodeEditor;
@@ -139,6 +140,24 @@ void Graph::userCreateNode(const char *nodeTypeName)
     node->init(*this, id, nodeTypeName);
     nodes.emplace(id, std::move(node));
     raiseModified(ChangeImpact::Other);
+}
+
+void Graph::showDiagnosticRows()
+{
+    ImGuiEx::DiagnosticLabel("ID");
+    ImGui::Text("%u", id);
+
+    ImGuiEx::DiagnosticLabel("Name");
+    ImGui::TextUnformatted(name.c_str());
+
+    ImGuiEx::DiagnosticLabel("UID");
+    ImGui::TextUnformatted(uid.c_str());
+
+    ImGuiEx::DiagnosticLabel("Nodes");
+    ImGui::Text("%zu", nodes.size());
+
+    ImGuiEx::DiagnosticLabel("Links");
+    ImGui::Text("%zu", links.size());
 }
 
 void Graph::rebuildWindowName() { windowName = std::format("{}###graph-{}", name, uid); }

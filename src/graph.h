@@ -55,6 +55,8 @@ public:
 
     void userCreateNode(const char *typeName);
 
+    void showDiagnosticRows();
+
 private:
     GraphId id;
     std::string uid;
