@@ -6,6 +6,7 @@
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 
+#include <optional>
 #include <dwmapi.h>
 #include <windows.h>
 
@@ -15,18 +16,42 @@
 namespace Mirael::WindowsOnly
 {
 
+namespace
+{
+
+std::optional<HICON> hApplicationIcon{};
+
+void loadApplicationIcon()
+{
+    if (!hApplicationIcon) {
+        hApplicationIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ICON1));
+    }
+}
+
+void setWindowIcon(HWND hwnd)
+{
+    loadApplicationIcon();
+    if (hApplicationIcon && *hApplicationIcon != NULL) {
+        SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)*hApplicationIcon);
+        SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)*hApplicationIcon);
+    }
+}
+
+}; // namespace
+
 void customizeMainWindow(GLFWwindow *mainWindow)
 {
     HWND hwnd = glfwGetWin32Window(mainWindow);
-
-    HICON hIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ICON1));
-    if (hIcon) {
-        SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
-        SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
-    }
+    setWindowIcon(hwnd);
 
     BOOL useDarkMode = TRUE;
     DwmSetWindowAttribute(hwnd, 20, &useDarkMode, sizeof(useDarkMode));
+}
+
+void customizeSeparatedWindow(GLFWwindow *window)
+{
+    HWND hwnd = glfwGetWin32Window(window);
+    setWindowIcon(hwnd);
 }
 
 }; // namespace Mirael::WindowsOnly

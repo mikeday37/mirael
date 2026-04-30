@@ -8,6 +8,7 @@ namespace Mirael::WindowsOnly
 {
 
 void customizeMainWindow(GLFWwindow *mainWindow);
+void customizeSeparatedWindow(GLFWwindow *window);
 
 };
 

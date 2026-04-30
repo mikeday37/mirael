@@ -59,6 +59,8 @@ private:
     //
 public:
     static App &get() { return *appInstance; }
+    static App *fromWindow(GLFWwindow *window) { return static_cast<App *>(glfwGetWindowUserPointer(window)); }
+
     void attemptReloadLastProject();
     Project &getProject() { return projectExplorer.getProject(); }
     Library &getLibrary() { return library; }
@@ -80,7 +82,7 @@ public:
     std::string getNewUuidAsString() const;
 
     struct Metrics {
-        uint64_t mainLoopIteration, swapChainBuildCount;
+        uint64_t mainLoopIteration, swapChainBuildCount, platformWindowCreateCount, platformWindowDestroyCount, windowRefreshCount;
     };
     Metrics metrics{};
     void showDiagnosticRows();
@@ -135,9 +137,16 @@ private:
     static void imGuiSettings_ReadLine(ImGuiContext *ctx, ImGuiSettingsHandler *handler, void *entry, const char *line);
 
     // main window handling
+    static void imGuiPlatform_CreateWindow(ImGuiViewport *vp);
+    static void imGuiPlatform_DestroyWindow(ImGuiViewport *vp);
     GLFWmonitor *getCurrentMonitor();
     bool togglingFullscreen       = false;
     bool initialShowWindowPending = true;
+    struct BaseImGuiPlatformHandlers {
+        void (*Platform_CreateWindow)(ImGuiViewport *vp)  = nullptr;
+        void (*Platform_DestroyWindow)(ImGuiViewport *vp) = nullptr;
+    };
+    BaseImGuiPlatformHandlers baseImGuiPlatformHandlers{};
 
     //
     // GLFW setup, management and hooks

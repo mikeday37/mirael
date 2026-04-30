@@ -82,6 +82,7 @@ void App::preInitImGui()
     attemptReloadLastProject();
 
     auto &io = ImGui::GetIO();
+
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
@@ -185,6 +186,15 @@ void App::finishInitImGui()
     prci.pColorAttachmentFormats = &surfaceFormat;
 
     ImGui_ImplVulkan_Init(&initInfo);
+
+    auto &io = ImGui::GetIO();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        auto &platio                                     = ImGui::GetPlatformIO();
+        baseImGuiPlatformHandlers.Platform_CreateWindow  = platio.Platform_CreateWindow;
+        baseImGuiPlatformHandlers.Platform_DestroyWindow = platio.Platform_DestroyWindow;
+        platio.Platform_CreateWindow                     = imGuiPlatform_CreateWindow;
+        platio.Platform_DestroyWindow                    = imGuiPlatform_DestroyWindow;
+    }
 }
 
 void App::mainLoop()
@@ -288,6 +298,12 @@ void App::showDiagnosticRows()
 
     ImGuiEx::DiagnosticLabel("Swapchain Build Count");
     ImGui::Text("%u", metrics.swapChainBuildCount);
+
+    ImGuiEx::DiagnosticLabel("Platform Windows Created");
+    ImGui::Text("%u", metrics.platformWindowCreateCount);
+
+    ImGuiEx::DiagnosticLabel("Platform Windows Destroyed");
+    ImGui::Text("%u", metrics.platformWindowDestroyCount);
 }
 
 void App::showImGui()
@@ -452,6 +468,24 @@ void App::imGuiSettings_ReadLine(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *h
     }
 }
 
+void App::imGuiPlatform_CreateWindow(ImGuiViewport *vp)
+{
+    App &app = App::get();
+    app.metrics.platformWindowCreateCount++;
+    app.baseImGuiPlatformHandlers.Platform_CreateWindow(vp);
+
+#ifdef WIN32
+    WindowsOnly::customizeSeparatedWindow(static_cast<GLFWwindow *>(vp->PlatformHandle));
+#endif
+}
+
+void App::imGuiPlatform_DestroyWindow(ImGuiViewport *vp)
+{
+    App &app = App::get();
+    app.metrics.platformWindowDestroyCount++;
+    app.baseImGuiPlatformHandlers.Platform_DestroyWindow(vp);
+}
+
 GLFWmonitor *App::getCurrentMonitor()
 {
     int windowX, windowY, windowWidth, windowHeight;
@@ -486,15 +520,15 @@ GLFWmonitor *App::getCurrentMonitor()
 
 void App::frameBufferResizeCallback(GLFWwindow *window, int /*width*/, int /*height*/)
 {
-    auto app                = reinterpret_cast<App *>(glfwGetWindowUserPointer(window));
+    auto app = App::fromWindow(window);
     app->frameBufferResized = true;
 }
 
 bool App::isWindowInSuperState(GLFWwindow *window)
 {
-    auto app       = reinterpret_cast<App *>(glfwGetWindowUserPointer(window));
     bool maximized = glfwGetWindowAttrib(window, GLFW_MAXIMIZED) != GLFW_FALSE;
     bool iconified = glfwGetWindowAttrib(window, GLFW_ICONIFIED) != GLFW_FALSE;
+    auto app = App::fromWindow(window);
     return maximized || iconified || app->mainWindowSettings.fullscreen || app->togglingFullscreen;
 }
 
@@ -504,10 +538,7 @@ void App::windowPosCallback(GLFWwindow *window, int x, int y)
     if (isWindowInSuperState(window)) {
         return;
     }
-    auto app = reinterpret_cast<App *>(glfwGetWindowUserPointer(window));
-    if (!app) {
-        return;
-    }
+    auto app = App::fromWindow(window);
     app->mainWindowSettings.x = x;
     app->mainWindowSettings.y = y;
 }
@@ -518,29 +549,20 @@ void App::windowSizeCallback(GLFWwindow *window, int width, int height)
     if (isWindowInSuperState(window)) {
         return;
     }
-    auto app = reinterpret_cast<App *>(glfwGetWindowUserPointer(window));
-    if (!app) {
-        return;
-    }
+    auto app = App::fromWindow(window);
     app->mainWindowSettings.width  = width;
     app->mainWindowSettings.height = height;
 }
 
 void App::windowMaximizeCallback(GLFWwindow *window, int maximized)
 {
-    auto app = reinterpret_cast<App *>(glfwGetWindowUserPointer(window));
-    if (!app) {
-        return;
-    }
+    auto app = App::fromWindow(window);
     app->mainWindowSettings.maximized = maximized != GLFW_FALSE;
 }
 
 void App::windowCloseCallback(GLFWwindow *window)
 {
-    auto app = reinterpret_cast<App *>(glfwGetWindowUserPointer(window));
-    if (!app) {
-        return;
-    }
+    auto app = App::fromWindow(window);
     if (!app->closeConfirmed) {
         app->closeRequested = true;
         glfwSetWindowShouldClose(window, GLFW_FALSE);
