@@ -25,8 +25,8 @@ public:
 
     Project &getProject() { return *project; }
 
-    static const char *explorerWindowName() { return "Project Explorer"; }
-    void showExplorer();
+    static const char *windowName() { return "Project Explorer"; }
+    void show();
 
     void load(std::filesystem::path filepath);
 

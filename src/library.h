@@ -15,8 +15,8 @@ namespace Mirael
 class Library
 {
 public:
-    static const char *explorerWindowName() { return "Node Library"; }
-    void showExplorer();
+    static const char *windowName() { return "Node Library"; }
+    void show(bool &open);
 };
 
 }; // namespace Mirael

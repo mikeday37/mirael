@@ -6,9 +6,9 @@
 namespace Mirael
 {
 
-void Library::showExplorer()
+void Library::show(bool &open)
 {
-    if (ImGui::Begin(explorerWindowName())) {
+    if (ImGui::Begin(windowName(), &open)) {
         if (ImGui::TreeNodeEx("built-in", ImGuiTreeNodeFlags_DefaultOpen)) {
             const ImGuiTreeNodeFlags leafFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
             for (const char *name : App::get().nodeTypes().names()) {

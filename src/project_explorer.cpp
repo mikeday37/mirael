@@ -16,11 +16,11 @@ namespace Mirael
 namespace fs = std::filesystem;
 using json   = nlohmann::json;
 
-void ProjectExplorer::showExplorer()
+void ProjectExplorer::show()
 {
     auto windowFlags = ImGuiWindowFlags_MenuBar | (project->isModified() ? ImGuiWindowFlags_UnsavedDocument : 0);
 
-    if (ImGui::Begin(explorerWindowName(), nullptr, windowFlags)) {
+    if (ImGui::Begin(windowName(), nullptr, windowFlags)) {
 
         if (ImGui::BeginMenuBar()) {
             if (ImGui::BeginMenu("File")) {
@@ -49,9 +49,15 @@ void ProjectExplorer::showExplorer()
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("View")) {
+                ImGui::MenuItem("Node Library", nullptr, App::get().getLibraryFlag());
+                ImGui::MenuItem("Properties", nullptr, App::get().getPropertiesFlag());
+                ImGui::MenuItem("Settings", nullptr, App::get().getSettingsFlag());
+                ImGui::MenuItem("Diagnostics", nullptr, App::get().getDiagnosticsFlag());
+                ImGui::Separator();
                 if (ImGui::MenuItem("Fullscreen", nullptr, App::get().getFullscreenFlag())) {
                     App::get().applyFullscreenSetting();
                 }
+                ImGui::Separator();
                 ImGui::MenuItem("Show Dear ImGui Demo", nullptr, App::get().getImGuiDemoFlag());
                 ImGui::EndMenu();
             }

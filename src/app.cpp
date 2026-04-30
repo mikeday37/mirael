@@ -284,16 +284,30 @@ void App::showImGui()
 
     if (mainWindowSettings.firstRun) {
         mainWindowSettings.firstRun = false;
-        ImGuiID leftBottomId{};
+        ImGuiID leftMiddleBottomId{}, leftBottomId{};
         ImGuiID leftId    = ImGui::DockBuilderSplitNode(dockspaceId, ImGuiDir_Left, 0.2f, nullptr, nullptr);
-        ImGuiID leftTopId = ImGui::DockBuilderSplitNode(leftId, ImGuiDir_Up, 0.5f, nullptr, &leftBottomId);
-        ImGui::DockBuilderDockWindow(ProjectExplorer::explorerWindowName(), leftTopId);
-        ImGui::DockBuilderDockWindow(Library::explorerWindowName(), leftBottomId);
+        ImGuiID leftTopId = ImGui::DockBuilderSplitNode(leftId, ImGuiDir_Up, 0.33f, nullptr, &leftMiddleBottomId);
+        ImGuiID leftMiddleId = ImGui::DockBuilderSplitNode(leftMiddleBottomId, ImGuiDir_Up, 0.5f, nullptr, &leftBottomId);
+        ImGui::DockBuilderDockWindow(ProjectExplorer::windowName(), leftTopId);
+        ImGui::DockBuilderDockWindow(Library::windowName(), leftMiddleId);
+        ImGui::DockBuilderDockWindow(Properties::windowName(), leftBottomId);
         ImGui::DockBuilderFinish(dockspaceId);
     }
 
-    projectExplorer.showExplorer();
-    library.showExplorer();
+    projectExplorer.show();
+
+    if (mainWindowSettings.library) {
+        library.show(mainWindowSettings.library);
+    }
+    if (mainWindowSettings.properties) {
+        properties.show(mainWindowSettings.properties);
+    }
+    if (mainWindowSettings.settings) {
+        settings.show(mainWindowSettings.settings);
+    }
+    if (mainWindowSettings.diagnostics) {
+        diagnostics.show(mainWindowSettings.diagnostics);
+    }
 
     getProject().showGraphs();
 
@@ -375,6 +389,10 @@ void App::imGuiSettings_WriteAll(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *h
         out_buf->appendf("Size=%d,%d\n", *settings.width, *settings.height);
     out_buf->appendf("Maximized=%d\n", (int)settings.maximized);
     out_buf->appendf("Fullscreen=%d\n", (int)settings.fullscreen);
+    out_buf->appendf("Library=%d\n", (int)settings.library);
+    out_buf->appendf("Properties=%d\n", (int)settings.properties);
+    out_buf->appendf("Settings=%d\n", (int)settings.settings);
+    out_buf->appendf("Diagnostics=%d\n", (int)settings.diagnostics);
     out_buf->appendf("ImGuiDemo=%d\n", (int)settings.demo);
     if (settings.lastProjectPath)
         out_buf->appendf("LastProjectPath=%s\n", settings.lastProjectPath->string().c_str());
@@ -390,26 +408,34 @@ void App::imGuiSettings_ReadLine(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *h
 {
     assert(entry == handler->UserData);
     App &app       = *static_cast<App *>(handler->UserData);
-    auto &settings = app.mainWindowSettings;
+    auto &mws = app.mainWindowSettings;
 
-    int x, y, width, height, maximized, fullscreen, demo;
+    int x, y, width, height, maximized, fullscreen, library, properties, settings, diagnostics, demo;
     if (sscanf_s(line, "Pos=%d,%d", &x, &y) == 2) {
-        settings.x = x;
-        settings.y = y;
+        mws.x = x;
+        mws.y = y;
     } else if (sscanf_s(line, "Size=%d,%d", &width, &height) == 2) {
-        settings.width  = width;
-        settings.height = height;
+        mws.width  = width;
+        mws.height = height;
     } else if (sscanf_s(line, "Maximized=%d", &maximized) == 1) {
-        settings.maximized = maximized != 0;
+        mws.maximized = maximized != 0;
     } else if (sscanf_s(line, "Fullscreen=%d", &fullscreen) == 1) {
-        settings.fullscreen = fullscreen != 0;
+        mws.fullscreen = fullscreen != 0;
+    } else if (sscanf_s(line, "Library=%d", &library) == 1) {
+        mws.library = library != 0;
+    } else if (sscanf_s(line, "Properties=%d", &properties) == 1) {
+        mws.properties = properties != 0;
+    } else if (sscanf_s(line, "Settings=%d", &settings) == 1) {
+        mws.settings = settings != 0;
+    } else if (sscanf_s(line, "Diagnostics=%d", &diagnostics) == 1) {
+        mws.diagnostics = diagnostics != 0;
     } else if (sscanf_s(line, "ImGuiDemo=%d", &demo) == 1) {
-        settings.demo = demo != 0;
+        mws.demo = demo != 0;
     } else {
         std::string path;
         path.resize(strlen(line) + 1);
         if (sscanf_s(line, "LastProjectPath=%s", path.data(), (unsigned)path.size()) == 1) {
-            settings.lastProjectPath = path;
+            mws.lastProjectPath = path;
         }
     }
 }

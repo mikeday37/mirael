@@ -22,10 +22,13 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
+#include "diagnostics.h"
 #include "library.h"
 #include "project.h"
 #include "project_explorer.h"
+#include "properties.h"
 #include "registry.h"
+#include "settings.h"
 
 namespace Mirael
 {
@@ -60,10 +63,14 @@ public:
     Project &getProject() { return projectExplorer.getProject(); }
     Library &getLibrary() { return library; }
     void exit();
-    bool *getImGuiDemoFlag() { return &mainWindowSettings.demo; }
+    bool *getLibraryFlag() { return &mainWindowSettings.library; }
+    bool *getPropertiesFlag() { return &mainWindowSettings.properties; }
+    bool *getSettingsFlag() { return &mainWindowSettings.settings; }
+    bool *getDiagnosticsFlag() { return &mainWindowSettings.diagnostics; }
     bool *getFullscreenFlag() { return &mainWindowSettings.fullscreen; }
+    bool *getImGuiDemoFlag() { return &mainWindowSettings.demo; }
     void applyFullscreenSetting();
-    
+
     void setDestructiveAction(std::string label, std::string message, std::function<void()> postConfirmAction,
                               std::function<void()> postCancelAction = nullptr);
     void showError(std::string message);
@@ -77,6 +84,9 @@ private:
     void showImGui();
     ProjectExplorer projectExplorer;
     Library library;
+    Properties properties;
+    Settings settings;
+    Diagnostics diagnostics;
     ImGuiID dockspaceId{};
 
     // interaction
@@ -102,10 +112,17 @@ private:
     //
     struct MainWindowSettings {
         std::optional<int> x, y, width, height; // screen coordinates
-        bool maximized, fullscreen, demo, firstRun;
+        bool maximized, fullscreen, library, properties, settings, diagnostics, demo, firstRun;
         std::optional<std::filesystem::path> lastProjectPath;
     };
-    MainWindowSettings mainWindowSettings = {.maximized = false, .fullscreen = false, .demo = false, .firstRun = true};
+    MainWindowSettings mainWindowSettings = {.maximized   = false,
+                                             .fullscreen  = false,
+                                             .library     = true,
+                                             .properties  = true,
+                                             .settings    = false,
+                                             .diagnostics = false,
+                                             .demo        = false,
+                                             .firstRun    = true};
     ImGuiSettingsHandler getImGuiSettingsHandler();
     static void imGuiSettings_WriteAll(ImGuiContext *ctx, ImGuiSettingsHandler *handler, ImGuiTextBuffer *out_buf);
     static void *imGuiSettings_ReadOpen(ImGuiContext *ctx, ImGuiSettingsHandler *handler, const char *name);
@@ -113,7 +130,7 @@ private:
 
     // main window handling
     GLFWmonitor *getCurrentMonitor();
-    bool togglingFullscreen = false;
+    bool togglingFullscreen       = false;
     bool initialShowWindowPending = true;
 
     //
