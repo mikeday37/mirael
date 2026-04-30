@@ -44,6 +44,7 @@ public:
     void save(const std::filesystem::path &filepath);
     [[nodiscard]] static std::unique_ptr<Project> load(const std::filesystem::path &filepath);
     std::optional<std::filesystem::path> getLastFilepath() const { return lastFilepath; }
+    std::string getFileName() const {return fileName;}
 
 private:
     // main data
@@ -60,6 +61,8 @@ private:
 
     // serialization support
     std::optional<std::filesystem::path> lastFilepath;
+    std::string fileName = "unnamed project";
+    void storeFilepath(std::filesystem::path filepath);
     void serialize(nlohmann::json &j) const;
     [[nodiscard]] static std::unique_ptr<Project> deserialize(const nlohmann::json &j);
 

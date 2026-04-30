@@ -77,7 +77,8 @@ void Project::save(const std::filesystem::path &filepath)
     if (!o.good())
         throw std::runtime_error("Failed to write data to: " + filepath.string());
     isModifiedFlag = false;
-    lastFilepath   = filepath;
+    storeFilepath(filepath);
+
 }
 
 [[nodiscard]] std::unique_ptr<Project> Project::load(const std::filesystem::path &filepath)
@@ -89,8 +90,14 @@ void Project::save(const std::filesystem::path &filepath)
     i >> j;
     // TODO: catch parse errors and fail gracefully with user notice
     auto project          = deserialize(j);
-    project->lastFilepath = filepath;
+    project->storeFilepath(filepath);
     return project;
+}
+
+void Project::storeFilepath(std::filesystem::path filepath)
+{
+    lastFilepath = filepath;
+    fileName = filepath.filename().string();
 }
 
 void Project::serialize(nlohmann::json &j) const

@@ -59,51 +59,57 @@ void ProjectExplorer::showExplorer()
             ImGui::EndMenuBar();
         }
 
-        const ImGuiTreeNodeFlags leafFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-        for (auto id : project->getGraphIdsInDisplayOrder()) {
-            auto &graph = project->getGraph(id);
-            auto name   = graph.getName();
-            if (renamingGraphId && *renamingGraphId == id) {
-                ImGui::TreeNodeEx("##renaming_item", leafFlags);
-                ImGui::SameLine();
-                ImGui::SetNextItemWidth(-FLT_MIN);
-                if (firstRenameFrame)
-                    ImGui::SetKeyboardFocusHere();
-                if (ImGui::InputText("##rename", &renameBuffer,
-                                     ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
-                    graph.rename(renameBuffer);
-                    renamingGraphId.reset();
-                } else if (ImGui::IsKeyPressed(ImGuiKey_Escape) || (!firstRenameFrame && !ImGui::IsItemActive())) {
-                    renamingGraphId.reset();
-                }
-                firstRenameFrame = false;
-            } else {
-                ImGui::TreeNodeEx((void *)(intptr_t)id, leafFlags, "%.*s", name.size(), name.data());
-                if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-                    graph.activate();
-                }
-                if (ImGui::BeginPopupContextItem()) {
-                    if (ImGui::MenuItem("Show")) {
+        if (ImGui::TreeNodeEx(project->getFileName().c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal) && project->getLastFilepath()) {
+                ImGui::SetTooltip(project->getLastFilepath()->string().c_str());
+            }
+            const ImGuiTreeNodeFlags leafFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+            for (auto id : project->getGraphIdsInDisplayOrder()) {
+                auto &graph = project->getGraph(id);
+                auto name   = graph.getName();
+                if (renamingGraphId && *renamingGraphId == id) {
+                    ImGui::TreeNodeEx("##renaming_item", leafFlags);
+                    ImGui::SameLine();
+                    ImGui::SetNextItemWidth(-FLT_MIN);
+                    if (firstRenameFrame)
+                        ImGui::SetKeyboardFocusHere();
+                    if (ImGui::InputText("##rename", &renameBuffer,
+                                         ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
+                        graph.rename(renameBuffer);
+                        renamingGraphId.reset();
+                    } else if (ImGui::IsKeyPressed(ImGuiKey_Escape) || (!firstRenameFrame && !ImGui::IsItemActive())) {
+                        renamingGraphId.reset();
+                    }
+                    firstRenameFrame = false;
+                } else {
+                    ImGui::TreeNodeEx((void *)(intptr_t)id, leafFlags, "%.*s", name.size(), name.data());
+                    if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
                         graph.activate();
                     }
-                    if (ImGui::MenuItem("Hide")) {
-                        graph.setVisible(false);
+                    if (ImGui::BeginPopupContextItem()) {
+                        if (ImGui::MenuItem("Show")) {
+                            graph.activate();
+                        }
+                        if (ImGui::MenuItem("Hide")) {
+                            graph.setVisible(false);
+                        }
+                        ImGui::Separator();
+                        if (ImGui::MenuItem("Rename")) {
+                            renamingGraphId  = id;
+                            renameBuffer     = name;
+                            firstRenameFrame = true;
+                        }
+                        ImGui::Separator();
+                        if (ImGui::MenuItem("Delete")) {
+                            App::get().setDestructiveAction(
+                                "Delete Graph?", std::format("Delete graph \"{}\"?  This operation cannot be undone.", name),
+                                [this, id]() { project->removeGraph(id); });
+                        }
+                        ImGui::EndPopup();
                     }
-                    ImGui::Separator();
-                    if (ImGui::MenuItem("Rename")) {
-                        renamingGraphId  = id;
-                        renameBuffer     = name;
-                        firstRenameFrame = true;
-                    }
-                    ImGui::Separator();
-                    if (ImGui::MenuItem("Delete")) {
-                        App::get().setDestructiveAction("Delete Graph?",
-                                                        std::format("Delete graph \"{}\"?  This operation cannot be undone.", name),
-                                                        [this, id]() { project->removeGraph(id); });
-                    }
-                    ImGui::EndPopup();
                 }
             }
+            ImGui::TreePop();
         }
     }
     ImGui::End();
