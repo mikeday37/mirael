@@ -35,7 +35,6 @@ public:
     void createNodeInLastFocusedGraphIfVisible(const char *nodeTypeName);
 
     // graph management
-    Graph &addGraph(std::unique_ptr<Graph> &&graph);
     Graph &addNewGraph();
     void removeGraph(GraphId id);
     Graph &getGraph(GraphId id) { return *graphMap.at(id); }

@@ -30,23 +30,16 @@ void Project::createNodeInLastFocusedGraphIfVisible(const char *nodeTypeName)
         it->second->userCreateNode(nodeTypeName);
 }
 
-Graph &Project::addGraph(std::unique_ptr<Graph> &&graph)
+Graph &Project::addNewGraph()
 {
     auto id             = nextGraphId++;
-    auto [it, inserted] = graphMap.emplace(id, std::move(graph));
+    auto [it, inserted] = graphMap.emplace(id, std::make_unique<Graph>(id));
     Graph &storedGraph  = *it->second;
     watchGraphChanges(storedGraph);
     isModifiedFlag = true;
     orderDirty     = true;
+    storedGraph.rename(std::format("Graph {}", id));
     return storedGraph;
-}
-
-Graph &Project::addNewGraph()
-{
-    auto id      = nextGraphId;
-    Graph &graph = addGraph(std::make_unique<Graph>(id));
-    graph.rename(std::format("Graph {}", id));
-    return graph;
 }
 
 void Project::removeGraph(GraphId id)
