@@ -63,6 +63,13 @@ public:
     void RepositionNodes();
     void Reorient();
 
+    void showProperties();
+
+    enum SelectionStatus { None, SingleLink, SingleNode, Multiple };
+    static const char *to_string(SelectionStatus status);
+    SelectionStatus getSelectionStatus() const { return selectionStatus; }
+    Node *getSingleSelectedNode();
+
 private:
     GraphId id;
     std::string uid;
@@ -83,7 +90,7 @@ private:
     GraphElementId nextElementId = 1;
     std::unordered_map<NodeId, std::unique_ptr<Node>> nodes;
     std::unordered_map<LinkId, Link> links;
-    
+
     // editor wrangling
     struct CanvasOrientation {
         float zoom = 1.0f;
@@ -99,6 +106,11 @@ private:
     CanvasInfo canvasInfo{};
 
     static bool isOrientationChangeSignificant(CanvasOrientation a, CanvasOrientation b);
+
+    SelectionStatus selectionStatus = SelectionStatus::None;
+    std::optional<NodeId> selectedNodeId;
+    std::optional<LinkId> selectedLinkId;
+    void processSelectionState(); // called within ne::Begin()/::End()
 };
 
 }; // namespace Mirael

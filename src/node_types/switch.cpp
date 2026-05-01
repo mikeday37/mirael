@@ -30,8 +30,7 @@ void Switch::onInit()
     choicePinId = getPinId("choice");
     inputs.reserve(inputCount);
     for (int n : std::views::iota(1, inputCount + 1)) {
-        std::string key   = std::format("in{}", n);
-        inputs.emplace_back(n, getPinId(key), key);
+        addPin(n);
     }
     outPinId = getPinId("out");
 }
@@ -153,7 +152,49 @@ void Switch::onSerialize(nlohmann::json &j) const
     j["dynamic"] = dynamic;
     j["n"]       = inputCount;
     if (manualChoice != 0)
-        j["choice"]  = manualChoice;
+        j["choice"] = manualChoice;
+}
+
+void Switch::onShowProperties()
+{
+    bool changed = false;
+
+    int priorInputCount = inputCount;
+    ImGui::InputInt("Inputs", &inputCount);
+    inputCount = std::clamp(inputCount, 1, 100);
+    if (priorInputCount != inputCount) {
+        changed = true;
+        if (inputCount > priorInputCount)
+            expandInputs();
+        else {
+            assert(inputCount < priorInputCount);
+            inputs.resize(inputCount);
+        }
+    }
+
+    changed |= ImGui::Checkbox("Enabled", &enabled);
+    changed |= ImGui::Checkbox("Dynamic", &dynamic);
+
+    if (!dynamic)
+        changed |= ImGui::InputInt("Manual Choice", &manualChoice);
+
+    if (changed)
+        raiseModified();
+}
+
+void Switch::expandInputs()
+{
+    if (inputCount > inputs.size())
+        inputs.reserve(inputCount);
+
+    while (inputCount > inputs.size())
+        addPin(static_cast<int>(inputs.size()) + 1);
+}
+
+void Switch::addPin(int pinNumber)
+{
+    std::string key = std::format("in{}", pinNumber);
+    inputs.emplace_back(pinNumber, getPinId(key), key);
 }
 
 }; // namespace Mirael::NodeTypes

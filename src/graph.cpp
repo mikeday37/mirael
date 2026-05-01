@@ -1,5 +1,6 @@
 #include "pch.h"
 
+#include <cmath>
 #include <ranges>
 
 #include "imgui_node_editor.h"
@@ -28,11 +29,11 @@ void Graph::serialize(nlohmann::json &j) const
     j["name"]    = name;
     j["visible"] = visible;
 
-    j["x"] = canvasInfo.orientation.origin.x;
-    j["y"] = canvasInfo.orientation.origin.y;
+    j["x"]    = canvasInfo.orientation.origin.x;
+    j["y"]    = canvasInfo.orientation.origin.y;
     j["zoom"] = canvasInfo.orientation.zoom;
 
-    j["nodes"]   = json::object();
+    j["nodes"] = json::object();
     for (const auto &[id, node] : nodes) {
         json nodeJson;
         node->serialize(nodeJson);
@@ -51,7 +52,7 @@ std::unique_ptr<Graph> Graph::deserialize(GraphId id, std::string_view uid, cons
 
     graph->canvasInfo.orientation.origin.x = j["x"].get<float>();
     graph->canvasInfo.orientation.origin.y = j["y"].get<float>();
-    graph->canvasInfo.orientation.zoom = j["zoom"].get<float>();
+    graph->canvasInfo.orientation.zoom     = j["zoom"].get<float>();
 
     graph->pendingSetInitialCanvasOrientation = graph->canvasInfo.orientation;
 
@@ -120,7 +121,7 @@ void Graph::showView()
         adjustEditorStyle();
 
         if (pendingSetInitialCanvasOrientation) {
-            canvasInfo.orientation.zoom = pendingSetInitialCanvasOrientation->zoom;
+            canvasInfo.orientation.zoom   = pendingSetInitialCanvasOrientation->zoom;
             canvasInfo.orientation.origin = pendingSetInitialCanvasOrientation->origin;
             ne::SetInitialViewOrientation(pendingSetInitialCanvasOrientation->zoom, pendingSetInitialCanvasOrientation->origin);
             pendingSetInitialCanvasOrientation.reset();
@@ -133,19 +134,34 @@ void Graph::showView()
             pendingSetCanvasOrientation.reset();
         }
 
-        if (!ne::IsPendingInitialViewOrientation())
-        {
+        if (!ne::IsPendingInitialViewOrientation()) {
             for (const auto &node : nodes | std::views::values) {
 
+                auto priorPos = node->pos;
+
+                bool setPosThisFrame = false;
                 if (node->pendingSetPos) {
+                    setPosThisFrame = true;
                     ne::SetNodePosition(node->id, *node->pendingSetPos);
                     node->pendingSetPos.reset();
+                }
+
+                if (node->selectPending) {
+                    node->selectPending = false;
+                    if (ne::GetSelectedObjectCount() > 0)
+                        ne::ClearSelection();
+                    ne::SelectNode(static_cast<ne::NodeId>(node->id));
                 }
 
                 node->show();
 
                 node->pos = ne::GetNodePosition(node->id);
+
+                if (!setPosThisFrame && (node->pos.x != priorPos.x || node->pos.y != priorPos.y))
+                    raiseModified(ChangeImpact::Other);
             }
+
+            processSelectionState();
 
             if (ne::BeginCreate()) {
 
@@ -154,7 +170,7 @@ void Graph::showView()
                 ne::EndCreate();
             }
 
-            auto lastOrientation = canvasInfo.orientation;
+            auto lastOrientation   = canvasInfo.orientation;
             canvasInfo.orientation = {.zoom = ne::GetCurrentZoom(), .origin = ne::GetCurrentOrigin()};
             canvasInfo.mousePos    = ImGui::GetMousePos();
             ne::GetCurrentViewRect(&canvasInfo.viewRectMin, &canvasInfo.viewRectMax);
@@ -198,6 +214,7 @@ void Graph::userCreateNode(const char *nodeTypeName)
     auto node = App::get().nodeTypes().createNode(nodeTypeName);
     auto id   = static_cast<NodeId>(getNextElementId());
     node->init(*this, id, nodeTypeName);
+    node->select();
     node->setPos(getCanvasViewCenter());
     nodes.emplace(id, std::move(node));
     raiseModified(ChangeImpact::Other);
@@ -206,7 +223,7 @@ void Graph::userCreateNode(const char *nodeTypeName)
 void Graph::showDiagnosticRows()
 {
     ImGuiEx::DiagnosticLabel("ID");
-    ImGui::Text("%u", id);
+    ImGui::Text("%llu", id);
 
     ImGuiEx::DiagnosticLabel("Name");
     ImGui::TextUnformatted(name.c_str());
@@ -232,6 +249,21 @@ void Graph::showDiagnosticRows()
 
     ImGuiEx::DiagnosticLabel("Canvas Mouse Pos");
     ImGui::Text("%.3f, %.3f", canvasInfo.mousePos.x, canvasInfo.mousePos.y);
+
+    ImGuiEx::DiagnosticLabel("Selection Status");
+    ImGui::TextUnformatted(to_string(selectionStatus));
+
+    ImGuiEx::DiagnosticLabel("Selected NodeId", "Only populated if a single node is selected.");
+    if (selectedNodeId.has_value())
+        ImGui::Text("%llu", *selectedNodeId);
+    else
+        ImGui::TextDisabled("n/a");
+
+    ImGuiEx::DiagnosticLabel("Selected LinkId", "Only populated if a single link is selected.");
+    if (selectedLinkId.has_value())
+        ImGui::Text("%llu", *selectedLinkId);
+    else
+        ImGui::TextDisabled("n/a");
 }
 
 ImVec2 Graph::getCanvasViewCenter() const
@@ -246,9 +278,42 @@ void Graph::RepositionNodes()
         node->pendingSetPos = node->pos;
 }
 
-void Graph::Reorient()
+void Graph::Reorient() { pendingSetCanvasOrientation = canvasInfo.orientation; }
+
+void Graph::showProperties()
 {
-    pendingSetCanvasOrientation = canvasInfo.orientation;
+    Node *node = getSingleSelectedNode();
+    if (node)
+        node->onShowProperties();
+}
+
+const char *Graph::to_string(SelectionStatus status)
+{
+    switch (status) {
+    case SelectionStatus::None:
+        return "None";
+    case SelectionStatus::SingleNode:
+        return "Single Node";
+    case SelectionStatus::SingleLink:
+        return "Single Link";
+    case SelectionStatus::Multiple:
+        return "Multiple";
+    default:
+        return "(unknown)";
+    }
+}
+
+Node *Graph::getSingleSelectedNode()
+{
+    if (selectionStatus != SelectionStatus::SingleNode)
+        return nullptr;
+
+    auto nodeId = *selectedNodeId;
+    auto it     = nodes.find(nodeId);
+    if (it == nodes.end())
+        return nullptr;
+    else
+        return &*it->second;
 }
 
 void Graph::rebuildWindowName() { windowName = std::format("{}###graph-{}", name, uid); }
@@ -257,9 +322,9 @@ void Graph::initEditorContext()
 {
     editorId = std::format("Graph {} Editor", id);
     ne::Config config{};
-    config.SettingsFile     = nullptr;
-    config.CanvasSizeMode   = ne::CanvasSizeMode::CenterOnly;
-    config.EnableSnapToGrid = false;
+    config.SettingsFile      = nullptr;
+    config.CanvasSizeMode    = ne::CanvasSizeMode::CenterOnly;
+    config.EnableSnapToGrid  = false;
     config.EnablePersistence = false;
     context.reset(ne::CreateEditor(&config));
 }
@@ -273,7 +338,7 @@ void Graph::adjustEditorStyle()
 
 bool Graph::isOrientationChangeSignificant(CanvasOrientation a, CanvasOrientation b)
 {
-    const float zoomEpsilon = 1e-4f;
+    const float zoomEpsilon   = 1e-4f;
     const float scrollEpsilon = 1e-2f;
 
     if (fabs(a.zoom - b.zoom) > zoomEpsilon)
@@ -283,6 +348,33 @@ bool Graph::isOrientationChangeSignificant(CanvasOrientation a, CanvasOrientatio
         return true;
 
     return false;
+}
+
+void Graph::processSelectionState()
+{
+    ne::NodeId rawNodeId{};
+    ne::LinkId rawLinkId{};
+    int totalSelCount = ne::GetSelectedObjectCount();
+    int nodeSelCount  = ne::GetSelectedNodes(&rawNodeId, 1);
+    int linkSelCount  = ne::GetSelectedLinks(&rawLinkId, 1);
+    if (nodeSelCount > 0 && totalSelCount == 1) {
+        selectionStatus = SelectionStatus::SingleNode;
+        selectedNodeId  = static_cast<NodeId>(rawNodeId);
+        selectedLinkId.reset();
+    } else if (linkSelCount > 0 && totalSelCount == 1) {
+        selectionStatus = SelectionStatus::SingleLink;
+        selectedLinkId  = static_cast<LinkId>(rawLinkId);
+        selectedNodeId.reset();
+    } else if (totalSelCount == 0) {
+        selectionStatus = SelectionStatus::None;
+        selectedNodeId.reset();
+        selectedLinkId.reset();
+    } else {
+        assert(totalSelCount > 1);
+        selectionStatus = SelectionStatus::Multiple;
+        selectedNodeId.reset();
+        selectedLinkId.reset();
+    }
 }
 
 void Graph::EditorDeleter::operator()(EditorContext *context) const { ne::DestroyEditor(context); }

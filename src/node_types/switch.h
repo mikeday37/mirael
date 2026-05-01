@@ -10,15 +10,17 @@ class Switch : public Node
 public:
     static const char *typeName() { return "switch"; }
 
-    virtual void onDeserialize(const nlohmann::json &j);
+    void onDeserialize(const nlohmann::json &j) override;
     void onInit() override;
     void onShow() override;
-    virtual void onSerialize(nlohmann::json &j) const;
+    void onSerialize(nlohmann::json &j) const override;
+
+    void onShowProperties() override;
 
 private:
-    bool enabled = true;
-    bool dynamic = true;
-    int inputCount = 2;
+    bool enabled     = true;
+    bool dynamic     = true;
+    int inputCount   = 2;
     int manualChoice = 0;
     PinId choicePinId{}, outPinId{};
     struct InputPin {
@@ -27,6 +29,8 @@ private:
         std::string label;
     };
     std::vector<InputPin> inputs;
+    void expandInputs();
+    void addPin(int pinNumber); // 1-indexed
 };
 
 }; // namespace Mirael::NodeTypes

@@ -25,6 +25,8 @@ protected:
     virtual void onShow() = 0;
     virtual void onSerialize(nlohmann::json &j) const {}
 
+    virtual void onShowProperties() {}
+
     NodeId getId() const { return id; }
     void *getIdAsPointer() const { return (void *)(uintptr_t)(uint64_t)(id); } // this is necessary for using ImGui::PushID()
     PinId getPinId(std::string_view pinKey);
@@ -32,6 +34,7 @@ protected:
     void raiseModified();
 
     void setPos(ImVec2 newPos);
+    void select() { selectPending = true; }
 
 private:
     bool initialized = false;
@@ -49,6 +52,8 @@ private:
 
     ImVec2 pos;
     std::optional<ImVec2> pendingSetPos{};
+
+    bool selectPending = false;
 
     friend Graph;
 };
