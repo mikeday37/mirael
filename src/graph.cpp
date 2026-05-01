@@ -27,6 +27,11 @@ void Graph::serialize(nlohmann::json &j) const
     j["uid"]     = uid;
     j["name"]    = name;
     j["visible"] = visible;
+
+    j["x"] = canvasInfo.orientation.origin.x;
+    j["y"] = canvasInfo.orientation.origin.y;
+    j["zoom"] = canvasInfo.orientation.zoom;
+
     j["nodes"]   = json::object();
     for (const auto &[id, node] : nodes) {
         json nodeJson;
@@ -43,6 +48,12 @@ std::unique_ptr<Graph> Graph::deserialize(GraphId id, std::string_view uid, cons
     graph->name = j["name"].get<std::string>();
     graph->rebuildWindowName();
     graph->visible = j["visible"].get<bool>();
+
+    graph->canvasInfo.orientation.origin.x = j["x"].get<float>();
+    graph->canvasInfo.orientation.origin.y = j["y"].get<float>();
+    graph->canvasInfo.orientation.zoom = j["zoom"].get<float>();
+
+    graph->pendingSetInitialCanvasOrientation = graph->canvasInfo.orientation;
 
     const auto &nodesObj = j.at("nodes");
     if (!nodesObj.is_object())
@@ -101,14 +112,36 @@ void Graph::showView()
 
     ImGui::SetNextWindowDockID(App::get().getDockspaceId(), ImGuiCond_FirstUseEver);
     if (ImGui::Begin(getWindowName().c_str(), &visible)) {
+
         if (ImGui::IsWindowFocused())
             Project::get().setLastFocusedGraphId(id);
+
         ne::SetCurrentEditor(&*context);
         adjustEditorStyle();
-        ne::Begin("Graph Editor");
 
-        for (const auto &node : nodes | std::views::values)
+        if (pendingSetInitialCanvasOrientation) {
+            ne::SetInitialViewOrientation(pendingSetInitialCanvasOrientation->zoom, pendingSetInitialCanvasOrientation->origin);
+            pendingSetInitialCanvasOrientation.reset();
+        }
+
+        ne::Begin(editorId.c_str());
+
+        if (pendingSetCanvasOrientation) {
+            ne::SetViewOrientation(pendingSetCanvasOrientation->zoom, pendingSetCanvasOrientation->origin);
+            pendingSetCanvasOrientation.reset();
+        }
+
+        for (const auto &node : nodes | std::views::values) {
+
+            if (node->pendingSetPos) {
+                ne::SetNodePosition(node->id, *node->pendingSetPos);
+                node->pendingSetPos.reset();
+            }
+
             node->show();
+
+            node->pos = ne::GetNodePosition(node->id);
+        }
 
         if (ne::BeginCreate()) {
 
@@ -116,6 +149,25 @@ void Graph::showView()
 
             ne::EndCreate();
         }
+
+        canvasInfo.orientation = {.zoom = ne::GetCurrentZoom(), .origin = ne::GetCurrentOrigin()};
+        canvasInfo.mousePos    = ImGui::GetMousePos();
+        ne::GetCurrentViewRect(&canvasInfo.viewRectMin, &canvasInfo.viewRectMax);
+
+        ne::Suspend();
+
+        if (ne::ShowBackgroundContextMenu()) {
+            ImGui::OpenPopup("Background Menu");
+        }
+
+        if (ImGui::BeginPopup("Background Menu")) {
+            if (ImGui::MenuItem("Fit Content")) {
+                ne::NavigateToContent(1.0f);
+            }
+            ImGui::EndPopup();
+        }
+
+        ne::Resume();
 
         ne::End();
         ne::SetCurrentEditor(nullptr);
@@ -138,6 +190,7 @@ void Graph::userCreateNode(const char *nodeTypeName)
     auto node = App::get().nodeTypes().createNode(nodeTypeName);
     auto id   = static_cast<NodeId>(getNextElementId());
     node->init(*this, id, nodeTypeName);
+    node->setPos(getCanvasViewCenter());
     nodes.emplace(id, std::move(node));
     raiseModified(ChangeImpact::Other);
 }
@@ -158,17 +211,48 @@ void Graph::showDiagnosticRows()
 
     ImGuiEx::DiagnosticLabel("Links");
     ImGui::Text("%zu", links.size());
+
+    ImGuiEx::DiagnosticLabel("Canvas Zoom");
+    ImGui::Text("%.6f", canvasInfo.orientation.zoom);
+
+    ImGuiEx::DiagnosticLabel("Canvas Origin");
+    ImGui::Text("%.3f, %.3f", canvasInfo.orientation.origin.x, canvasInfo.orientation.origin.y);
+
+    ImGuiEx::DiagnosticLabel("Canvas View Rect");
+    ImGui::Text("(%.3f, %.3f) - (%.3f, %.3f)", //
+                canvasInfo.viewRectMin.x, canvasInfo.viewRectMin.y, canvasInfo.viewRectMax.x, canvasInfo.viewRectMax.y);
+
+    ImGuiEx::DiagnosticLabel("Canvas Mouse Pos");
+    ImGui::Text("%.3f, %.3f", canvasInfo.mousePos.x, canvasInfo.mousePos.y);
+}
+
+ImVec2 Graph::getCanvasViewCenter() const
+{
+    return ImVec2((canvasInfo.viewRectMin.x + canvasInfo.viewRectMax.x) / 2.0f, //
+                  (canvasInfo.viewRectMin.y + canvasInfo.viewRectMax.y) / 2.0f);
+}
+
+void Graph::RepositionNodes()
+{
+    for (auto &[id, node] : nodes)
+        node->pendingSetPos = node->pos;
+}
+
+void Graph::Reorient()
+{
+    pendingSetCanvasOrientation = canvasInfo.orientation;
 }
 
 void Graph::rebuildWindowName() { windowName = std::format("{}###graph-{}", name, uid); }
 
 void Graph::initEditorContext()
 {
+    editorId = std::format("Graph {} Editor", id);
     ne::Config config{};
-    settingsFileName        = std::format("node-editor-graph-{}.json", uid);
-    config.SettingsFile     = settingsFileName.c_str();
+    config.SettingsFile     = nullptr;
     config.CanvasSizeMode   = ne::CanvasSizeMode::CenterOnly;
     config.EnableSnapToGrid = false;
+    config.EnablePersistence = false;
     context.reset(ne::CreateEditor(&config));
 }
 
@@ -177,6 +261,11 @@ void Graph::adjustEditorStyle()
     auto &style                                = ne::GetStyle();
     style.Colors[ne::StyleColor_HovNodeBorder] = ImColor(0, 0, 0, 0); // disable hover highlight
     style.Colors[ne::StyleColor_SelNodeBorder] = ImColor(50, 176, 255, 255);
+}
+
+bool Graph::isOrientationChangeSignificant() const
+{
+    return false;
 }
 
 void Graph::EditorDeleter::operator()(EditorContext *context) const { ne::DestroyEditor(context); }

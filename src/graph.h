@@ -57,6 +57,12 @@ public:
 
     void showDiagnosticRows();
 
+    ImVec2 getCanvasViewCenter() const;
+
+    // temporary debug helpers - may be removed
+    void RepositionNodes();
+    void Reorient();
+
 private:
     GraphId id;
     std::string uid;
@@ -65,8 +71,8 @@ private:
 
     std::string windowName; // derived from id and name, but cached so it doesn't reallocate every frame
     void rebuildWindowName();
-    std::string settingsFileName; // must be cached or the pointer in editor config would dangle
 
+    std::string editorId;
     struct EditorDeleter {
         void operator()(EditorContext *context) const;
     };
@@ -77,6 +83,20 @@ private:
     GraphElementId nextElementId = 1;
     std::unordered_map<NodeId, std::unique_ptr<Node>> nodes;
     std::unordered_map<LinkId, Link> links;
+    
+    // editor wrangling
+    struct CanvasOrientation {
+        float zoom = 1.0f;
+        ImVec2 origin;
+    };
+    std::optional<CanvasOrientation> pendingSetCanvasOrientation{}, pendingSetInitialCanvasOrientation{};
+
+    struct CanvasInfo {
+        CanvasOrientation orientation;
+        ImVec2 mousePos;
+        ImVec2 viewRectMin, viewRectMax;
+    };
+    CanvasInfo canvasInfo{};
 };
 
 }; // namespace Mirael

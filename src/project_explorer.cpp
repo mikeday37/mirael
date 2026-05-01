@@ -63,6 +63,19 @@ void ProjectExplorer::show()
             }
             if (ImGui::BeginMenu("Help")) {
                 ImGui::MenuItem("About", nullptr, nullptr, false);
+                ImGui::Separator();
+                if (ImGui::MenuItem("Reorient Selected Graph")) {
+                    auto graph = project->getLastFocusedGraph();
+                    if (graph) {
+                        graph->Reorient();
+                    }
+                }
+                if (ImGui::MenuItem("Reposition Nodes in Selected Graph")) {
+                    auto graph = project->getLastFocusedGraph();
+                    if (graph) {
+                        graph->RepositionNodes();
+                    }
+                }
                 ImGui::EndMenu();
             }
             ImGui::EndMenuBar();

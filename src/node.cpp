@@ -40,6 +40,12 @@ void Node::raiseModified()
     graph->raiseModified(Graph::ChangeImpact::Other);
 }
 
+void Node::setPos(ImVec2 newPos)
+{
+    pendingSetPos = newPos;
+    raiseModified();
+}
+
 void Node::init(Graph &owner, NodeId id, std::string_view nodeTypeName)
 {
     if (initialized)
@@ -58,10 +64,15 @@ void Node::show() { onShow(); }
 void Node::serialize(nlohmann::json &j) const
 {
     j["type"]     = typeName;
+
     json pinsJson = json::object();
     for (const auto &[key, id] : pinKeyToId)
         pinsJson[key] = id;
     j["pins"]       = pinsJson;
+
+    j["x"] = pos.x;
+    j["y"] = pos.y;
+
     json configJson = json::object();
     onSerialize(configJson);
     if (!configJson.empty())
@@ -72,19 +83,30 @@ std::unique_ptr<Node> Node::deserialize(Graph &owner, NodeId id, const nlohmann:
 {
     auto typeName       = j["type"].get<std::string>();
     auto node           = App::get().nodeTypes().createNode(typeName);
+
     node->deserializing = true;
+
     for (const auto &[key, value] : j["pins"].items())
         node->pinKeyToId[key] = value.get<uint64_t>();
     auto pinCountDeserialized = node->pinKeyToId.size();
+
+    node->pos.x = j["x"].get<float>();
+    node->pos.y = j["y"].get<float>();
+
+    node->pendingSetPos = node->pos;
+
     if (j.contains("config"))
         node->onDeserialize(j["config"]);
     node->init(owner, id, typeName);
+
     auto pinCountInitialized = node->pinKeyToId.size();
     if (pinCountDeserialized != pinCountInitialized)
         throw std::runtime_error(
             std::format("Node (id={}, type={}) deserialized with pin count mismatch (deserialized={}, initialized={}).", id,
                         typeName.c_str(), pinCountDeserialized, pinCountInitialized));
+
     node->deserializing = false;
+
     return node;
 }
 
