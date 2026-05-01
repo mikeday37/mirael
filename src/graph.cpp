@@ -120,6 +120,8 @@ void Graph::showView()
         adjustEditorStyle();
 
         if (pendingSetInitialCanvasOrientation) {
+            canvasInfo.orientation.zoom = pendingSetInitialCanvasOrientation->zoom;
+            canvasInfo.orientation.origin = pendingSetInitialCanvasOrientation->origin;
             ne::SetInitialViewOrientation(pendingSetInitialCanvasOrientation->zoom, pendingSetInitialCanvasOrientation->origin);
             pendingSetInitialCanvasOrientation.reset();
         }
@@ -131,29 +133,35 @@ void Graph::showView()
             pendingSetCanvasOrientation.reset();
         }
 
-        for (const auto &node : nodes | std::views::values) {
+        if (!ne::IsPendingInitialViewOrientation())
+        {
+            for (const auto &node : nodes | std::views::values) {
 
-            if (node->pendingSetPos) {
-                ne::SetNodePosition(node->id, *node->pendingSetPos);
-                node->pendingSetPos.reset();
+                if (node->pendingSetPos) {
+                    ne::SetNodePosition(node->id, *node->pendingSetPos);
+                    node->pendingSetPos.reset();
+                }
+
+                node->show();
+
+                node->pos = ne::GetNodePosition(node->id);
             }
 
-            node->show();
+            if (ne::BeginCreate()) {
 
-            node->pos = ne::GetNodePosition(node->id);
+                // TODO: continue link implementation here
+
+                ne::EndCreate();
+            }
+
+            auto lastOrientation = canvasInfo.orientation;
+            canvasInfo.orientation = {.zoom = ne::GetCurrentZoom(), .origin = ne::GetCurrentOrigin()};
+            canvasInfo.mousePos    = ImGui::GetMousePos();
+            ne::GetCurrentViewRect(&canvasInfo.viewRectMin, &canvasInfo.viewRectMax);
+
+            if (isOrientationChangeSignificant(lastOrientation, canvasInfo.orientation))
+                raiseModified(ChangeImpact::Other);
         }
-
-        if (ne::BeginCreate()) {
-
-            // TODO: continue link implementation here
-
-            ne::EndCreate();
-        }
-
-        canvasInfo.orientation = {.zoom = ne::GetCurrentZoom(), .origin = ne::GetCurrentOrigin()};
-        canvasInfo.mousePos    = ImGui::GetMousePos();
-        ne::GetCurrentViewRect(&canvasInfo.viewRectMin, &canvasInfo.viewRectMax);
-
         ne::Suspend();
 
         if (ne::ShowBackgroundContextMenu()) {
@@ -263,8 +271,17 @@ void Graph::adjustEditorStyle()
     style.Colors[ne::StyleColor_SelNodeBorder] = ImColor(50, 176, 255, 255);
 }
 
-bool Graph::isOrientationChangeSignificant() const
+bool Graph::isOrientationChangeSignificant(CanvasOrientation a, CanvasOrientation b)
 {
+    const float zoomEpsilon = 1e-4f;
+    const float scrollEpsilon = 1e-2f;
+
+    if (fabs(a.zoom - b.zoom) > zoomEpsilon)
+        return true;
+
+    if (fabs(a.origin.x - b.origin.x) > scrollEpsilon || fabs(a.origin.y - b.origin.y) > scrollEpsilon)
+        return true;
+
     return false;
 }
 

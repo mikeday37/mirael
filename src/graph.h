@@ -97,6 +97,8 @@ private:
         ImVec2 viewRectMin, viewRectMax;
     };
     CanvasInfo canvasInfo{};
+
+    static bool isOrientationChangeSignificant(CanvasOrientation a, CanvasOrientation b);
 };
 
 }; // namespace Mirael
