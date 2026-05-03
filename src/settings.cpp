@@ -1,5 +1,7 @@
 #include "pch.h"
 
+#include "ine/utilities/style_editor.h"
+
 #include "app.h"
 #include "settings.h"
 
@@ -15,7 +17,14 @@ void Mirael::Settings::show(bool &open)
     ImGui::SetNextWindowDockID(App::get().getDockspaceId(), ImGuiCond_FirstUseEver);
     if (ImGui::Begin(windowName(), &open)) {
         if (ImGui::CollapsingHeader("Mirael Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::Separator();
         }
+
+        if (ImGui::CollapsingHeader("Node Editor Style", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ax::NodeEditor::Utilities::ShowStyleEditor();
+            ImGui::Separator();
+        }
+
         if (ImGui::CollapsingHeader("ImGui Style", ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::ShowStyleEditor();
         }
