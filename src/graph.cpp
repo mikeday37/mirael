@@ -222,44 +222,44 @@ void Graph::userCreateNode(const char *nodeTypeName)
 
 void Graph::showDiagnosticRows()
 {
-    ImGuiEx::DiagnosticLabel("ID");
+    ImGuiEx::RowLabel("ID");
     ImGui::Text("%llu", id);
 
-    ImGuiEx::DiagnosticLabel("Name");
+    ImGuiEx::RowLabel("Name");
     ImGui::TextUnformatted(name.c_str());
 
-    ImGuiEx::DiagnosticLabel("UID");
+    ImGuiEx::RowLabel("UID");
     ImGui::TextUnformatted(uid.c_str());
 
-    ImGuiEx::DiagnosticLabel("Nodes");
+    ImGuiEx::RowLabel("Nodes");
     ImGui::Text("%zu", nodes.size());
 
-    ImGuiEx::DiagnosticLabel("Links");
+    ImGuiEx::RowLabel("Links");
     ImGui::Text("%zu", links.size());
 
-    ImGuiEx::DiagnosticLabel("Canvas Zoom");
+    ImGuiEx::RowLabel("Canvas Zoom");
     ImGui::Text("%.6f", canvasInfo.orientation.zoom);
 
-    ImGuiEx::DiagnosticLabel("Canvas Origin");
+    ImGuiEx::RowLabel("Canvas Origin");
     ImGui::Text("%.3f, %.3f", canvasInfo.orientation.origin.x, canvasInfo.orientation.origin.y);
 
-    ImGuiEx::DiagnosticLabel("Canvas View Rect");
+    ImGuiEx::RowLabel("Canvas View Rect");
     ImGui::Text("(%.3f, %.3f) - (%.3f, %.3f)", //
                 canvasInfo.viewRectMin.x, canvasInfo.viewRectMin.y, canvasInfo.viewRectMax.x, canvasInfo.viewRectMax.y);
 
-    ImGuiEx::DiagnosticLabel("Canvas Mouse Pos");
+    ImGuiEx::RowLabel("Canvas Mouse Pos");
     ImGui::Text("%.3f, %.3f", canvasInfo.mousePos.x, canvasInfo.mousePos.y);
 
-    ImGuiEx::DiagnosticLabel("Selection Status");
+    ImGuiEx::RowLabel("Selection Status");
     ImGui::TextUnformatted(to_string(selectionStatus));
 
-    ImGuiEx::DiagnosticLabel("Selected NodeId", "Only populated if a single node is selected.");
+    ImGuiEx::RowLabel("Selected NodeId", "Only populated if a single node is selected.");
     if (selectedNodeId.has_value())
         ImGui::Text("%llu", *selectedNodeId);
     else
         ImGui::TextDisabled("n/a");
 
-    ImGuiEx::DiagnosticLabel("Selected LinkId", "Only populated if a single link is selected.");
+    ImGuiEx::RowLabel("Selected LinkId", "Only populated if a single link is selected.");
     if (selectedLinkId.has_value())
         ImGui::Text("%llu", *selectedLinkId);
     else

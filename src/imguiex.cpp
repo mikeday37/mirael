@@ -7,7 +7,7 @@
 namespace Mirael::ImGuiEx
 {
 
-void DiagnosticLabel(const char *labelText, const char *toolTip)
+void RowLabel(const char *labelText, const char *toolTip)
 {
     ImGui::TableNextRow();
     ImGui::TableNextColumn();

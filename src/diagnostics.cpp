@@ -36,10 +36,10 @@ void Mirael::Diagnostics::show(bool &open)
         if (ImGui::CollapsingHeader("ImGui IO", ImGuiTreeNodeFlags_DefaultOpen)) {
             if (ImGui::BeginTable("##diags", 2, tableFlags)) {
 
-                ImGuiEx::DiagnosticLabel("Mouse X");
+                ImGuiEx::RowLabel("Mouse X");
                 ImGui::Text("%.0f", io.MousePos.x);
 
-                ImGuiEx::DiagnosticLabel("Mouse Y");
+                ImGuiEx::RowLabel("Mouse Y");
                 ImGui::Text("%.0f", io.MousePos.y);
 
                 ImGui::EndTable();
@@ -48,19 +48,19 @@ void Mirael::Diagnostics::show(bool &open)
         if (ImGui::CollapsingHeader("ImGui Metrics", ImGuiTreeNodeFlags_DefaultOpen)) {
             if (ImGui::BeginTable("##diags", 2, tableFlags)) {
 
-                ImGuiEx::DiagnosticLabel("Framerate", "Average of last 60 frames.");
+                ImGuiEx::RowLabel("Framerate", "Average of last 60 frames.");
                 ImGui::Text("%.1f", io.Framerate);
 
-                ImGuiEx::DiagnosticLabel("Active Windows");
+                ImGuiEx::RowLabel("Active Windows");
                 ImGui::Text("%d", io.MetricsActiveWindows);
 
-                ImGuiEx::DiagnosticLabel("Render Windows");
+                ImGuiEx::RowLabel("Render Windows");
                 ImGui::Text("%d", io.MetricsRenderWindows);
 
-                ImGuiEx::DiagnosticLabel("Render Vertices");
+                ImGuiEx::RowLabel("Render Vertices");
                 ImGui::Text("%d", io.MetricsRenderVertices);
 
-                ImGuiEx::DiagnosticLabel("Render Indices");
+                ImGuiEx::RowLabel("Render Indices");
                 ImGui::Text("%d", io.MetricsRenderIndices);
 
                 ImGui::EndTable();

@@ -293,16 +293,16 @@ std::string App::getNewUuidAsString() const { return uuids::to_string(uuids::uui
 
 void App::showDiagnosticRows()
 {
-    ImGuiEx::DiagnosticLabel("Main Loop Iteration");
+    ImGuiEx::RowLabel("Main Loop Iteration");
     ImGui::Text("%u", metrics.mainLoopIteration);
 
-    ImGuiEx::DiagnosticLabel("Swapchain Build Count");
+    ImGuiEx::RowLabel("Swapchain Build Count");
     ImGui::Text("%u", metrics.swapChainBuildCount);
 
-    ImGuiEx::DiagnosticLabel("Platform Windows Created");
+    ImGuiEx::RowLabel("Platform Windows Created");
     ImGui::Text("%u", metrics.platformWindowCreateCount);
 
-    ImGuiEx::DiagnosticLabel("Platform Windows Destroyed");
+    ImGuiEx::RowLabel("Platform Windows Destroyed");
     ImGui::Text("%u", metrics.platformWindowDestroyCount);
 }
 
