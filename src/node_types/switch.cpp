@@ -3,8 +3,8 @@
 #include <utility>
 
 #include "imgui.h"
-#include "imgui_node_editor.h"
-#include "utilities/widgets.h"
+#include "ine/imgui_node_editor.h"
+#include "ine/utilities/widgets.h"
 
 #include "switch.h"
 

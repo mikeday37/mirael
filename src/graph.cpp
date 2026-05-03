@@ -3,7 +3,7 @@
 #include <cmath>
 #include <ranges>
 
-#include "imgui_node_editor.h"
+#include "ine/imgui_node_editor.h"
 
 #include "app.h"
 #include "graph.h"

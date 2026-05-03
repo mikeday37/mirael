@@ -6,5 +6,5 @@
 	path = external/nfde
 	url = https://github.com/btzy/nativefiledialog-extended.git
 [submodule "external/imgui-node-editor"]
-	path = external/imgui-node-editor
+	path = external/imgui-node-editor/ine
 	url = https://github.com/mikeday37/mirael-node-editor.git

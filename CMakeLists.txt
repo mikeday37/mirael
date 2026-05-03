@@ -96,14 +96,26 @@ set(IMGUI_INCLUDES
 # === ImGui Node Editor ===
 #
 
-set(INE_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/imgui-node-editor")
+# due to the fluid nature of the imgui-node-editor fork we're using, we'll add an
+# extra folder between its root and its content, to help avoid path conflicts.
+#
+# so instead of:
+#    #include "imgui-node-editor.h"
+#    #include "utilities/widgets.h" // <- example weak name that could conflict
+#
+# we do this:
+#    #include "ine/imgui-node-editor.h"
+#    #include "ine/utilities/widgets.h"
+
+set(INE_PARENT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/imgui-node-editor")
+set(INE_SRC_DIR "${INE_PARENT_DIR}/ine")
 file(GLOB INE_SOURCES
 	"${INE_SRC_DIR}/*.cpp"
 	"${INE_SRC_DIR}/utilities/*.cpp"
 )
 set_source_files_properties(${INE_SOURCES} PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
 set(INE_INCLUDES
-	"${INE_SRC_DIR}"
+	"${INE_PARENT_DIR}"
 )
 
 
