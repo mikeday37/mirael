@@ -29,10 +29,6 @@ public:
     Graph(Graph &&)                 = delete;
     Graph &operator=(Graph &&)      = delete;
 
-    enum class ChangeImpact {
-        Name, // used if the name of the graph changed (may include other changes)
-        Other // used only if the name of the graph did not change
-    };
     using ChangeCallback = std::function<void(ChangeImpact)>;
     ChangeCallback onModified;
 

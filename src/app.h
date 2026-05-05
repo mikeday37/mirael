@@ -87,6 +87,24 @@ public:
     Metrics metrics{};
     void showDiagnosticRows();
 
+    struct ChangeTrackingSettings {
+        bool panZoom = false, moveNode = true, graphVisibility = false;
+    };
+    ChangeTrackingSettings &getChangeTrackingSettings() { return changeTrackingSettings; }
+
+    struct Style {
+        struct Values {
+            float pinIconSize = 20.0f;
+        };
+        struct Colors {
+            ImVec4 nodeHeaderFill = ImColor(66, 230, 218, 127);
+            ImVec4 pinIconColor   = ImColor(134, 134, 134, 255);
+        };
+        Values values{};
+        Colors colors{};
+    };
+    Style &getStyle() { return style; }
+
 private:
     static inline App *appInstance = nullptr;
     void showImGui();
@@ -96,10 +114,12 @@ private:
     Settings settings;
     Diagnostics diagnostics;
     ImGuiID dockspaceId{};
+    Style style{};
 
     // interaction
     bool closeRequested = false;
     bool closeConfirmed = false;
+    ChangeTrackingSettings changeTrackingSettings{};
 
     // registries
     NodeTypeRegistry nodeTypeRegistry;

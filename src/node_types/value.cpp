@@ -3,6 +3,7 @@
 #include "ine/imgui_node_editor.h"
 #include "misc/cpp/imgui_stdlib.h"
 
+#include "data.h"
 #include "value.h"
 
 namespace ne = ax::NodeEditor;
@@ -16,9 +17,7 @@ void Value::onDeserialize(const nlohmann::json &j)
         value = j["value"].get<std::string>();
 }
 
-void Value::onInit() {
-    outPinId = getPinId("out");
-}
+void Value::onInit() { outPinId = getPinId("out"); }
 
 void Value::onShow()
 {
@@ -28,7 +27,7 @@ void Value::onShow()
     ImGui::SameLine();
     ImGui::SetNextItemWidth(24.0f * ImGui::CalcTextSize("0").x);
     if (ImGui::InputText("###value", &value))
-        raiseModified();
+        raiseModified(ChangeImpact::NodeConfig);
     ImGui::SameLine();
     ne::BeginPin(outPinId, ne::PinKind::Output);
     ImGui::Text("out ->");

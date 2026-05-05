@@ -6,6 +6,7 @@
 #include "ine/imgui_node_editor.h"
 
 #include "app.h"
+#include "data.h"
 #include "graph.h"
 #include "imguiex.h"
 #include "registry.h"
@@ -20,7 +21,7 @@ void Graph::rename(std::string newName)
 {
     name = std::move(newName);
     rebuildWindowName();
-    raiseModified(ChangeImpact::Name);
+    raiseModified(ChangeImpact::GraphName);
 }
 
 void Graph::serialize(nlohmann::json &j) const
@@ -81,7 +82,7 @@ void Graph::setVisible(bool visible)
     auto oldValue = this->visible;
     this->visible = visible;
     if (oldValue != this->visible)
-        raiseModified(ChangeImpact::Other);
+        raiseModified(ChangeImpact::GraphVisibility);
 }
 
 void Graph::bringWindowForward() const
@@ -158,7 +159,7 @@ void Graph::showView()
                 node->pos = ne::GetNodePosition(node->id);
 
                 if (!setPosThisFrame && (node->pos.x != priorPos.x || node->pos.y != priorPos.y))
-                    raiseModified(ChangeImpact::Other);
+                    raiseModified(ChangeImpact::NodePosition);
             }
 
             processSelectionState();
@@ -176,7 +177,7 @@ void Graph::showView()
             ne::GetCurrentViewRect(&canvasInfo.viewRectMin, &canvasInfo.viewRectMax);
 
             if (isOrientationChangeSignificant(lastOrientation, canvasInfo.orientation))
-                raiseModified(ChangeImpact::Other);
+                raiseModified(ChangeImpact::GraphPanZoom);
         }
         ne::Suspend();
 
@@ -199,7 +200,7 @@ void Graph::showView()
     ImGui::End();
 
     if (!visible)
-        raiseModified(ChangeImpact::Other);
+        raiseModified(ChangeImpact::GraphVisibility);
 }
 
 void Graph::raiseModified(ChangeImpact impact) const
@@ -217,7 +218,7 @@ void Graph::userCreateNode(const char *nodeTypeName)
     node->select();
     node->setPos(getCanvasViewCenter());
     nodes.emplace(id, std::move(node));
-    raiseModified(ChangeImpact::Other);
+    raiseModified(ChangeImpact::AddNode);
 }
 
 void Graph::showDiagnosticRows()

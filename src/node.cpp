@@ -35,15 +35,15 @@ GraphElementId Node::getMaxElementId() const
         return std::max(id, std::ranges::max(pinKeyToId | std::views::values));
 }
 
-void Node::raiseModified()
+void Node::raiseModified(ChangeImpact impact)
 {
-    graph->raiseModified(Graph::ChangeImpact::Other);
+    graph->raiseModified(impact);
 }
 
 void Node::setPos(ImVec2 newPos)
 {
     pendingSetPos = newPos;
-    raiseModified();
+    raiseModified(ChangeImpact::NodePosition);
 }
 
 void Node::init(Graph &owner, NodeId id, std::string_view nodeTypeName)

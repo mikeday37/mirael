@@ -4,6 +4,7 @@
 #include "misc/cpp/imgui_stdlib.h"
 
 #include "comment.h"
+#include "data.h"
 
 namespace ne = ax::NodeEditor;
 
@@ -27,7 +28,7 @@ void Comment::onShow()
     ImGui::SameLine();
     ImGui::SetNextItemWidth(50.0f * ImGui::CalcTextSize("W").x);
     if (ImGui::InputText("###comment", &comment))
-        raiseModified();
+        raiseModified(ChangeImpact::NodeConfig);
     ImGui::PopID();
     ne::EndNode();
 }

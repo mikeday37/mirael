@@ -59,10 +59,41 @@ std::span<GraphId> Project::getGraphIdsInDisplayOrder()
 
 void Project::watchGraphChanges(Graph &graph)
 {
-    graph.onModified = [this](Graph::ChangeImpact impact) {
-        isModifiedFlag = true;
-        if (impact == Graph::ChangeImpact::Name)
-            orderDirty = true;
+    auto &changeTrackingSettings = App::get().getChangeTrackingSettings();
+    graph.onModified             = [this, &changeTrackingSettings](ChangeImpact impact) {
+        switch (impact) {
+
+        case ChangeImpact::GraphName:
+            isModifiedFlag = true;
+            orderDirty     = true;
+            break;
+
+        case ChangeImpact::GraphVisibility:
+            if (changeTrackingSettings.graphVisibility)
+                isModifiedFlag = true;
+            break;
+
+        case ChangeImpact::NodePosition:
+            if (changeTrackingSettings.moveNode)
+                isModifiedFlag = true;
+            break;
+
+        case ChangeImpact::GraphPanZoom:
+            if (changeTrackingSettings.panZoom)
+                isModifiedFlag = true;
+            break;
+
+        case ChangeImpact::AddNode:
+            [[fallthrough]];
+        case ChangeImpact::RemoveNode:
+            [[fallthrough]];
+        case ChangeImpact::NodeConfig:
+            isModifiedFlag = true;
+            break;
+
+        default:
+            throw new std::runtime_error("Unhandled change impact.");
+        }
     };
 }
 
@@ -78,7 +109,6 @@ void Project::save(const std::filesystem::path &filepath)
         throw std::runtime_error("Failed to write data to: " + filepath.string());
     isModifiedFlag = false;
     storeFilepath(filepath);
-
 }
 
 [[nodiscard]] std::unique_ptr<Project> Project::load(const std::filesystem::path &filepath)
@@ -89,7 +119,7 @@ void Project::save(const std::filesystem::path &filepath)
     json j;
     i >> j;
     // TODO: catch parse errors and fail gracefully with user notice
-    auto project          = deserialize(j);
+    auto project = deserialize(j);
     project->storeFilepath(filepath);
     return project;
 }
@@ -97,7 +127,7 @@ void Project::save(const std::filesystem::path &filepath)
 void Project::storeFilepath(std::filesystem::path filepath)
 {
     lastFilepath = filepath;
-    fileName = filepath.filename().string();
+    fileName     = filepath.filename().string();
 }
 
 void Project::serialize(nlohmann::json &j) const

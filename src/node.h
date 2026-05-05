@@ -31,7 +31,7 @@ protected:
     void *getIdAsPointer() const { return (void *)(uintptr_t)(uint64_t)(id); } // this is necessary for using ImGui::PushID()
     PinId getPinId(std::string_view pinKey);
     GraphElementId getMaxElementId() const;
-    void raiseModified();
+    void raiseModified(ChangeImpact impact);
 
     void setPos(ImVec2 newPos);
     void select() { selectPending = true; }

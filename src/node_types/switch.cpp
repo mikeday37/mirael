@@ -6,6 +6,8 @@
 #include "ine/imgui_node_editor.h"
 #include "ine/utilities/widgets.h"
 
+#include "app.h"
+#include "data.h"
 #include "switch.h"
 
 namespace ne = ax::NodeEditor;
@@ -39,7 +41,6 @@ namespace
 {
 
 ImVec2 HeaderMin, HeaderMax;
-ImU32 HeaderColor = IM_COL32(31, 191, 63, 127);
 
 void postHeader()
 {
@@ -53,7 +54,12 @@ void prePin(bool input = true)
     ne::PushStyleVar(ne::StyleVar_PivotSize, ImVec2(0, 0));
 }
 
-void drawPin() { ax::Widgets::Icon({24, 24}, ax::Drawing::IconType::Circle, false, {0.5f, 0.5f, 0.5f, 1}); }
+void drawPin()
+{
+    const auto &style = App::get().getStyle();
+    ax::Widgets::Icon({style.values.pinIconSize, style.values.pinIconSize}, ax::Drawing::IconType::Circle, false,
+                      style.colors.pinIconColor);
+}
 
 void postPin() { ne::PopStyleVar(2); }
 
@@ -61,6 +67,8 @@ void postNode(NodeId id)
 {
     if (!ImGui::IsItemVisible())
         return;
+
+    auto &style = App::get().getStyle();
 
     auto itemMin = ImGui::GetItemRectMin();
     auto itemMax = ImGui::GetItemRectMax();
@@ -73,7 +81,7 @@ void postNode(NodeId id)
 
     auto ul = ImVec2(itemMin.x + halfBorderWidth, itemMin.y + halfBorderWidth);
     auto lr = ImVec2(itemMax.x - halfBorderWidth, HeaderMax.y);
-    drawList->AddRectFilled(ul, lr, HeaderColor, ne::GetStyle().NodeRounding, ImDrawFlags_RoundCornersTop);
+    drawList->AddRectFilled(ul, lr, ImColor(style.colors.nodeHeaderFill), ne::GetStyle().NodeRounding, ImDrawFlags_RoundCornersTop);
 
     drawList->AddLine(ImVec2(ul.x, lr.y - 0.5f), ImVec2(lr.x - 1, lr.y - 0.5f), ImColor(255, 255, 255, 96 * alpha / (3 * 255)), 1.0f);
 }
@@ -86,6 +94,7 @@ void Switch::onShow()
 
     ne::BeginNode(getId());
     ImGui::PushID(getIdAsPointer());
+
     ImGui::Dummy({style.ItemInnerSpacing.x / 2.0f, 0});
     ImGui::SameLine();
     ImGui::TextUnformatted("Switch");
@@ -116,7 +125,7 @@ void Switch::onShow()
         else {
             if (ImGui::RadioButton(label.c_str(), manualChoice == n)) {
                 if (manualChoice != n)
-                    raiseModified();
+                    raiseModified(ChangeImpact::NodeConfig);
                 manualChoice = n;
             }
         }
@@ -133,7 +142,7 @@ void Switch::onShow()
             prePin(false);
             ne::BeginPin(outPinId, ne::PinKind::Output);
             if (ImGui::Checkbox("out", &enabled))
-                raiseModified();
+                raiseModified(ChangeImpact::NodeConfig);
             ImGui::SameLine();
             drawPin();
             ne::EndPin();
@@ -143,6 +152,7 @@ void Switch::onShow()
 
     ImGui::PopID();
     ne::EndNode();
+
     postNode(getId());
 }
 
@@ -179,7 +189,7 @@ void Switch::onShowProperties()
         changed |= ImGui::InputInt("Manual Choice", &manualChoice);
 
     if (changed)
-        raiseModified();
+        raiseModified(ChangeImpact::NodeConfig);
 }
 
 void Switch::expandInputs()
