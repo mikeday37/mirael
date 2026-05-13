@@ -162,11 +162,47 @@ void Graph::showView()
                     raiseModified(ChangeImpact::NodePosition);
             }
 
+            for (const auto &[linkId, link] : links) {
+                ne::Link(static_cast<ne::LinkId>(linkId), link.a.pin, link.b.pin);
+            }
+
             processSelectionState();
 
             if (ne::BeginCreate()) {
 
-                // TODO: continue link implementation here
+                ne::PinId startEditorPinId{}, endEditorPinId{};
+                if (ne::QueryNewLink(&startEditorPinId, &endEditorPinId)) {
+                    if (startEditorPinId && endEditorPinId && startEditorPinId != endEditorPinId) {
+                        PinId startPinId = static_cast<PinId>(startEditorPinId);
+                        PinId endPinId   = static_cast<PinId>(endEditorPinId);
+
+                        // for each pin id, we need to know: node id, and pin direction.
+                        // to accept, one pin must be output and one pin must be input, and they must be on different nodes
+
+                        auto startPinInfo = getPinInfo(startPinId);
+                        auto endPinInfo   = getPinInfo(endPinId);
+
+                        if (startPinInfo.direction == PinDirection::Input) {
+                            std::swap(startPinId, endPinId);
+                            std::swap(startPinInfo, endPinInfo);
+                        }
+
+                        bool valid = startPinInfo.direction == PinDirection::Output //
+                                     && endPinInfo.direction == PinDirection::Input //
+                                     && startPinInfo.nodeId != endPinInfo.nodeId;
+
+                        // additional constraint: inputs cannot have more than one link
+                        if (valid && !pinLinks.at(endPinId).empty())
+                            valid = false;
+
+                        if (!valid) {
+                            ne::RejectNewItem(ImColor(255, 0, 0), 2.0f);
+                        } else if (ne::AcceptNewItem()) {
+                            addLink({.a = PinRef{.node = startPinInfo.nodeId, .pin = startPinId},
+                                     .b = PinRef{.node = endPinInfo.nodeId, .pin = endPinId}});
+                        }
+                    }
+                }
 
                 ne::EndCreate();
             }
@@ -217,7 +253,7 @@ void Graph::userCreateNode(const char *nodeTypeName)
     node->init(*this, id, nodeTypeName);
     node->select();
     node->setPos(getCanvasViewCenter());
-    nodes.emplace(id, std::move(node));
+    nodes.try_emplace(id, std::move(node));
     raiseModified(ChangeImpact::AddNode);
 }
 
@@ -234,6 +270,9 @@ void Graph::showDiagnosticRows()
 
     ImGuiEx::RowLabel("Nodes");
     ImGui::Text("%zu", nodes.size());
+
+    ImGuiEx::RowLabel("Pins");
+    ImGui::Text("%zu", pins.size());
 
     ImGuiEx::RowLabel("Links");
     ImGui::Text("%zu", links.size());
@@ -317,6 +356,30 @@ Node *Graph::getSingleSelectedNode()
         return &*it->second;
 }
 
+void Graph::onPinAdded(NodeId nodeId, PinId pinId, PinConfig pinConfig)
+{
+    auto [it, inserted] = pins.try_emplace(pinId, PinInfo{.nodeId = nodeId, .direction = pinConfig.direction});
+    assert(inserted); // each add should actually insert
+    auto [it2, inserted2] = pinLinks.try_emplace(pinId);
+    assert(inserted2); // this should actually insert as well
+}
+
+void Graph::onPinRemoved(NodeId nodeId, PinId pinId)
+{
+    // remove all links involving pin
+    auto &linkSet = pinLinks.at(pinId);
+    while (!linkSet.empty())
+        removeLink(*linkSet.begin());
+
+    // remove the pin
+    auto it = pins.find(pinId);
+    assert(it->second.nodeId == nodeId); // removes should always correspond to the correct node
+    pins.erase(it);
+
+    // remove the pin link set
+    pinLinks.erase(pinId);
+}
+
 void Graph::rebuildWindowName() { windowName = std::format("{}###graph-{}", name, uid); }
 
 void Graph::initEditorContext()
@@ -335,6 +398,26 @@ void Graph::adjustEditorStyle()
     auto &style                                = ne::GetStyle();
     style.Colors[ne::StyleColor_HovNodeBorder] = ImColor(0, 0, 0, 0); // disable hover highlight
     style.Colors[ne::StyleColor_SelNodeBorder] = ImColor(50, 176, 255, 255);
+}
+
+void Graph::addLink(Link &&link)
+{
+    PinId pinA = link.a.pin, pinB = link.b.pin;
+    LinkId linkId = static_cast<LinkId>(getNextElementId());
+    links.try_emplace(linkId, std::move(link));
+    pinLinks.at(pinA).insert(linkId);
+    pinLinks.at(pinB).insert(linkId);
+}
+
+void Graph::removeLink(LinkId linkId)
+{
+    auto it = links.find(linkId);
+    if (it == links.end())
+        return;
+    const auto &link = it->second;
+    pinLinks.at(link.a.pin).erase(linkId);
+    pinLinks.at(link.b.pin).erase(linkId);
+    links.erase(it);
 }
 
 bool Graph::isOrientationChangeSignificant(CanvasOrientation a, CanvasOrientation b)

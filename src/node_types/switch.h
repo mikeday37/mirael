@@ -30,7 +30,10 @@ private:
     };
     std::vector<InputPin> inputs;
     void expandInputs();
-    void addPin(int pinNumber); // 1-indexed
+    void reduceInputs();
+    void addSwitchInputPin(int pinNumber);    // 1-indexed
+    void removeSwitchInputPin(int pinNumber); // 1-indexed
+    void handleToggleDynamic();
 };
 
 }; // namespace Mirael::NodeTypes

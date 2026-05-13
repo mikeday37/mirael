@@ -17,7 +17,7 @@ void Value::onDeserialize(const nlohmann::json &j)
         value = j["value"].get<std::string>();
 }
 
-void Value::onInit() { outPinId = getPinId("out"); }
+void Value::onInit() { outPinId = addPin("out", {.direction = PinDirection::Output}); }
 
 void Value::onShow()
 {

@@ -29,7 +29,10 @@ protected:
 
     NodeId getId() const { return id; }
     void *getIdAsPointer() const { return (void *)(uintptr_t)(uint64_t)(id); } // this is necessary for using ImGui::PushID()
-    PinId getPinId(std::string_view pinKey);
+
+    PinId addPin(std::string_view key, PinConfig config);
+    void removePin(std::string_view key);
+
     GraphElementId getMaxElementId() const;
     void raiseModified(ChangeImpact impact);
 
@@ -42,6 +45,7 @@ private:
     NodeId id;
     std::string typeName;
     std::unordered_map<std::string, PinId, TransparentStringHash, std::equal_to<>> pinKeyToId;
+    std::unordered_map<PinId, PinConfig> pinIdToConfig;
 
     void init(Graph &owner, NodeId id, std::string_view nodeTypeName);
     void show();

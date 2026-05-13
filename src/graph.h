@@ -66,6 +66,10 @@ public:
     SelectionStatus getSelectionStatus() const { return selectionStatus; }
     Node *getSingleSelectedNode();
 
+    // to be called only by base Node:
+    void onPinAdded(NodeId nodeId, PinId pinId, PinConfig pinConfig);
+    void onPinRemoved(NodeId nodeId, PinId pinId);
+
 private:
     GraphId id;
     std::string uid;
@@ -84,8 +88,17 @@ private:
     void adjustEditorStyle();
 
     GraphElementId nextElementId = 1;
+    struct PinInfo {
+        NodeId nodeId;
+        PinDirection direction;
+    };
     std::unordered_map<NodeId, std::unique_ptr<Node>> nodes;
     std::unordered_map<LinkId, Link> links;
+    std::unordered_map<PinId, PinInfo> pins;
+    std::unordered_map<PinId, std::unordered_set<LinkId>> pinLinks;
+    PinInfo getPinInfo(PinId pinId) const { return pins.at(pinId); }
+    void addLink(Link &&link);
+    void removeLink(LinkId linkId);
 
     // editor wrangling
     struct CanvasOrientation {

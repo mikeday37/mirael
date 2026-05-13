@@ -34,7 +34,7 @@ Graph &Project::addNewGraph()
 {
     auto uid            = App::get().getNewUuidAsString();
     auto id             = nextGraphId++;
-    auto [it, inserted] = graphMap.emplace(id, std::make_unique<Graph>(id, uid));
+    auto [it, inserted] = graphMap.try_emplace(id, std::make_unique<Graph>(id, uid));
     Graph &storedGraph  = *it->second;
     watchGraphChanges(storedGraph);
     isModifiedFlag = true;

@@ -29,12 +29,16 @@ void Switch::onDeserialize(const nlohmann::json &j)
 
 void Switch::onInit()
 {
-    choicePinId = getPinId("choice");
+    choicePinId = 0;
+    if (dynamic)
+        handleToggleDynamic();
+
     inputs.reserve(inputCount);
     for (int n : std::views::iota(1, inputCount + 1)) {
-        addPin(n);
+        addSwitchInputPin(n);
     }
-    outPinId = getPinId("out");
+
+    outPinId = addPin("out", {.direction = PinDirection::Output});
 }
 
 namespace
@@ -178,12 +182,16 @@ void Switch::onShowProperties()
             expandInputs();
         else {
             assert(inputCount < priorInputCount);
-            inputs.resize(inputCount);
+            reduceInputs();
         }
     }
 
     changed |= ImGui::Checkbox("Enabled", &enabled);
+
+    bool preDynamic = dynamic;
     changed |= ImGui::Checkbox("Dynamic", &dynamic);
+    if (preDynamic != dynamic)
+        handleToggleDynamic();
 
     if (!dynamic)
         changed |= ImGui::InputInt("Manual Choice", &manualChoice);
@@ -197,14 +205,47 @@ void Switch::expandInputs()
     if (inputCount > inputs.size())
         inputs.reserve(inputCount);
 
-    while (inputCount > inputs.size())
-        addPin(static_cast<int>(inputs.size()) + 1);
+    while (inputCount > inputs.size()) {
+        int pinNum = static_cast<int>(inputs.size()) + 1;
+        addSwitchInputPin(pinNum);
+    }
 }
 
-void Switch::addPin(int pinNumber)
+void Switch::reduceInputs()
+{
+    auto priorSize = static_cast<int>(inputs.size());
+
+    inputs.resize(inputCount);
+
+    while (priorSize > inputCount) {
+        int pinNum = priorSize--;
+        removeSwitchInputPin(pinNum);
+    }
+}
+
+void Switch::addSwitchInputPin(int pinNumber)
 {
     std::string key = std::format("in{}", pinNumber);
-    inputs.emplace_back(pinNumber, getPinId(key), key);
+    auto pinId      = addPin(key, {.direction = PinDirection::Input});
+    inputs.emplace_back(pinNumber, pinId, key);
+}
+
+void Switch::removeSwitchInputPin(int pinNumber)
+{
+    std::string key = std::format("in{}", pinNumber);
+    removePin(key);
+}
+
+void Switch::handleToggleDynamic()
+{
+    if (dynamic && !choicePinId) {
+        choicePinId = addPin("choice", {.direction = PinDirection::Input});
+    } else if (choicePinId && !dynamic) {
+        removePin("choice");
+        choicePinId = 0;
+    } else {
+        assert(false); // the above two cases should be the only cases we encounter
+    }
 }
 
 }; // namespace Mirael::NodeTypes
