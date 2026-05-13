@@ -106,15 +106,31 @@ void Switch::onShow()
     postHeader();
     ImGui::Dummy({0, style.ItemSpacing.y / 2.0f});
 
-    // optional choice input gets its own row
+    auto outPin = [this](){
+        prePin(false);
+        ne::BeginPin(outPinId, ne::PinKind::Output);
+        if (ImGui::Checkbox("out", &enabled))
+            raiseModified(ChangeImpact::NodeConfig);
+        ImGui::SameLine();
+        drawPin();
+        ne::EndPin();
+        postPin();
+    };
+
+    // if dynamic, choice input and the output are on the same row
     if (dynamic) {
         prePin();
         ne::BeginPin(choicePinId, ne::PinKind::Input);
         drawPin();
         ImGui::SameLine();
+        ImGui::AlignTextToFramePadding();
         ImGui::TextUnformatted("choice");
         ne::EndPin();
         postPin();
+
+        ImGui::SameLine();
+
+        outPin();
     }
 
     // loop through inputs
@@ -136,21 +152,14 @@ void Switch::onShow()
         ne::EndPin();
         postPin();
 
-        // output will be aligned with the first input
-        if (first) {
+        // output will be aligned with the first input if not dynamic
+        if (!dynamic && first) {
             first = false;
             ImGui::SameLine();
-            ImGui::Dummy({ImGui::CalcTextSize("W").x * 2.0f, 0});
+            ImGui::Dummy({ImGui::CalcTextSize("W").x * 1.0f, 0});
             ImGui::SameLine();
 
-            prePin(false);
-            ne::BeginPin(outPinId, ne::PinKind::Output);
-            if (ImGui::Checkbox("out", &enabled))
-                raiseModified(ChangeImpact::NodeConfig);
-            ImGui::SameLine();
-            drawPin();
-            ne::EndPin();
-            postPin();
+            outPin();
         }
     }
 
