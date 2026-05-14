@@ -49,7 +49,6 @@ public:
 
 private:
     // main data
-    std::string name_    = "Project";
     GraphId nextGraphId_ = 1;
     std::unordered_map<GraphId, std::unique_ptr<Graph>> graphMap_;
 

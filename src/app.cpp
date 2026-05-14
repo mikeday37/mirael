@@ -653,11 +653,11 @@ VKAPI_ATTR vk::Bool32 VKAPI_CALL App::debugCallback(vk::DebugUtilsMessageSeverit
 
 void App::createSurface()
 {
-    VkSurfaceKHR _surface;
-    if (glfwCreateWindowSurface(*instance_, window_, nullptr, &_surface) != 0) {
+    VkSurfaceKHR surface;
+    if (glfwCreateWindowSurface(*instance_, window_, nullptr, &surface) != 0) {
         throw std::runtime_error("Failed to create window surface!");
     }
-    surface_ = vk::raii::SurfaceKHR(instance_, _surface);
+    surface_ = vk::raii::SurfaceKHR(instance_, surface);
 }
 
 void App::pickPhysicalDevice()

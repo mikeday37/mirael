@@ -62,16 +62,6 @@ void Node::removePin(std::string_view key)
     }
 }
 
-/*PinId Node::getPinId(std::string_view pinKey)
-{
-    auto it = pinKeyToId_.find(pinKey);
-    if (it == pinKeyToId_.end()) {
-        return 0;
-    } else {
-        return it->second;
-    }
-}*/
-
 GraphElementId Node::getMaxElementId() const
 {
     if (pinKeyToId_.empty())
