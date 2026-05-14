@@ -37,6 +37,8 @@ public:
 
     void serialize(nlohmann::json &j) const;
     static std::unique_ptr<Graph> deserialize(GraphId id, std::string_view uid, const nlohmann::json &j);
+    void serializeLink(nlohmann::json &j, const Link &link) const;
+    Link deserializeLink(const nlohmann::json &j);
 
     void setVisible(bool visible);
     bool isVisible() const { return visible; }
@@ -98,6 +100,7 @@ private:
     std::unordered_map<PinId, std::unordered_set<LinkId>> pinLinks;
     PinInfo getPinInfo(PinId pinId) const { return pins.at(pinId); }
     void addLink(Link &&link);
+    void addLinkWithId(Link &&link, LinkId linkId);
     void removeLink(LinkId linkId);
 
     // editor wrangling

@@ -87,6 +87,10 @@ void Project::watchGraphChanges(Graph &graph)
             [[fallthrough]];
         case ChangeImpact::RemoveNode:
             [[fallthrough]];
+        case ChangeImpact::AddLink:
+            [[fallthrough]];
+        case ChangeImpact::RemoveLink:
+            [[fallthrough]];
         case ChangeImpact::NodeConfig:
             isModifiedFlag = true;
             break;

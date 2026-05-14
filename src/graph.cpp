@@ -35,10 +35,17 @@ void Graph::serialize(nlohmann::json &j) const
     j["zoom"] = canvasInfo.orientation.zoom;
 
     j["nodes"] = json::object();
-    for (const auto &[id, node] : nodes) {
+    for (const auto &[nodeId, node] : nodes) {
         json nodeJson;
         node->serialize(nodeJson);
-        j["nodes"][std::to_string(id)] = nodeJson;
+        j["nodes"][std::to_string(nodeId)] = nodeJson;
+    }
+
+    j["links"] = json::object();
+    for (const auto &[linkId, link] : links) {
+        json linkJson;
+        serializeLink(linkJson, link);
+        j["links"][std::to_string(linkId)] = linkJson;
     }
 }
 
@@ -64,17 +71,45 @@ std::unique_ptr<Graph> Graph::deserialize(GraphId id, std::string_view uid, cons
     GraphElementId maxElementId = 0;
 
     for (const auto &[key, value] : nodesObj.items()) {
-        GraphElementId id   = static_cast<GraphElementId>(std::stoull(key));
-        auto [it, inserted] = graph->nodes.try_emplace(id, Node::deserialize(*graph, id, value));
+        NodeId nodeId       = static_cast<NodeId>(std::stoull(key));
+        auto [it, inserted] = graph->nodes.try_emplace(nodeId, Node::deserialize(*graph, nodeId, value));
         if (!inserted)
-            throw std::runtime_error(std::format("Node Id {} not inserted into Graph Id {} during deserialization.", id, graph->id));
+            throw std::runtime_error(
+                std::format("Node Id {} not inserted into Graph Id {} during deserialization.", nodeId, graph->id));
         auto maxElementIdInNode = it->second->getMaxElementId();
         maxElementId            = std::max(maxElementId, maxElementIdInNode);
+    }
+
+    if (j.contains("links")) {
+        const auto &linksObj = j.at("links");
+        if (!linksObj.is_object())
+            throw std::runtime_error("Graph json parsing error: 'links' is not an object.");
+
+        for (const auto &[key, value] : linksObj.items()) {
+            LinkId linkId = static_cast<LinkId>(std::stoull(key));
+            graph->addLinkWithId(graph->deserializeLink(value), linkId);
+            maxElementId = std::max(maxElementId, linkId);
+        }
     }
 
     graph->nextElementId = maxElementId + 1;
 
     return graph;
+}
+
+void Graph::serializeLink(nlohmann::json& j, const Link& link) const
+{
+    j["a"] = link.a.pin;
+    j["b"] = link.b.pin;
+}
+
+Link Graph::deserializeLink(const nlohmann::json &j)
+{
+    PinId a = static_cast<PinId>(j["a"].get<uint64_t>());
+    PinId b = static_cast<PinId>(j["b"].get<uint64_t>());
+
+    return Link{.a = {.node = pins.at(a).nodeId, .pin = a}, //
+                .b = {.node = pins.at(b).nodeId, .pin = b}};
 }
 
 void Graph::setVisible(bool visible)
@@ -200,6 +235,7 @@ void Graph::showView()
                         } else if (ne::AcceptNewItem()) {
                             addLink({.a = PinRef{.node = startPinInfo.nodeId, .pin = startPinId},
                                      .b = PinRef{.node = endPinInfo.nodeId, .pin = endPinId}});
+                            raiseModified(ChangeImpact::AddLink);
                         }
                     }
                 }
@@ -402,9 +438,14 @@ void Graph::adjustEditorStyle()
 
 void Graph::addLink(Link &&link)
 {
+    addLinkWithId(std::move(link), getNextElementId());
+}
+
+void Graph::addLinkWithId(Link &&link, LinkId linkId)
+{
     PinId pinA = link.a.pin, pinB = link.b.pin;
-    LinkId linkId = static_cast<LinkId>(getNextElementId());
-    links.try_emplace(linkId, std::move(link));
+    const auto &[it, inserted] = links.try_emplace(linkId, std::move(link));
+    assert(inserted);
     pinLinks.at(pinA).insert(linkId);
     pinLinks.at(pinB).insert(linkId);
 }

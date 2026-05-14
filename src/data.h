@@ -29,6 +29,6 @@ struct Link {
     PinRef a, b; // a -> b, usually, though in the future we may support undirected or bidirectional links
 };
 
-enum class ChangeImpact { GraphName, GraphVisibility, GraphPanZoom, AddNode, RemoveNode, NodePosition, NodeConfig };
+enum class ChangeImpact { GraphName, GraphVisibility, GraphPanZoom, AddNode, RemoveNode, AddLink, RemoveLink, NodePosition, NodeConfig };
 
 }; // namespace Mirael
