@@ -95,7 +95,7 @@ void Node::init(Graph &owner, NodeId id, std::string_view nodeTypeName)
     initialized_ = true;
 
     graph_    = &owner;
-    this->id_ = id;
+    id_       = id;
     typeName_ = nodeTypeName;
 
     onInit();

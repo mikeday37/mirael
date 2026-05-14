@@ -114,9 +114,9 @@ Link Graph::deserializeLink(const nlohmann::json &j)
 
 void Graph::setVisible(bool visible)
 {
-    auto oldValue  = this->visible_;
-    this->visible_ = visible;
-    if (oldValue != this->visible_)
+    auto oldValue = visible_;
+    visible_      = visible;
+    if (oldValue != visible_)
         raiseModified(ChangeImpact::GraphVisibility);
 }
 
