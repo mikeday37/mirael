@@ -97,7 +97,7 @@ std::unique_ptr<Graph> Graph::deserialize(GraphId id, std::string_view uid, cons
     return graph;
 }
 
-void Graph::serializeLink(nlohmann::json& j, const Link& link) const
+void Graph::serializeLink(nlohmann::json &j, const Link &link) const
 {
     j["a"] = link.a.pin;
     j["b"] = link.b.pin;
@@ -171,77 +171,8 @@ void Graph::showView()
         }
 
         if (!ne::IsPendingInitialViewOrientation()) {
-            for (const auto &node : nodes | std::views::values) {
 
-                auto priorPos = node->pos;
-
-                bool setPosThisFrame = false;
-                if (node->pendingSetPos) {
-                    setPosThisFrame = true;
-                    ne::SetNodePosition(node->id, *node->pendingSetPos);
-                    node->pendingSetPos.reset();
-                }
-
-                if (node->selectPending) {
-                    node->selectPending = false;
-                    if (ne::GetSelectedObjectCount() > 0)
-                        ne::ClearSelection();
-                    ne::SelectNode(static_cast<ne::NodeId>(node->id));
-                }
-
-                node->show();
-
-                node->pos = ne::GetNodePosition(node->id);
-
-                if (!setPosThisFrame && (node->pos.x != priorPos.x || node->pos.y != priorPos.y))
-                    raiseModified(ChangeImpact::NodePosition);
-            }
-
-            for (const auto &[linkId, link] : links) {
-                ne::Link(static_cast<ne::LinkId>(linkId), link.a.pin, link.b.pin);
-            }
-
-            processSelectionState();
-
-            if (ne::BeginCreate()) {
-
-                ne::PinId startEditorPinId{}, endEditorPinId{};
-                if (ne::QueryNewLink(&startEditorPinId, &endEditorPinId)) {
-                    if (startEditorPinId && endEditorPinId && startEditorPinId != endEditorPinId) {
-                        PinId startPinId = static_cast<PinId>(startEditorPinId);
-                        PinId endPinId   = static_cast<PinId>(endEditorPinId);
-
-                        // for each pin id, we need to know: node id, and pin direction.
-                        // to accept, one pin must be output and one pin must be input, and they must be on different nodes
-
-                        auto startPinInfo = getPinInfo(startPinId);
-                        auto endPinInfo   = getPinInfo(endPinId);
-
-                        if (startPinInfo.direction == PinDirection::Input) {
-                            std::swap(startPinId, endPinId);
-                            std::swap(startPinInfo, endPinInfo);
-                        }
-
-                        bool valid = startPinInfo.direction == PinDirection::Output //
-                                     && endPinInfo.direction == PinDirection::Input //
-                                     && startPinInfo.nodeId != endPinInfo.nodeId;
-
-                        // additional constraint: inputs cannot have more than one link
-                        if (valid && !pinLinks.at(endPinId).empty())
-                            valid = false;
-
-                        if (!valid) {
-                            ne::RejectNewItem(ImColor(255, 0, 0), 2.0f);
-                        } else if (ne::AcceptNewItem()) {
-                            addLink({.a = PinRef{.node = startPinInfo.nodeId, .pin = startPinId},
-                                     .b = PinRef{.node = endPinInfo.nodeId, .pin = endPinId}});
-                            raiseModified(ChangeImpact::AddLink);
-                        }
-                    }
-                }
-
-                ne::EndCreate();
-            }
+            showNodesAndLinks(); // wait until view orientation is stable to avoid a glitchy-looking load
 
             auto lastOrientation   = canvasInfo.orientation;
             canvasInfo.orientation = {.zoom = ne::GetCurrentZoom(), .origin = ne::GetCurrentOrigin()};
@@ -436,10 +367,7 @@ void Graph::adjustEditorStyle()
     style.Colors[ne::StyleColor_SelNodeBorder] = ImColor(50, 176, 255, 255);
 }
 
-void Graph::addLink(Link &&link)
-{
-    addLinkWithId(std::move(link), getNextElementId());
-}
+void Graph::addLink(Link &&link) { addLinkWithId(std::move(link), getNextElementId()); }
 
 void Graph::addLinkWithId(Link &&link, LinkId linkId)
 {
@@ -500,6 +428,116 @@ void Graph::processSelectionState()
         selectedNodeId.reset();
         selectedLinkId.reset();
     }
+}
+
+void Graph::showNodesAndLinks()
+{
+    // this is called exclusively within the ne::Begin()/::End() region of ::show()
+
+    for (const auto &node : nodes | std::views::values) {
+
+        auto priorPos = node->pos;
+
+        bool setPosThisFrame = false;
+        if (node->pendingSetPos) {
+            setPosThisFrame = true;
+            ne::SetNodePosition(node->id, *node->pendingSetPos);
+            node->pendingSetPos.reset();
+        }
+
+        if (node->selectPending) {
+            node->selectPending = false;
+            if (ne::GetSelectedObjectCount() > 0)
+                ne::ClearSelection();
+            ne::SelectNode(static_cast<ne::NodeId>(node->id));
+        }
+
+        node->show();
+
+        node->pos = ne::GetNodePosition(node->id);
+
+        if (!setPosThisFrame && (node->pos.x != priorPos.x || node->pos.y != priorPos.y))
+            raiseModified(ChangeImpact::NodePosition);
+    }
+
+    for (const auto &[linkId, link] : links) {
+        ne::Link(static_cast<ne::LinkId>(linkId), link.a.pin, link.b.pin);
+    }
+
+    processSelectionState();
+
+    if (ne::BeginCreate()) {
+
+        ne::PinId startEditorPinId{}, endEditorPinId{};
+        if (ne::QueryNewLink(&startEditorPinId, &endEditorPinId)) {
+            if (startEditorPinId && endEditorPinId && startEditorPinId != endEditorPinId) {
+                PinId startPinId = static_cast<PinId>(startEditorPinId);
+                PinId endPinId   = static_cast<PinId>(endEditorPinId);
+
+                // for each pin id, we need to know: node id, and pin direction.
+                // to accept, one pin must be output and one pin must be input, and they must be on different nodes
+
+                auto startPinInfo = getPinInfo(startPinId);
+                auto endPinInfo   = getPinInfo(endPinId);
+
+                if (startPinInfo.direction == PinDirection::Input) {
+                    std::swap(startPinId, endPinId);
+                    std::swap(startPinInfo, endPinInfo);
+                }
+
+                bool valid = startPinInfo.direction == PinDirection::Output //
+                             && endPinInfo.direction == PinDirection::Input //
+                             && startPinInfo.nodeId != endPinInfo.nodeId;
+
+                // additional constraint: inputs cannot have more than one link
+                if (valid && !pinLinks.at(endPinId).empty())
+                    valid = false;
+
+                if (!valid) {
+                    ne::RejectNewItem(ImColor(255, 0, 0), 2.0f);
+                } else if (ne::AcceptNewItem()) {
+                    addLink({.a = PinRef{.node = startPinInfo.nodeId, .pin = startPinId},
+                             .b = PinRef{.node = endPinInfo.nodeId, .pin = endPinId}});
+                    raiseModified(ChangeImpact::AddLink);
+                }
+            }
+        }
+
+        ne::EndCreate();
+    }
+
+    if (ne::BeginDelete()) {
+
+        ne::NodeId editorNodeId = 0;
+        while (ne::QueryDeletedNode(&editorNodeId)) {
+            if (ne::AcceptDeletedItem()) {
+                NodeId nodeId = static_cast<NodeId>(editorNodeId);
+                removeNode(nodeId);
+                raiseModified(ChangeImpact::RemoveNode);
+            }
+        }
+
+        ne::LinkId editorLinkId = 0;
+        while (ne::QueryDeletedLink(&editorLinkId)) {
+            if (ne::AcceptDeletedItem()) {
+                LinkId linkId = static_cast<LinkId>(editorLinkId);
+                removeLink(linkId);
+                raiseModified(ChangeImpact::RemoveLink);
+            }
+        }
+
+        ne::EndDelete();
+    }
+}
+
+void Graph::removeNode(NodeId nodeId)
+{
+    auto it = nodes.find(nodeId);
+    if (it == nodes.end())
+        return;
+
+    it->second->removeAllPins();
+    nodes.erase(it);
 }
 
 void Graph::EditorDeleter::operator()(EditorContext *context) const { ne::DestroyEditor(context); }

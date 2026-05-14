@@ -4,6 +4,7 @@
 
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <xutility>
 
 #include "data.h"
@@ -58,6 +59,9 @@ private:
     std::optional<ImVec2> pendingSetPos{};
 
     bool selectPending = false;
+
+    void truncatePinKeysToConfigured();
+    void removeAllPins();
 
     friend Graph;
 };

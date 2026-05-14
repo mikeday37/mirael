@@ -4,6 +4,8 @@
 #include <nlohmann/json.hpp>
 #include <string>
 #include <string_view>
+#include <unordered_map>
+#include <unordered_set>
 
 #include "data.h"
 #include "node.h"
@@ -123,6 +125,10 @@ private:
     std::optional<NodeId> selectedNodeId;
     std::optional<LinkId> selectedLinkId;
     void processSelectionState(); // called within ne::Begin()/::End()
+
+    void showNodesAndLinks();
+
+    void removeNode(NodeId nodeId);
 };
 
 }; // namespace Mirael

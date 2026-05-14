@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include <stdexcept>
+#include <unordered_set>
 
 #include "app.h"
 #include "data.h"
@@ -146,9 +147,36 @@ std::unique_ptr<Node> Node::deserialize(Graph &owner, NodeId id, const nlohmann:
             std::format("Node (id={}, type={}) deserialized with pin count mismatch (deserialized={}, initialized={}).", id,
                         typeName.c_str(), pinCountDeserialized, pinCountInitialized));
 
+    node->truncatePinKeysToConfigured(); // this is only necessary because some old saved projects kept unused pin keys
+
+    if (node->pinKeyToId.size() != node->pinIdToConfig.size())
+        throw std::runtime_error(std::format("Node (id={}, type={}) deserialized with pin count mismatch (keyToId={}, idToConfig={}).",
+                                             id, typeName.c_str(), node->pinKeyToId.size(), node->pinIdToConfig.size()));
+
     node->deserializing = false;
 
     return node;
+}
+
+void Node::truncatePinKeysToConfigured()
+{
+    std::unordered_set<std::string> danglingPinKeys{};
+
+    for (const auto &[pinKey, nodeId] : pinKeyToId) {
+        if (!pinIdToConfig.contains(nodeId))
+            danglingPinKeys.insert(pinKey);
+    }
+
+    for (const auto &pinKey : danglingPinKeys) {
+        pinKeyToId.erase(pinKey);
+    }
+}
+
+void Node::removeAllPins()
+{
+    while (!pinKeyToId.empty())
+        removePin(pinKeyToId.begin()->first);
+    assert(pinKeyToId.empty() && pinIdToConfig.empty());
 }
 
 }; // namespace Mirael
