@@ -18,17 +18,17 @@ public:
     void onShowProperties() override;
 
 private:
-    bool enabled     = true;
-    bool dynamic     = true;
-    int inputCount   = 2;
-    int manualChoice = 0;
-    PinId choicePinId{}, outPinId{};
+    bool enabled_     = true;
+    bool dynamic_     = true;
+    int inputCount_   = 2;
+    int manualChoice_ = 0;
+    PinId choicePinId_{}, outPinId_{};
     struct InputPin {
         int n;
         PinId id;
         std::string label;
     };
-    std::vector<InputPin> inputs;
+    std::vector<InputPin> inputs_;
     void expandInputs();
     void reduceInputs();
     void addSwitchInputPin(int pinNumber);    // 1-indexed

@@ -14,7 +14,7 @@ public:
     void onShow() override;
 
 private:
-    PinId inPinId{};
+    PinId inPinId_{};
 };
 
 }; // namespace Mirael::NodeTypes

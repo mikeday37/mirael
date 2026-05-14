@@ -16,8 +16,8 @@ public:
     virtual void onSerialize(nlohmann::json &j) const;
 
 private:
-    std::string value;
-    PinId outPinId{};
+    std::string value_;
+    PinId outPinId_{};
 };
 
 }; // namespace Mirael::NodeTypes

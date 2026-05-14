@@ -15,7 +15,7 @@ class Project;
 class ProjectExplorer
 {
 public:
-    ProjectExplorer() : project(std::make_unique<Project>()) {}
+    ProjectExplorer() : project_(std::make_unique<Project>()) {}
 
     // forbid copy, move
     ProjectExplorer(const ProjectExplorer &)            = delete;
@@ -23,7 +23,7 @@ public:
     ProjectExplorer(ProjectExplorer &&)                 = delete;
     ProjectExplorer &operator=(ProjectExplorer &&)      = delete;
 
-    Project &getProject() { return *project; }
+    Project &getProject() { return *project_; }
 
     static const char *windowName() { return "Project Explorer"; }
     void show();
@@ -31,7 +31,7 @@ public:
     void load(std::filesystem::path filepath);
 
 private:
-    std::unique_ptr<Project> project;
+    std::unique_ptr<Project> project_;
     void clear();
 
     // ui entry points to serialization
@@ -45,9 +45,9 @@ private:
     void saveViaFileDialog();
 
     // graph renaming
-    std::optional<GraphId> renamingGraphId = ~0;
-    bool firstRenameFrame   = false;
-    std::string renameBuffer;
+    std::optional<GraphId> renamingGraphId_ = ~0;
+    bool firstRenameFrame_                  = false;
+    std::string renameBuffer_;
 };
 
 }; // namespace Mirael

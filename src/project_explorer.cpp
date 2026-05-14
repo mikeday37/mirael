@@ -18,7 +18,7 @@ using json   = nlohmann::json;
 
 void ProjectExplorer::show()
 {
-    auto windowFlags = ImGuiWindowFlags_MenuBar | (project->isModified() ? ImGuiWindowFlags_UnsavedDocument : 0);
+    auto windowFlags = ImGuiWindowFlags_MenuBar | (project_->isModified() ? ImGuiWindowFlags_UnsavedDocument : 0);
 
     if (ImGui::Begin(windowName(), nullptr, windowFlags)) {
 
@@ -44,7 +44,7 @@ void ProjectExplorer::show()
             }
             if (ImGui::BeginMenu("Project")) {
                 if (ImGui::MenuItem("Add New Graph")) {
-                    project->addNewGraph();
+                    project_->addNewGraph();
                 }
                 ImGui::EndMenu();
             }
@@ -65,13 +65,13 @@ void ProjectExplorer::show()
                 ImGui::MenuItem("About", nullptr, nullptr, false);
                 ImGui::Separator();
                 if (ImGui::MenuItem("Reorient Selected Graph")) {
-                    auto graph = project->getLastFocusedGraph();
+                    auto graph = project_->getLastFocusedGraph();
                     if (graph) {
                         graph->Reorient();
                     }
                 }
                 if (ImGui::MenuItem("Reposition Nodes in Selected Graph")) {
-                    auto graph = project->getLastFocusedGraph();
+                    auto graph = project_->getLastFocusedGraph();
                     if (graph) {
                         graph->RepositionNodes();
                     }
@@ -81,28 +81,28 @@ void ProjectExplorer::show()
             ImGui::EndMenuBar();
         }
 
-        if (ImGui::TreeNodeEx(project->getFileName().c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-            if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal) && project->getLastFilepath()) {
-                ImGui::SetTooltip(project->getLastFilepath()->string().c_str());
+        if (ImGui::TreeNodeEx(project_->getFileName().c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal) && project_->getLastFilepath()) {
+                ImGui::SetTooltip(project_->getLastFilepath()->string().c_str());
             }
             const ImGuiTreeNodeFlags leafFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-            for (auto id : project->getGraphIdsInDisplayOrder()) {
-                auto &graph = project->getGraph(id);
+            for (auto id : project_->getGraphIdsInDisplayOrder()) {
+                auto &graph = project_->getGraph(id);
                 auto name   = graph.getName();
-                if (renamingGraphId && *renamingGraphId == id) {
+                if (renamingGraphId_ && *renamingGraphId_ == id) {
                     ImGui::TreeNodeEx("##renaming_item", leafFlags);
                     ImGui::SameLine();
                     ImGui::SetNextItemWidth(-FLT_MIN);
-                    if (firstRenameFrame)
+                    if (firstRenameFrame_)
                         ImGui::SetKeyboardFocusHere();
-                    if (ImGui::InputText("##rename", &renameBuffer,
+                    if (ImGui::InputText("##rename", &renameBuffer_,
                                          ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
-                        graph.rename(renameBuffer);
-                        renamingGraphId.reset();
-                    } else if (ImGui::IsKeyPressed(ImGuiKey_Escape) || (!firstRenameFrame && !ImGui::IsItemActive())) {
-                        renamingGraphId.reset();
+                        graph.rename(renameBuffer_);
+                        renamingGraphId_.reset();
+                    } else if (ImGui::IsKeyPressed(ImGuiKey_Escape) || (!firstRenameFrame_ && !ImGui::IsItemActive())) {
+                        renamingGraphId_.reset();
                     }
-                    firstRenameFrame = false;
+                    firstRenameFrame_ = false;
                 } else {
                     ImGui::TreeNodeEx((void *)(intptr_t)id, leafFlags, "%.*s", name.size(), name.data());
                     if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
@@ -117,15 +117,15 @@ void ProjectExplorer::show()
                         }
                         ImGui::Separator();
                         if (ImGui::MenuItem("Rename")) {
-                            renamingGraphId  = id;
-                            renameBuffer     = name;
-                            firstRenameFrame = true;
+                            renamingGraphId_  = id;
+                            renameBuffer_     = name;
+                            firstRenameFrame_ = true;
                         }
                         ImGui::Separator();
                         if (ImGui::MenuItem("Delete")) {
                             App::get().setDestructiveAction(
                                 "Delete Graph?", std::format("Delete graph \"{}\"?  This operation cannot be undone.", name),
-                                [this, id]() { project->removeGraph(id); });
+                                [this, id]() { project_->removeGraph(id); });
                         }
                         ImGui::EndPopup();
                     }
@@ -140,14 +140,14 @@ void ProjectExplorer::show()
 void ProjectExplorer::load(std::filesystem::path filepath)
 {
     if (!filepath.empty() && fs::exists(filepath))
-        project = Project::load(filepath);
+        project_ = Project::load(filepath);
 }
 
-void ProjectExplorer::clear() { project = std::make_unique<Project>(); }
+void ProjectExplorer::clear() { project_ = std::make_unique<Project>(); }
 
 void ProjectExplorer::onUserNew()
 {
-    if (project->isModified()) {
+    if (project_->isModified()) {
         App::get().setDestructiveAction("Discard Changes?", "Discard ALL unsaved changes?  This operation cannot be undone.",
                                         [this]() { clear(); });
     } else
@@ -156,7 +156,7 @@ void ProjectExplorer::onUserNew()
 
 void ProjectExplorer::onUserOpen()
 {
-    if (project->isModified()) {
+    if (project_->isModified()) {
         App::get().setDestructiveAction("Discard Changes?", "Discard ALL unsaved changes?  This operation cannot be undone.",
                                         [this]() { openViaFileDialog(); });
     } else
@@ -165,9 +165,9 @@ void ProjectExplorer::onUserOpen()
 
 void ProjectExplorer::onUserSave()
 {
-    const auto &lastFilepath = project->getLastFilepath();
+    const auto &lastFilepath = project_->getLastFilepath();
     if (lastFilepath)
-        project->save(*lastFilepath);
+        project_->save(*lastFilepath);
     else
         saveViaFileDialog();
 }
@@ -179,7 +179,7 @@ void ProjectExplorer::openViaFileDialog()
     NfdShim::OpenArgs args = {.filters = {{"Mirael Projects", "mir"}}};
     auto results           = NfdShim::getOpenFilePath(args);
     if (results.good())
-        project = Project::load(results.filepath);
+        project_ = Project::load(results.filepath);
     else if (results.bad()) {
         App::get().showError("Unable to choose path to open: " + results.errorMessage);
     }
@@ -190,7 +190,7 @@ void ProjectExplorer::saveViaFileDialog()
     NfdShim::SaveArgs args = {.filters = {{"Mirael Projects", "mir"}}, .defaultName = "project.mir"};
     auto results           = NfdShim::getSaveAsFilePath(args);
     if (results.good())
-        project->save(results.filepath);
+        project_->save(results.filepath);
     else if (results.bad()) {
         App::get().showError("Unable to choose file path to save as: " + results.errorMessage);
     }

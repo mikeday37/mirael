@@ -16,7 +16,7 @@ public:
     virtual void onSerialize(nlohmann::json &j) const;
 
 private:
-    std::string comment;
+    std::string comment_;
 };
 
 }; // namespace Mirael::NodeTypes

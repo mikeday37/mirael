@@ -14,10 +14,10 @@ namespace Mirael::NodeTypes
 void Value::onDeserialize(const nlohmann::json &j)
 {
     if (!j.empty())
-        value = j["value"].get<std::string>();
+        value_ = j["value"].get<std::string>();
 }
 
-void Value::onInit() { outPinId = addPin("out", {.direction = PinDirection::Output}); }
+void Value::onInit() { outPinId_ = addPin("out", {.direction = PinDirection::Output}); }
 
 void Value::onShow()
 {
@@ -26,10 +26,10 @@ void Value::onShow()
     ImGui::Text("Value:");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(24.0f * ImGui::CalcTextSize("0").x);
-    if (ImGui::InputText("###value", &value))
+    if (ImGui::InputText("###value", &value_))
         raiseModified(ChangeImpact::NodeConfig);
     ImGui::SameLine();
-    ne::BeginPin(outPinId, ne::PinKind::Output);
+    ne::BeginPin(outPinId_, ne::PinKind::Output);
     ImGui::Text("out ->");
     ne::EndPin();
     ImGui::PopID();
@@ -38,8 +38,8 @@ void Value::onShow()
 
 void Value::onSerialize(nlohmann::json &j) const
 {
-    if (!value.empty())
-        j["value"] = value;
+    if (!value_.empty())
+        j["value"] = value_;
 }
 
 }; // namespace Mirael::NodeTypes

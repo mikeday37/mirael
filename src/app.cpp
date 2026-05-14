@@ -48,10 +48,10 @@ constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
 App::App()
 {
-    if (appInstance) {
+    if (appInstance_) {
         throw std::runtime_error("Mirael::App singleton already constructed.");
     }
-    appInstance = this;
+    appInstance_ = this;
 }
 
 void App::run()
@@ -73,7 +73,7 @@ void App::preInitImGui()
         throw std::runtime_error("Unable to create ImGui context.");
     }
 
-    mainWindowSettings.firstRun = !std::filesystem::exists("imgui.ini");
+    mainWindowSettings_.firstRun = !std::filesystem::exists("imgui.ini");
 
     auto settingsHandler = getImGuiSettingsHandler();
     ImGui::AddSettingsHandler(&settingsHandler);
@@ -111,29 +111,29 @@ void App::initWindow()
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
-    if (mainWindowSettings.x) {
-        glfwWindowHint(GLFW_POSITION_X, *mainWindowSettings.x);
+    if (mainWindowSettings_.x) {
+        glfwWindowHint(GLFW_POSITION_X, *mainWindowSettings_.x);
     }
-    if (mainWindowSettings.y) {
-        glfwWindowHint(GLFW_POSITION_Y, *mainWindowSettings.y);
+    if (mainWindowSettings_.y) {
+        glfwWindowHint(GLFW_POSITION_Y, *mainWindowSettings_.y);
     }
-    if (mainWindowSettings.maximized) {
+    if (mainWindowSettings_.maximized) {
         glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
     }
-    if (!mainWindowSettings.width || !mainWindowSettings.height) {
-        mainWindowSettings.width  = 1280;
-        mainWindowSettings.height = 720;
+    if (!mainWindowSettings_.width || !mainWindowSettings_.height) {
+        mainWindowSettings_.width  = 1280;
+        mainWindowSettings_.height = 720;
     }
-    window = glfwCreateWindow(*mainWindowSettings.width, *mainWindowSettings.height, "Mirael", nullptr, nullptr);
-    if (window == NULL) {
+    window_ = glfwCreateWindow(*mainWindowSettings_.width, *mainWindowSettings_.height, "Mirael", nullptr, nullptr);
+    if (window_ == NULL) {
         throw std::runtime_error("GLFW: failed to create main window.");
     }
 
 #ifdef WIN32
-    WindowsOnly::customizeMainWindow(window);
+    WindowsOnly::customizeMainWindow(window_);
 #endif
 
-    if (mainWindowSettings.fullscreen) {
+    if (mainWindowSettings_.fullscreen) {
         applyFullscreenSetting();
     }
 
@@ -141,12 +141,12 @@ void App::initWindow()
         throw std::runtime_error("GLFW: Vulkan not supported.");
     }
 
-    glfwSetWindowUserPointer(window, this);
-    glfwSetFramebufferSizeCallback(window, frameBufferResizeCallback);
-    glfwSetWindowPosCallback(window, windowPosCallback);
-    glfwSetWindowSizeCallback(window, windowSizeCallback);
-    glfwSetWindowMaximizeCallback(window, windowMaximizeCallback);
-    glfwSetWindowCloseCallback(window, windowCloseCallback);
+    glfwSetWindowUserPointer(window_, this);
+    glfwSetFramebufferSizeCallback(window_, frameBufferResizeCallback);
+    glfwSetWindowPosCallback(window_, windowPosCallback);
+    glfwSetWindowSizeCallback(window_, windowSizeCallback);
+    glfwSetWindowMaximizeCallback(window_, windowMaximizeCallback);
+    glfwSetWindowCloseCallback(window_, windowCloseCallback);
 }
 
 void App::initVulkan()
@@ -166,20 +166,20 @@ void App::initVulkan()
 
 void App::finishInitImGui()
 {
-    ImGui_ImplGlfw_InitForVulkan(window, true);
+    ImGui_ImplGlfw_InitForVulkan(window_, true);
 
     ImGui_ImplVulkan_InitInfo initInfo{};
-    initInfo.Instance            = *instance;
-    initInfo.PhysicalDevice      = *physicalDevice;
-    initInfo.Device              = *device;
-    initInfo.QueueFamily         = graphicsQueueIndex;
-    initInfo.Queue               = *graphicsQueue;
+    initInfo.Instance            = *instance_;
+    initInfo.PhysicalDevice      = *physicalDevice_;
+    initInfo.Device              = *device_;
+    initInfo.QueueFamily         = graphicsQueueIndex_;
+    initInfo.Queue               = *graphicsQueue_;
     initInfo.DescriptorPoolSize  = IMGUI_IMPL_VULKAN_MINIMUM_IMAGE_SAMPLER_POOL_SIZE;
-    initInfo.MinImageCount       = minImageCount;
-    initInfo.ImageCount          = static_cast<uint32_t>(swapchainImages.size());
+    initInfo.MinImageCount       = minImageCount_;
+    initInfo.ImageCount          = static_cast<uint32_t>(swapchainImages_.size());
     initInfo.UseDynamicRendering = true;
 
-    VkFormat surfaceFormat       = static_cast<VkFormat>(swapchainSurfaceFormat.format);
+    VkFormat surfaceFormat       = static_cast<VkFormat>(swapchainSurfaceFormat_.format);
     auto &prci                   = initInfo.PipelineInfoMain.PipelineRenderingCreateInfo;
     prci.sType                   = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
     prci.colorAttachmentCount    = 1;
@@ -189,25 +189,25 @@ void App::finishInitImGui()
 
     auto &io = ImGui::GetIO();
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        auto &platio                                     = ImGui::GetPlatformIO();
-        baseImGuiPlatformHandlers.Platform_CreateWindow  = platio.Platform_CreateWindow;
-        baseImGuiPlatformHandlers.Platform_DestroyWindow = platio.Platform_DestroyWindow;
-        platio.Platform_CreateWindow                     = imGuiPlatform_CreateWindow;
-        platio.Platform_DestroyWindow                    = imGuiPlatform_DestroyWindow;
+        auto &platio                                      = ImGui::GetPlatformIO();
+        baseImGuiPlatformHandlers_.Platform_CreateWindow  = platio.Platform_CreateWindow;
+        baseImGuiPlatformHandlers_.Platform_DestroyWindow = platio.Platform_DestroyWindow;
+        platio.Platform_CreateWindow                      = imGuiPlatform_CreateWindow;
+        platio.Platform_DestroyWindow                     = imGuiPlatform_DestroyWindow;
     }
 }
 
 void App::mainLoop()
 {
-    while (!glfwWindowShouldClose(window)) {
-        ++metrics.mainLoopIteration;
+    while (!glfwWindowShouldClose(window_)) {
+        ++metrics_.mainLoopIteration;
 
         glfwPollEvents();
         drawFrame();
 
-        if (initialShowWindowPending) {
-            glfwShowWindow(window);
-            initialShowWindowPending = false;
+        if (initialShowWindowPending_) {
+            glfwShowWindow(window_);
+            initialShowWindowPending_ = false;
         }
     }
 }
@@ -216,13 +216,13 @@ void App::cleanup()
 {
     NfdShim::Quit();
 
-    device.waitIdle();
+    device_.waitIdle();
 
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 
-    glfwDestroyWindow(window);
+    glfwDestroyWindow(window_);
     glfwTerminate();
 
     // the vulkan objects we created are all raii, so they take care of themselves.
@@ -230,57 +230,57 @@ void App::cleanup()
 
 void App::attemptReloadLastProject()
 {
-    if (!mainWindowSettings.lastProjectPath)
+    if (!mainWindowSettings_.lastProjectPath)
         return;
 
-    const auto &filepath = *mainWindowSettings.lastProjectPath;
+    const auto &filepath = *mainWindowSettings_.lastProjectPath;
 
     if (filepath.empty() || !std::filesystem::exists(filepath))
         return;
 
-    projectExplorer.load(filepath);
+    projectExplorer_.load(filepath);
 }
 
-void App::exit() { closeRequested = true; }
+void App::exit() { closeRequested_ = true; }
 
 void App::applyFullscreenSetting()
 {
-    togglingFullscreen = true;
+    togglingFullscreen_ = true;
 
-    if (mainWindowSettings.fullscreen) {
+    if (mainWindowSettings_.fullscreen) {
         auto *monitor           = getCurrentMonitor();
         const GLFWvidmode *mode = glfwGetVideoMode(monitor);
         int monitorX, monitorY;
         glfwGetMonitorPos(monitor, &monitorX, &monitorY);
-        glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_FALSE);
-        glfwSetWindowMonitor(window, nullptr, monitorX, monitorY, mode->width, mode->height, GLFW_DONT_CARE);
+        glfwSetWindowAttrib(window_, GLFW_DECORATED, GLFW_FALSE);
+        glfwSetWindowMonitor(window_, nullptr, monitorX, monitorY, mode->width, mode->height, GLFW_DONT_CARE);
 
     } else {
-        const auto &s = mainWindowSettings;
-        glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_TRUE);
-        glfwSetWindowAttrib(window, GLFW_FLOATING, GLFW_FALSE);
+        const auto &s = mainWindowSettings_;
+        glfwSetWindowAttrib(window_, GLFW_DECORATED, GLFW_TRUE);
+        glfwSetWindowAttrib(window_, GLFW_FLOATING, GLFW_FALSE);
         if (s.maximized) {
-            glfwHideWindow(window);
+            glfwHideWindow(window_);
         }
-        glfwSetWindowMonitor(window, nullptr, *s.x, *s.y, *s.width, *s.height, GLFW_DONT_CARE);
+        glfwSetWindowMonitor(window_, nullptr, *s.x, *s.y, *s.width, *s.height, GLFW_DONT_CARE);
         if (s.maximized) {
             glfwPollEvents();
-            glfwMaximizeWindow(window);
-            glfwShowWindow(window);
+            glfwMaximizeWindow(window_);
+            glfwShowWindow(window_);
         }
     }
 
-    togglingFullscreen = false;
+    togglingFullscreen_ = false;
 }
 
 void App::setDestructiveAction(std::string label, std::string message, std::function<void()> postConfirmAction,
                                std::function<void()> postCancelAction)
 {
-    destructiveAction = {.modalTitle        = label,
-                         .modalMessage      = message,
-                         .modalCenter       = ImGui::GetWindowViewport()->GetCenter(),
-                         .postConfirmAction = postConfirmAction,
-                         .postCancelAction  = postCancelAction};
+    destructiveAction_ = {.modalTitle        = label,
+                          .modalMessage      = message,
+                          .modalCenter       = ImGui::GetWindowViewport()->GetCenter(),
+                          .postConfirmAction = postConfirmAction,
+                          .postCancelAction  = postCancelAction};
 }
 
 void App::showError(std::string message)
@@ -294,73 +294,73 @@ std::string App::getNewUuidAsString() const { return uuids::to_string(uuids::uui
 void App::showDiagnosticRows()
 {
     ImGuiEx::RowLabel("Main Loop Iteration");
-    ImGui::Text("%u", metrics.mainLoopIteration);
+    ImGui::Text("%u", metrics_.mainLoopIteration);
 
     ImGuiEx::RowLabel("Swapchain Build Count");
-    ImGui::Text("%u", metrics.swapChainBuildCount);
+    ImGui::Text("%u", metrics_.swapChainBuildCount);
 
     ImGuiEx::RowLabel("Platform Windows Created");
-    ImGui::Text("%u", metrics.platformWindowCreateCount);
+    ImGui::Text("%u", metrics_.platformWindowCreateCount);
 
     ImGuiEx::RowLabel("Platform Windows Destroyed");
-    ImGui::Text("%u", metrics.platformWindowDestroyCount);
+    ImGui::Text("%u", metrics_.platformWindowDestroyCount);
 }
 
 void App::showImGui()
 {
-    dockspaceId = ImGui::DockSpaceOverViewport(0, nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
+    dockspaceId_ = ImGui::DockSpaceOverViewport(0, nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
 
-    if (mainWindowSettings.firstRun) {
-        mainWindowSettings.firstRun = false;
+    if (mainWindowSettings_.firstRun) {
+        mainWindowSettings_.firstRun = false;
         ImGuiID leftMiddleBottomId{}, leftBottomId{};
-        ImGuiID leftId       = ImGui::DockBuilderSplitNode(dockspaceId, ImGuiDir_Left, 0.2f, nullptr, nullptr);
+        ImGuiID leftId       = ImGui::DockBuilderSplitNode(dockspaceId_, ImGuiDir_Left, 0.2f, nullptr, nullptr);
         ImGuiID leftTopId    = ImGui::DockBuilderSplitNode(leftId, ImGuiDir_Up, 0.33f, nullptr, &leftMiddleBottomId);
         ImGuiID leftMiddleId = ImGui::DockBuilderSplitNode(leftMiddleBottomId, ImGuiDir_Up, 0.5f, nullptr, &leftBottomId);
         ImGui::DockBuilderDockWindow(ProjectExplorer::windowName(), leftTopId);
         ImGui::DockBuilderDockWindow(Library::windowName(), leftMiddleId);
         ImGui::DockBuilderDockWindow(Properties::windowName(), leftBottomId);
-        ImGui::DockBuilderFinish(dockspaceId);
+        ImGui::DockBuilderFinish(dockspaceId_);
     }
 
-    projectExplorer.show();
+    projectExplorer_.show();
 
-    if (mainWindowSettings.library) {
-        library.show(mainWindowSettings.library);
+    if (mainWindowSettings_.library) {
+        library_.show(mainWindowSettings_.library);
     }
-    if (mainWindowSettings.properties) {
-        properties.show(mainWindowSettings.properties);
+    if (mainWindowSettings_.properties) {
+        properties_.show(mainWindowSettings_.properties);
     }
-    if (mainWindowSettings.settings) {
-        settings.show(mainWindowSettings.settings);
+    if (mainWindowSettings_.settings) {
+        settings_.show(mainWindowSettings_.settings);
     }
-    if (mainWindowSettings.diagnostics) {
-        diagnostics.show(mainWindowSettings.diagnostics);
+    if (mainWindowSettings_.diagnostics) {
+        diagnostics_.show(mainWindowSettings_.diagnostics);
     }
 
     getProject().showGraphs();
 
-    if (mainWindowSettings.demo) {
-        ImGui::ShowDemoWindow(&mainWindowSettings.demo);
+    if (mainWindowSettings_.demo) {
+        ImGui::ShowDemoWindow(&mainWindowSettings_.demo);
     }
 
-    if (closeRequested) {
-        closeRequested = false;
+    if (closeRequested_) {
+        closeRequested_ = false;
         if (getProject().isModified()) {
             setDestructiveAction(
                 "Exit with Unsaved Changes?", "Are you sure you want to discard all unsaved changes?  This cannot be undone.",
                 [this]() {
-                    closeConfirmed = true;
-                    glfwSetWindowShouldClose(window, GLFW_TRUE);
+                    closeConfirmed_ = true;
+                    glfwSetWindowShouldClose(window_, GLFW_TRUE);
                 },
-                [this]() { closeRequested = false; });
+                [this]() { closeRequested_ = false; });
         } else {
-            closeConfirmed = true;
-            glfwSetWindowShouldClose(window, GLFW_TRUE);
+            closeConfirmed_ = true;
+            glfwSetWindowShouldClose(window_, GLFW_TRUE);
         }
     }
 
-    if (destructiveAction) {
-        auto &actionInfo = *destructiveAction;
+    if (destructiveAction_) {
+        auto &actionInfo = *destructiveAction_;
         if (!actionInfo.opened) {
             ImGui::OpenPopup(actionInfo.modalTitle.c_str());
             actionInfo.opened = true;
@@ -383,7 +383,7 @@ void App::showImGui()
             if (reset) {
                 if (actionInfo.postCancelAction)
                     actionInfo.postCancelAction();
-                destructiveAction.reset();
+                destructiveAction_.reset();
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();
@@ -406,9 +406,9 @@ ImGuiSettingsHandler App::getImGuiSettingsHandler()
 
 void App::imGuiSettings_WriteAll(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *handler, ImGuiTextBuffer *out_buf)
 {
-    App &app                               = *static_cast<App *>(handler->UserData);
-    app.mainWindowSettings.lastProjectPath = app.getProject().getLastFilepath();
-    const auto &settings                   = app.mainWindowSettings;
+    App &app                                = *static_cast<App *>(handler->UserData);
+    app.mainWindowSettings_.lastProjectPath = app.getProject().getLastFilepath();
+    const auto &settings                    = app.mainWindowSettings_;
 
     out_buf->appendf("[%s][MainWindow]\n", handler->TypeName);
     if (settings.x && settings.y)
@@ -436,7 +436,7 @@ void App::imGuiSettings_ReadLine(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *h
 {
     assert(entry == handler->UserData);
     App &app  = *static_cast<App *>(handler->UserData);
-    auto &mws = app.mainWindowSettings;
+    auto &mws = app.mainWindowSettings_;
 
     int x, y, width, height, maximized, fullscreen, library, properties, settings, diagnostics, demo;
     if (sscanf_s(line, "Pos=%d,%d", &x, &y) == 2) {
@@ -471,8 +471,8 @@ void App::imGuiSettings_ReadLine(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *h
 void App::imGuiPlatform_CreateWindow(ImGuiViewport *vp)
 {
     App &app = App::get();
-    app.metrics.platformWindowCreateCount++;
-    app.baseImGuiPlatformHandlers.Platform_CreateWindow(vp);
+    app.metrics_.platformWindowCreateCount++;
+    app.baseImGuiPlatformHandlers_.Platform_CreateWindow(vp);
 
 #ifdef WIN32
     WindowsOnly::customizeSeparatedWindow(static_cast<GLFWwindow *>(vp->PlatformHandle));
@@ -482,15 +482,15 @@ void App::imGuiPlatform_CreateWindow(ImGuiViewport *vp)
 void App::imGuiPlatform_DestroyWindow(ImGuiViewport *vp)
 {
     App &app = App::get();
-    app.metrics.platformWindowDestroyCount++;
-    app.baseImGuiPlatformHandlers.Platform_DestroyWindow(vp);
+    app.metrics_.platformWindowDestroyCount++;
+    app.baseImGuiPlatformHandlers_.Platform_DestroyWindow(vp);
 }
 
 GLFWmonitor *App::getCurrentMonitor()
 {
     int windowX, windowY, windowWidth, windowHeight;
-    glfwGetWindowPos(window, &windowX, &windowY);
-    glfwGetWindowSize(window, &windowWidth, &windowHeight);
+    glfwGetWindowPos(window_, &windowX, &windowY);
+    glfwGetWindowSize(window_, &windowWidth, &windowHeight);
 
     int monitorCount;
     GLFWmonitor **monitors = glfwGetMonitors(&monitorCount);
@@ -520,16 +520,16 @@ GLFWmonitor *App::getCurrentMonitor()
 
 void App::frameBufferResizeCallback(GLFWwindow *window, int /*width*/, int /*height*/)
 {
-    auto app = App::fromWindow(window);
-    app->frameBufferResized = true;
+    auto app                 = App::fromWindow(window);
+    app->frameBufferResized_ = true;
 }
 
 bool App::isWindowInSuperState(GLFWwindow *window)
 {
     bool maximized = glfwGetWindowAttrib(window, GLFW_MAXIMIZED) != GLFW_FALSE;
     bool iconified = glfwGetWindowAttrib(window, GLFW_ICONIFIED) != GLFW_FALSE;
-    auto app = App::fromWindow(window);
-    return maximized || iconified || app->mainWindowSettings.fullscreen || app->togglingFullscreen;
+    auto app       = App::fromWindow(window);
+    return maximized || iconified || app->mainWindowSettings_.fullscreen || app->togglingFullscreen_;
 }
 
 void App::windowPosCallback(GLFWwindow *window, int x, int y)
@@ -538,9 +538,9 @@ void App::windowPosCallback(GLFWwindow *window, int x, int y)
     if (isWindowInSuperState(window)) {
         return;
     }
-    auto app = App::fromWindow(window);
-    app->mainWindowSettings.x = x;
-    app->mainWindowSettings.y = y;
+    auto app                   = App::fromWindow(window);
+    app->mainWindowSettings_.x = x;
+    app->mainWindowSettings_.y = y;
 }
 
 void App::windowSizeCallback(GLFWwindow *window, int width, int height)
@@ -549,22 +549,22 @@ void App::windowSizeCallback(GLFWwindow *window, int width, int height)
     if (isWindowInSuperState(window)) {
         return;
     }
-    auto app = App::fromWindow(window);
-    app->mainWindowSettings.width  = width;
-    app->mainWindowSettings.height = height;
+    auto app                        = App::fromWindow(window);
+    app->mainWindowSettings_.width  = width;
+    app->mainWindowSettings_.height = height;
 }
 
 void App::windowMaximizeCallback(GLFWwindow *window, int maximized)
 {
-    auto app = App::fromWindow(window);
-    app->mainWindowSettings.maximized = maximized != GLFW_FALSE;
+    auto app                           = App::fromWindow(window);
+    app->mainWindowSettings_.maximized = maximized != GLFW_FALSE;
 }
 
 void App::windowCloseCallback(GLFWwindow *window)
 {
     auto app = App::fromWindow(window);
-    if (!app->closeConfirmed) {
-        app->closeRequested = true;
+    if (!app->closeConfirmed_) {
+        app->closeRequested_ = true;
         glfwSetWindowShouldClose(window, GLFW_FALSE);
     }
 }
@@ -585,7 +585,7 @@ void App::createInstance()
 
     // check that all required layers are available
     auto supportedLayers =
-        context.enumerateInstanceLayerProperties() | std::views::transform([](const auto &property) { return property.layerName; });
+        context_.enumerateInstanceLayerProperties() | std::views::transform([](const auto &property) { return property.layerName; });
     auto unsupportedLayerIt = findFirstMissingString(requiredLayers, supportedLayers);
     if (unsupportedLayerIt != requiredLayers.end()) {
         throw std::runtime_error("Required layer not supported: " + std::string(*unsupportedLayerIt));
@@ -595,7 +595,7 @@ void App::createInstance()
     auto requiredInstanceExtensions = getRequiredInstanceExtensions();
 
     // check that all required extensions are available
-    auto supportedInstanceExtensions = context.enumerateInstanceExtensionProperties() |
+    auto supportedInstanceExtensions = context_.enumerateInstanceExtensionProperties() |
                                        std::views::transform([](const auto &property) { return property.extensionName; });
     auto unsupportedInstanceExtensionIt = findFirstMissingString(requiredInstanceExtensions, supportedInstanceExtensions);
     if (unsupportedInstanceExtensionIt != requiredInstanceExtensions.end()) {
@@ -608,7 +608,7 @@ void App::createInstance()
                                       .enabledExtensionCount   = static_cast<uint32_t>(requiredInstanceExtensions.size()),
                                       .ppEnabledExtensionNames = requiredInstanceExtensions.data()};
 
-    instance = vk::raii::Instance(context, createInfo);
+    instance_ = vk::raii::Instance(context_, createInfo);
 }
 
 std::vector<const char *> App::getRequiredInstanceExtensions()
@@ -637,7 +637,7 @@ void App::setupDebugMessenger()
     vk::DebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCreateInfoEXT{
         .messageSeverity = severityFlags, .messageType = messageTypeFlags, .pfnUserCallback = &debugCallback};
 
-    debugMessenger = instance.createDebugUtilsMessengerEXT(debugUtilsMessengerCreateInfoEXT);
+    debugMessenger_ = instance_.createDebugUtilsMessengerEXT(debugUtilsMessengerCreateInfoEXT);
 }
 
 VKAPI_ATTR vk::Bool32 VKAPI_CALL App::debugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT severity,
@@ -654,20 +654,20 @@ VKAPI_ATTR vk::Bool32 VKAPI_CALL App::debugCallback(vk::DebugUtilsMessageSeverit
 void App::createSurface()
 {
     VkSurfaceKHR _surface;
-    if (glfwCreateWindowSurface(*instance, window, nullptr, &_surface) != 0) {
+    if (glfwCreateWindowSurface(*instance_, window_, nullptr, &_surface) != 0) {
         throw std::runtime_error("Failed to create window surface!");
     }
-    surface = vk::raii::SurfaceKHR(instance, _surface);
+    surface_ = vk::raii::SurfaceKHR(instance_, _surface);
 }
 
 void App::pickPhysicalDevice()
 {
-    auto physicalDevices = instance.enumeratePhysicalDevices();
+    auto physicalDevices = instance_.enumeratePhysicalDevices();
     auto it = std::ranges::find_if(physicalDevices, [&](auto const &physicalDevice) { return isDeviceSuitable(physicalDevice); });
     if (it == physicalDevices.end()) {
         throw std::runtime_error("Failed to find GPU with Vulkan support.");
     } else {
-        physicalDevice = *it;
+        physicalDevice_ = *it;
     }
 }
 
@@ -713,16 +713,16 @@ bool App::isDeviceSuitable(const vk::raii::PhysicalDevice &physicalDevice)
 
 void App::createLogicalDevice()
 {
-    assert(graphicsQueueIndex == ~0);
-    auto queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
+    assert(graphicsQueueIndex_ == ~0);
+    auto queueFamilyProperties = physicalDevice_.getQueueFamilyProperties();
     for (uint32_t queueIndex : std::views::iota(0u, queueFamilyProperties.size())) {
         if ((queueFamilyProperties[queueIndex].queueFlags & vk::QueueFlagBits::eGraphics) &&
-            physicalDevice.getSurfaceSupportKHR(queueIndex, *surface)) {
-            graphicsQueueIndex = queueIndex;
+            physicalDevice_.getSurfaceSupportKHR(queueIndex, *surface_)) {
+            graphicsQueueIndex_ = queueIndex;
             break;
         }
     }
-    if (graphicsQueueIndex == ~0) {
+    if (graphicsQueueIndex_ == ~0) {
         throw std::runtime_error("Could not find a single queue for both graphics and present!");
     }
 
@@ -735,37 +735,37 @@ void App::createLogicalDevice()
 
     constexpr float queuePriority = 0.5f;
     vk::DeviceQueueCreateInfo deviceQueueCreateInfo{
-        .queueFamilyIndex = graphicsQueueIndex, .queueCount = 1, .pQueuePriorities = &queuePriority};
+        .queueFamilyIndex = graphicsQueueIndex_, .queueCount = 1, .pQueuePriorities = &queuePriority};
     vk::DeviceCreateInfo deviceCreateInfo{.pNext                   = &featureChain.get<vk::PhysicalDeviceFeatures2>(),
                                           .queueCreateInfoCount    = deviceQueueCreateInfo.queueCount,
                                           .pQueueCreateInfos       = &deviceQueueCreateInfo,
                                           .enabledExtensionCount   = static_cast<uint32_t>(requiredDeviceExtensions.size()),
                                           .ppEnabledExtensionNames = requiredDeviceExtensions.data()};
 
-    device        = vk::raii::Device(physicalDevice, deviceCreateInfo);
-    graphicsQueue = vk::raii::Queue(device, graphicsQueueIndex, 0);
+    device_        = vk::raii::Device(physicalDevice_, deviceCreateInfo);
+    graphicsQueue_ = vk::raii::Queue(device_, graphicsQueueIndex_, 0);
 }
 
 void App::createSwapchain()
 {
-    ++metrics.swapChainBuildCount;
+    ++metrics_.swapChainBuildCount;
 
-    vk::SurfaceCapabilitiesKHR surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
-    swapchainExtent                                = chooseSwapExtent(surfaceCapabilities);
-    minImageCount                                  = chooseSwapMinImageCount(surfaceCapabilities);
+    vk::SurfaceCapabilitiesKHR surfaceCapabilities = physicalDevice_.getSurfaceCapabilitiesKHR(*surface_);
+    swapchainExtent_                               = chooseSwapExtent(surfaceCapabilities);
+    minImageCount_                                 = chooseSwapMinImageCount(surfaceCapabilities);
 
-    auto availableFormats  = physicalDevice.getSurfaceFormatsKHR(*surface);
-    swapchainSurfaceFormat = chooseSwapSurfaceFormat(availableFormats);
+    auto availableFormats   = physicalDevice_.getSurfaceFormatsKHR(*surface_);
+    swapchainSurfaceFormat_ = chooseSwapSurfaceFormat(availableFormats);
 
-    auto availablePresentModes = physicalDevice.getSurfacePresentModesKHR(*surface);
+    auto availablePresentModes = physicalDevice_.getSurfacePresentModesKHR(*surface_);
     auto presentMode           = chooseSwapPresentMode(availablePresentModes);
 
     vk::SwapchainCreateInfoKHR swapchainCreateInfo{
-        .surface          = *surface,
-        .minImageCount    = minImageCount,
-        .imageFormat      = swapchainSurfaceFormat.format,
-        .imageColorSpace  = swapchainSurfaceFormat.colorSpace,
-        .imageExtent      = swapchainExtent,
+        .surface          = *surface_,
+        .minImageCount    = minImageCount_,
+        .imageFormat      = swapchainSurfaceFormat_.format,
+        .imageColorSpace  = swapchainSurfaceFormat_.colorSpace,
+        .imageExtent      = swapchainExtent_,
         .imageArrayLayers = 1,
         .imageUsage       = vk::ImageUsageFlagBits::eColorAttachment, // we might later use eTransferDst if using a memory operation to
                                                                       // transfer images to the swap chain
@@ -774,26 +774,26 @@ void App::createSwapchain()
         .compositeAlpha   = vk::CompositeAlphaFlagBitsKHR::eOpaque,
         .presentMode      = presentMode,
         .clipped          = true};
-    swapchain       = vk::raii::SwapchainKHR(device, swapchainCreateInfo);
-    swapchainImages = swapchain.getImages();
+    swapchain_       = vk::raii::SwapchainKHR(device_, swapchainCreateInfo);
+    swapchainImages_ = swapchain_.getImages();
 }
 
 void App::cleanupSwapchain()
 {
-    swapchainImageViews.clear();
-    swapchain = nullptr;
+    swapchainImageViews_.clear();
+    swapchain_ = nullptr;
 }
 
 void App::recreateSwapchain()
 {
     int width = 0, height = 0;
-    glfwGetFramebufferSize(window, &width, &height);
+    glfwGetFramebufferSize(window_, &width, &height);
     while (width == 0 || height == 0) {
-        glfwGetFramebufferSize(window, &width, &height);
+        glfwGetFramebufferSize(window_, &width, &height);
         glfwWaitEvents();
     }
 
-    device.waitIdle();
+    device_.waitIdle();
 
     cleanupSwapchain();
 
@@ -825,7 +825,7 @@ vk::Extent2D App::chooseSwapExtent(vk::SurfaceCapabilitiesKHR const &capabilitie
         return capabilities.currentExtent;
     }
     int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
+    glfwGetFramebufferSize(window_, &width, &height);
     return {std::clamp<uint32_t>(width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
             std::clamp<uint32_t>(height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height)};
 }
@@ -843,12 +843,12 @@ void App::createImageViews()
 {
     vk::ImageViewCreateInfo imageViewCreateInfo{
         .viewType         = vk::ImageViewType::e2D,
-        .format           = swapchainSurfaceFormat.format,
+        .format           = swapchainSurfaceFormat_.format,
         .subresourceRange = {.aspectMask = vk::ImageAspectFlagBits::eColor, .levelCount = 1, .layerCount = 1}};
 
-    for (auto &image : swapchainImages) {
+    for (auto &image : swapchainImages_) {
         imageViewCreateInfo.image = image;
-        swapchainImageViews.emplace_back(device, imageViewCreateInfo);
+        swapchainImageViews_.emplace_back(device_, imageViewCreateInfo);
     }
 }
 
@@ -877,11 +877,11 @@ void App::createGraphicsPipeline()
     // viewport & scissor
     vk::Viewport viewport{.x        = 0.0f,
                           .y        = 0.0f,
-                          .width    = static_cast<float>(swapchainExtent.width),
-                          .height   = static_cast<float>(swapchainExtent.height),
+                          .width    = static_cast<float>(swapchainExtent_.width),
+                          .height   = static_cast<float>(swapchainExtent_.height),
                           .minDepth = 0.0f,
                           .maxDepth = 1.0f};
-    vk::Rect2D scissor{vk::Offset2D{0, 0}, swapchainExtent};
+    vk::Rect2D scissor{vk::Offset2D{0, 0}, swapchainExtent_};
     vk::PipelineViewportStateCreateInfo viewportState{.viewportCount = 1, .scissorCount = 1};
 
     // rasterizer
@@ -910,7 +910,7 @@ void App::createGraphicsPipeline()
     // pipeline layout
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo{.setLayoutCount         = 0,  // for "uniform" values used in shaders
                                                     .pushConstantRangeCount = 0}; // for "push constants" for use in shaders
-    pipelineLayout = vk::raii::PipelineLayout(device, pipelineLayoutInfo);
+    pipelineLayout_ = vk::raii::PipelineLayout(device_, pipelineLayoutInfo);
 
     // rendering
     vk::StructureChain<vk::GraphicsPipelineCreateInfo, vk::PipelineRenderingCreateInfo> pipelineCreateInfoChain = {
@@ -924,50 +924,50 @@ void App::createGraphicsPipeline()
             .pMultisampleState   = &multisampling,
             .pColorBlendState    = &colorBlending,
             .pDynamicState       = &dynamicState,
-            .layout              = pipelineLayout, // pipeline layout is a vulkan handle rather than a struct
+            .layout              = pipelineLayout_, // pipeline layout is a vulkan handle rather than a struct
             .renderPass          = nullptr,
         },
-        {.colorAttachmentCount = 1, .pColorAttachmentFormats = &swapchainSurfaceFormat.format}};
+        {.colorAttachmentCount = 1, .pColorAttachmentFormats = &swapchainSurfaceFormat_.format}};
 
     // full pipeline
-    graphicsPipeline = vk::raii::Pipeline(device, nullptr, pipelineCreateInfoChain.get<vk::GraphicsPipelineCreateInfo>());
+    graphicsPipeline_ = vk::raii::Pipeline(device_, nullptr, pipelineCreateInfoChain.get<vk::GraphicsPipelineCreateInfo>());
 }
 
 [[nodiscard]] vk::raii::ShaderModule App::createShaderModule(const std::vector<char> &code) const
 {
     vk::ShaderModuleCreateInfo createInfo{.codeSize = code.size() * sizeof(char),
                                           .pCode    = reinterpret_cast<const uint32_t *>(code.data())};
-    vk::raii::ShaderModule shaderModule(device, createInfo);
+    vk::raii::ShaderModule shaderModule(device_, createInfo);
     return shaderModule;
 }
 
 void App::createCommandPool()
 {
     vk::CommandPoolCreateInfo poolInfo{.flags            = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-                                       .queueFamilyIndex = graphicsQueueIndex};
-    commandPool = vk::raii::CommandPool(device, poolInfo);
+                                       .queueFamilyIndex = graphicsQueueIndex_};
+    commandPool_ = vk::raii::CommandPool(device_, poolInfo);
 }
 
 void App::createCommandBuffers()
 {
-    vk::CommandBufferAllocateInfo allocInfo{.commandPool = commandPool,
+    vk::CommandBufferAllocateInfo allocInfo{.commandPool = commandPool_,
                                             .level = vk::CommandBufferLevel::ePrimary, // primary can be submitted, secondary can be
                                                                                        // called by primary but not submitted directly
                                             .commandBufferCount = MAX_FRAMES_IN_FLIGHT};
-    commandBuffers = vk::raii::CommandBuffers(device, allocInfo);
+    commandBuffers_ = vk::raii::CommandBuffers(device_, allocInfo);
 }
 
 void App::createSyncObjects()
 {
-    assert(presentCompleteSemaphores.empty() && renderFinishedSemaphores.empty() && inFlightFences.empty());
+    assert(presentCompleteSemaphores_.empty() && renderFinishedSemaphores_.empty() && inFlightFences_.empty());
 
-    for (size_t i : std::views::iota(0u, swapchainImages.size())) {
-        renderFinishedSemaphores.emplace_back(device, vk::SemaphoreCreateInfo());
+    for (size_t i : std::views::iota(0u, swapchainImages_.size())) {
+        renderFinishedSemaphores_.emplace_back(device_, vk::SemaphoreCreateInfo());
     }
 
     for (size_t i : std::views::iota(0u, MAX_FRAMES_IN_FLIGHT)) {
-        presentCompleteSemaphores.emplace_back(device, vk::SemaphoreCreateInfo());
-        inFlightFences.emplace_back(device, vk::FenceCreateInfo{.flags = vk::FenceCreateFlagBits::eSignaled});
+        presentCompleteSemaphores_.emplace_back(device_, vk::SemaphoreCreateInfo());
+        inFlightFences_.emplace_back(device_, vk::FenceCreateInfo{.flags = vk::FenceCreateFlagBits::eSignaled});
     }
 }
 
@@ -984,17 +984,17 @@ void App::transitionImageLayout(uint32_t imageIndex, vk::ImageLayout old_layout,
         .newLayout           = new_layout,
         .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-        .image               = swapchainImages[imageIndex],
+        .image               = swapchainImages_[imageIndex],
         .subresourceRange    = {
                .aspectMask = vk::ImageAspectFlagBits::eColor, .baseMipLevel = 0, .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1}};
 
     vk::DependencyInfo dependencyInfo = {.dependencyFlags = {}, .imageMemoryBarrierCount = 1, .pImageMemoryBarriers = &barrier};
-    commandBuffers[frameIndex].pipelineBarrier2(dependencyInfo);
+    commandBuffers_[frameIndex_].pipelineBarrier2(dependencyInfo);
 }
 
 void App::recordCommandBuffer(uint32_t imageIndex)
 {
-    auto &commandBuffer = commandBuffers[frameIndex];
+    auto &commandBuffer = commandBuffers_[frameIndex_];
     commandBuffer.begin({});
 
     transitionImageLayout(imageIndex,
@@ -1013,23 +1013,23 @@ void App::recordCommandBuffer(uint32_t imageIndex)
     );
 
     vk::ClearValue clearColor                  = vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f);
-    vk::RenderingAttachmentInfo attachmentInfo = {.imageView   = swapchainImageViews[imageIndex],
+    vk::RenderingAttachmentInfo attachmentInfo = {.imageView   = swapchainImageViews_[imageIndex],
                                                   .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
                                                   .loadOp      = vk::AttachmentLoadOp::eClear,
                                                   .storeOp     = vk::AttachmentStoreOp::eStore,
                                                   .clearValue  = clearColor};
-    vk::RenderingInfo renderingInfo            = {.renderArea           = {.offset = {0, 0}, .extent = swapchainExtent},
+    vk::RenderingInfo renderingInfo            = {.renderArea           = {.offset = {0, 0}, .extent = swapchainExtent_},
                                                   .layerCount           = 1,
                                                   .colorAttachmentCount = 1,
                                                   .pColorAttachments    = &attachmentInfo};
     commandBuffer.beginRendering(renderingInfo);
 
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *graphicsPipeline);
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *graphicsPipeline_);
 
 #ifdef SHOW_DEBUG_TRIANGLE
     commandBuffer.setViewport(
-        0, vk::Viewport(0.0f, 0.0f, static_cast<float>(swapchainExtent.width), static_cast<float>(swapchainExtent.height)));
-    commandBuffer.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), swapchainExtent));
+        0, vk::Viewport(0.0f, 0.0f, static_cast<float>(swapchainExtent_.width), static_cast<float>(swapchainExtent_.height)));
+    commandBuffer.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), swapchainExtent_));
     commandBuffer.draw(3, 1, 0, 0);
 #endif
 
@@ -1058,12 +1058,12 @@ void App::recordCommandBuffer(uint32_t imageIndex)
 
 void App::drawFrame()
 {
-    auto fenceResult = device.waitForFences(*inFlightFences[frameIndex], vk::True, UINT64_MAX);
+    auto fenceResult = device_.waitForFences(*inFlightFences_[frameIndex_], vk::True, UINT64_MAX);
     if (fenceResult != vk::Result::eSuccess) {
         throw std::runtime_error("Failed to wait for fence.");
     }
 
-    auto [result, imageIndex] = swapchain.acquireNextImage(UINT64_MAX, *presentCompleteSemaphores[frameIndex], nullptr);
+    auto [result, imageIndex] = swapchain_.acquireNextImage(UINT64_MAX, *presentCompleteSemaphores_[frameIndex_], nullptr);
     switch (result) {
     case vk::Result::eErrorOutOfDateKHR:
         recreateSwapchain();
@@ -1082,21 +1082,21 @@ void App::drawFrame()
     showImGui();
     ImGui::Render();
 
-    device.resetFences(*inFlightFences[frameIndex]); // only reset the fence if we are submitting work, otherwise we can deadlock
+    device_.resetFences(*inFlightFences_[frameIndex_]); // only reset the fence if we are submitting work, otherwise we can deadlock
 
-    commandBuffers[frameIndex].reset();
+    commandBuffers_[frameIndex_].reset();
     recordCommandBuffer(imageIndex);
 
     vk::PipelineStageFlags waitDestinationStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
     const vk::SubmitInfo submitInfo{.waitSemaphoreCount   = 1,
-                                    .pWaitSemaphores      = &*presentCompleteSemaphores[frameIndex],
+                                    .pWaitSemaphores      = &*presentCompleteSemaphores_[frameIndex_],
                                     .pWaitDstStageMask    = &waitDestinationStageMask,
                                     .commandBufferCount   = 1,
-                                    .pCommandBuffers      = &*commandBuffers[frameIndex],
+                                    .pCommandBuffers      = &*commandBuffers_[frameIndex_],
                                     .signalSemaphoreCount = 1,
-                                    .pSignalSemaphores    = &*renderFinishedSemaphores[imageIndex]};
+                                    .pSignalSemaphores    = &*renderFinishedSemaphores_[imageIndex]};
 
-    graphicsQueue.submit(submitInfo, *inFlightFences[frameIndex]);
+    graphicsQueue_.submit(submitInfo, *inFlightFences_[frameIndex_]);
 
     auto &io = ImGui::GetIO();
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
@@ -1105,18 +1105,18 @@ void App::drawFrame()
     }
 
     const vk::PresentInfoKHR presentInfoKHR{.waitSemaphoreCount = 1,
-                                            .pWaitSemaphores    = &*renderFinishedSemaphores[imageIndex],
+                                            .pWaitSemaphores    = &*renderFinishedSemaphores_[imageIndex],
                                             .swapchainCount     = 1,
-                                            .pSwapchains        = &*swapchain,
+                                            .pSwapchains        = &*swapchain_,
                                             .pImageIndices      = &imageIndex};
-    result = graphicsQueue.presentKHR(presentInfoKHR);
+    result = graphicsQueue_.presentKHR(presentInfoKHR);
 
-    if (result == vk::Result::eSuboptimalKHR || result == vk::Result::eErrorOutOfDateKHR || frameBufferResized) {
-        frameBufferResized = false;
+    if (result == vk::Result::eSuboptimalKHR || result == vk::Result::eErrorOutOfDateKHR || frameBufferResized_) {
+        frameBufferResized_ = false;
         recreateSwapchain();
     }
 
-    frameIndex = (frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
+    frameIndex_ = (frameIndex_ + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 }; // namespace Mirael

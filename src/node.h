@@ -28,8 +28,8 @@ protected:
 
     virtual void onShowProperties() {}
 
-    NodeId getId() const { return id; }
-    void *getIdAsPointer() const { return (void *)(uintptr_t)(uint64_t)(id); } // this is necessary for using ImGui::PushID()
+    NodeId getId() const { return id_; }
+    void *getIdAsPointer() const { return (void *)(uintptr_t)(uint64_t)(id_); } // this is necessary for using ImGui::PushID()
 
     PinId addPin(std::string_view key, PinConfig config);
     void removePin(std::string_view key);
@@ -38,27 +38,27 @@ protected:
     void raiseModified(ChangeImpact impact);
 
     void setPos(ImVec2 newPos);
-    void select() { selectPending = true; }
+    void select() { selectPending_ = true; }
 
 private:
-    bool initialized = false;
-    Graph *graph;
-    NodeId id;
-    std::string typeName;
-    std::unordered_map<std::string, PinId, TransparentStringHash, std::equal_to<>> pinKeyToId;
-    std::unordered_map<PinId, PinConfig> pinIdToConfig;
+    bool initialized_ = false;
+    Graph *graph_;
+    NodeId id_;
+    std::string typeName_;
+    std::unordered_map<std::string, PinId, TransparentStringHash, std::equal_to<>> pinKeyToId_;
+    std::unordered_map<PinId, PinConfig> pinIdToConfig_;
 
     void init(Graph &owner, NodeId id, std::string_view nodeTypeName);
     void show();
 
     void serialize(nlohmann::json &j) const;
     static std::unique_ptr<Node> deserialize(Graph &owner, NodeId id, const nlohmann::json &j);
-    bool deserializing = false;
+    bool deserializing_ = false;
 
-    ImVec2 pos;
-    std::optional<ImVec2> pendingSetPos{};
+    ImVec2 pos_;
+    std::optional<ImVec2> pendingSetPos_{};
 
-    bool selectPending = false;
+    bool selectPending_ = false;
 
     void truncatePinKeysToConfigured();
     void removeAllPins();

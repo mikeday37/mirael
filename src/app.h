@@ -58,39 +58,39 @@ private:
     // UI
     //
 public:
-    static App &get() { return *appInstance; }
+    static App &get() { return *appInstance_; }
     static App *fromWindow(GLFWwindow *window) { return static_cast<App *>(glfwGetWindowUserPointer(window)); }
 
     void attemptReloadLastProject();
-    Project &getProject() { return projectExplorer.getProject(); }
-    Library &getLibrary() { return library; }
+    Project &getProject() { return projectExplorer_.getProject(); }
+    Library &getLibrary() { return library_; }
     void exit();
-    bool *getLibraryFlag() { return &mainWindowSettings.library; }
-    bool *getPropertiesFlag() { return &mainWindowSettings.properties; }
-    bool *getSettingsFlag() { return &mainWindowSettings.settings; }
-    bool *getDiagnosticsFlag() { return &mainWindowSettings.diagnostics; }
-    bool *getFullscreenFlag() { return &mainWindowSettings.fullscreen; }
-    bool *getImGuiDemoFlag() { return &mainWindowSettings.demo; }
+    bool *getLibraryFlag() { return &mainWindowSettings_.library; }
+    bool *getPropertiesFlag() { return &mainWindowSettings_.properties; }
+    bool *getSettingsFlag() { return &mainWindowSettings_.settings; }
+    bool *getDiagnosticsFlag() { return &mainWindowSettings_.diagnostics; }
+    bool *getFullscreenFlag() { return &mainWindowSettings_.fullscreen; }
+    bool *getImGuiDemoFlag() { return &mainWindowSettings_.demo; }
     void applyFullscreenSetting();
 
     void setDestructiveAction(std::string label, std::string message, std::function<void()> postConfirmAction,
                               std::function<void()> postCancelAction = nullptr);
     void showError(std::string message);
-    ImGuiID getDockspaceId() const { return dockspaceId; }
-    const NodeTypeRegistry &nodeTypes() const { return nodeTypeRegistry; }
+    ImGuiID getDockspaceId() const { return dockspaceId_; }
+    const NodeTypeRegistry &nodeTypes() const { return nodeTypeRegistry_; }
 
     std::string getNewUuidAsString() const;
 
     struct Metrics {
         uint64_t mainLoopIteration, swapChainBuildCount, platformWindowCreateCount, platformWindowDestroyCount, windowRefreshCount;
     };
-    Metrics metrics{};
+    Metrics metrics_{};
     void showDiagnosticRows();
 
     struct ChangeTrackingSettings {
         bool panZoom = false, moveNode = true, graphVisibility = false;
     };
-    ChangeTrackingSettings &getChangeTrackingSettings() { return changeTrackingSettings; }
+    ChangeTrackingSettings &getChangeTrackingSettings() { return changeTrackingSettings_; }
 
     struct Style {
         struct Values {
@@ -103,26 +103,26 @@ public:
         Values values{};
         Colors colors{};
     };
-    Style &getStyle() { return style; }
+    Style &getStyle() { return style_; }
 
 private:
-    static inline App *appInstance = nullptr;
+    static inline App *appInstance_ = nullptr;
     void showImGui();
-    ProjectExplorer projectExplorer;
-    Library library;
-    Properties properties;
-    Settings settings;
-    Diagnostics diagnostics;
-    ImGuiID dockspaceId{};
-    Style style{};
+    ProjectExplorer projectExplorer_;
+    Library library_;
+    Properties properties_;
+    Settings settings_;
+    Diagnostics diagnostics_;
+    ImGuiID dockspaceId_{};
+    Style style_{};
 
     // interaction
-    bool closeRequested = false;
-    bool closeConfirmed = false;
-    ChangeTrackingSettings changeTrackingSettings{};
+    bool closeRequested_ = false;
+    bool closeConfirmed_ = false;
+    ChangeTrackingSettings changeTrackingSettings_{};
 
     // registries
-    NodeTypeRegistry nodeTypeRegistry;
+    NodeTypeRegistry nodeTypeRegistry_;
 
     // desctructive action (for requiring user confirmation)
     struct DestructiveAction {
@@ -133,7 +133,7 @@ private:
         std::function<void()> postCancelAction = nullptr;
         bool opened                            = false;
     };
-    std::optional<DestructiveAction> destructiveAction;
+    std::optional<DestructiveAction> destructiveAction_;
 
     //
     // main window settings persistence
@@ -143,14 +143,14 @@ private:
         bool maximized, fullscreen, library, properties, settings, diagnostics, demo, firstRun;
         std::optional<std::filesystem::path> lastProjectPath;
     };
-    MainWindowSettings mainWindowSettings = {.maximized   = false,
-                                             .fullscreen  = false,
-                                             .library     = true,
-                                             .properties  = true,
-                                             .settings    = false,
-                                             .diagnostics = false,
-                                             .demo        = false,
-                                             .firstRun    = true};
+    MainWindowSettings mainWindowSettings_ = {.maximized   = false,
+                                              .fullscreen  = false,
+                                              .library     = true,
+                                              .properties  = true,
+                                              .settings    = false,
+                                              .diagnostics = false,
+                                              .demo        = false,
+                                              .firstRun    = true};
     ImGuiSettingsHandler getImGuiSettingsHandler();
     static void imGuiSettings_WriteAll(ImGuiContext *ctx, ImGuiSettingsHandler *handler, ImGuiTextBuffer *out_buf);
     static void *imGuiSettings_ReadOpen(ImGuiContext *ctx, ImGuiSettingsHandler *handler, const char *name);
@@ -160,19 +160,19 @@ private:
     static void imGuiPlatform_CreateWindow(ImGuiViewport *vp);
     static void imGuiPlatform_DestroyWindow(ImGuiViewport *vp);
     GLFWmonitor *getCurrentMonitor();
-    bool togglingFullscreen       = false;
-    bool initialShowWindowPending = true;
+    bool togglingFullscreen_       = false;
+    bool initialShowWindowPending_ = true;
     struct BaseImGuiPlatformHandlers {
         void (*Platform_CreateWindow)(ImGuiViewport *vp)  = nullptr;
         void (*Platform_DestroyWindow)(ImGuiViewport *vp) = nullptr;
     };
-    BaseImGuiPlatformHandlers baseImGuiPlatformHandlers{};
+    BaseImGuiPlatformHandlers baseImGuiPlatformHandlers_{};
 
     //
     // GLFW setup, management and hooks
     //
-    GLFWwindow *window      = nullptr;
-    bool frameBufferResized = false;
+    GLFWwindow *window_      = nullptr;
+    bool frameBufferResized_ = false;
     static void frameBufferResizeCallback(GLFWwindow *window, int width, int height);
     static void windowPosCallback(GLFWwindow *window, int x, int y);
     static void windowSizeCallback(GLFWwindow *window, int width, int height);
@@ -184,30 +184,30 @@ private:
     //
     // Vulkan objects and variables
     //
-    vk::raii::Context context{};
-    vk::raii::Instance instance                     = nullptr;
-    vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
-    vk::raii::SurfaceKHR surface                    = nullptr;
-    vk::raii::PhysicalDevice physicalDevice         = nullptr;
-    vk::raii::Device device                         = nullptr;
-    vk::raii::Queue graphicsQueue                   = nullptr;
-    uint32_t graphicsQueueIndex                     = ~0;
-    vk::raii::SwapchainKHR swapchain                = nullptr;
-    vk::raii::PipelineLayout pipelineLayout         = nullptr;
-    vk::raii::Pipeline graphicsPipeline             = nullptr;
-    vk::raii::CommandPool commandPool               = nullptr;
+    vk::raii::Context context_{};
+    vk::raii::Instance instance_                     = nullptr;
+    vk::raii::DebugUtilsMessengerEXT debugMessenger_ = nullptr;
+    vk::raii::SurfaceKHR surface_                    = nullptr;
+    vk::raii::PhysicalDevice physicalDevice_         = nullptr;
+    vk::raii::Device device_                         = nullptr;
+    vk::raii::Queue graphicsQueue_                   = nullptr;
+    uint32_t graphicsQueueIndex_                     = ~0;
+    vk::raii::SwapchainKHR swapchain_                = nullptr;
+    vk::raii::PipelineLayout pipelineLayout_         = nullptr;
+    vk::raii::Pipeline graphicsPipeline_             = nullptr;
+    vk::raii::CommandPool commandPool_               = nullptr;
 
-    uint32_t minImageCount = 0;
-    vk::SurfaceFormatKHR swapchainSurfaceFormat;
-    vk::Extent2D swapchainExtent;
-    std::vector<vk::Image> swapchainImages;
-    std::vector<vk::raii::ImageView> swapchainImageViews;
+    uint32_t minImageCount_ = 0;
+    vk::SurfaceFormatKHR swapchainSurfaceFormat_;
+    vk::Extent2D swapchainExtent_;
+    std::vector<vk::Image> swapchainImages_;
+    std::vector<vk::raii::ImageView> swapchainImageViews_;
 
-    std::vector<vk::raii::CommandBuffer> commandBuffers;
-    std::vector<vk::raii::Semaphore> presentCompleteSemaphores;
-    std::vector<vk::raii::Semaphore> renderFinishedSemaphores;
-    std::vector<vk::raii::Fence> inFlightFences;
-    uint32_t frameIndex = 0;
+    std::vector<vk::raii::CommandBuffer> commandBuffers_;
+    std::vector<vk::raii::Semaphore> presentCompleteSemaphores_;
+    std::vector<vk::raii::Semaphore> renderFinishedSemaphores_;
+    std::vector<vk::raii::Fence> inFlightFences_;
+    uint32_t frameIndex_ = 0;
 
     //
     // Vulkan setup, mangement, rendering

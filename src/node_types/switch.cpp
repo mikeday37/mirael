@@ -20,25 +20,25 @@ void Switch::onDeserialize(const nlohmann::json &j)
     if (j.empty())
         return;
 
-    enabled    = j["enabled"].get<bool>();
-    dynamic    = j["dynamic"].get<bool>();
-    inputCount = j["n"].get<int>();
+    enabled_    = j["enabled"].get<bool>();
+    dynamic_    = j["dynamic"].get<bool>();
+    inputCount_ = j["n"].get<int>();
     if (j.contains("choice"))
-        manualChoice = j["choice"].get<int>();
+        manualChoice_ = j["choice"].get<int>();
 }
 
 void Switch::onInit()
 {
-    choicePinId = 0;
-    if (dynamic)
+    choicePinId_ = 0;
+    if (dynamic_)
         handleToggleDynamic();
 
-    inputs.reserve(inputCount);
-    for (int n : std::views::iota(1, inputCount + 1)) {
+    inputs_.reserve(inputCount_);
+    for (int n : std::views::iota(1, inputCount_ + 1)) {
         addSwitchInputPin(n);
     }
 
-    outPinId = addPin("out", {.direction = PinDirection::Output});
+    outPinId_ = addPin("out", {.direction = PinDirection::Output});
 }
 
 namespace
@@ -106,10 +106,10 @@ void Switch::onShow()
     postHeader();
     ImGui::Dummy({0, style.ItemSpacing.y / 2.0f});
 
-    auto outPin = [this](){
+    auto outPin = [this]() {
         prePin(false);
-        ne::BeginPin(outPinId, ne::PinKind::Output);
-        if (ImGui::Checkbox("out", &enabled))
+        ne::BeginPin(outPinId_, ne::PinKind::Output);
+        if (ImGui::Checkbox("out", &enabled_))
             raiseModified(ChangeImpact::NodeConfig);
         ImGui::SameLine();
         drawPin();
@@ -118,9 +118,9 @@ void Switch::onShow()
     };
 
     // if dynamic, choice input and the output are on the same row
-    if (dynamic) {
+    if (dynamic_) {
         prePin();
-        ne::BeginPin(choicePinId, ne::PinKind::Input);
+        ne::BeginPin(choicePinId_, ne::PinKind::Input);
         drawPin();
         ImGui::SameLine();
         ImGui::AlignTextToFramePadding();
@@ -135,25 +135,25 @@ void Switch::onShow()
 
     // loop through inputs
     bool first = true;
-    for (const auto &[n, id, label] : inputs) {
+    for (const auto &[n, id, label] : inputs_) {
         prePin();
         ne::BeginPin(id, ne::PinKind::Input);
         drawPin();
         ImGui::SameLine();
-        if (dynamic)
+        if (dynamic_)
             ImGui::TextUnformatted(label.c_str());
         else {
-            if (ImGui::RadioButton(label.c_str(), manualChoice == n)) {
-                if (manualChoice != n)
+            if (ImGui::RadioButton(label.c_str(), manualChoice_ == n)) {
+                if (manualChoice_ != n)
                     raiseModified(ChangeImpact::NodeConfig);
-                manualChoice = n;
+                manualChoice_ = n;
             }
         }
         ne::EndPin();
         postPin();
 
         // output will be aligned with the first input if not dynamic
-        if (!dynamic && first) {
+        if (!dynamic_ && first) {
             first = false;
             ImGui::SameLine();
             ImGui::Dummy({ImGui::CalcTextSize("W").x * 1.0f, 0});
@@ -171,39 +171,39 @@ void Switch::onShow()
 
 void Switch::onSerialize(nlohmann::json &j) const
 {
-    j["enabled"] = enabled;
-    j["dynamic"] = dynamic;
-    j["n"]       = inputCount;
-    if (manualChoice != 0)
-        j["choice"] = manualChoice;
+    j["enabled"] = enabled_;
+    j["dynamic"] = dynamic_;
+    j["n"]       = inputCount_;
+    if (manualChoice_ != 0)
+        j["choice"] = manualChoice_;
 }
 
 void Switch::onShowProperties()
 {
     bool changed = false;
 
-    int priorInputCount = inputCount;
-    ImGui::InputInt("Inputs", &inputCount);
-    inputCount = std::clamp(inputCount, 1, 100);
-    if (priorInputCount != inputCount) {
+    int priorInputCount = inputCount_;
+    ImGui::InputInt("Inputs", &inputCount_);
+    inputCount_ = std::clamp(inputCount_, 1, 100);
+    if (priorInputCount != inputCount_) {
         changed = true;
-        if (inputCount > priorInputCount)
+        if (inputCount_ > priorInputCount)
             expandInputs();
         else {
-            assert(inputCount < priorInputCount);
+            assert(inputCount_ < priorInputCount);
             reduceInputs();
         }
     }
 
-    changed |= ImGui::Checkbox("Enabled", &enabled);
+    changed |= ImGui::Checkbox("Enabled", &enabled_);
 
-    bool preDynamic = dynamic;
-    changed |= ImGui::Checkbox("Dynamic", &dynamic);
-    if (preDynamic != dynamic)
+    bool preDynamic = dynamic_;
+    changed |= ImGui::Checkbox("Dynamic", &dynamic_);
+    if (preDynamic != dynamic_)
         handleToggleDynamic();
 
-    if (!dynamic)
-        changed |= ImGui::InputInt("Manual Choice", &manualChoice);
+    if (!dynamic_)
+        changed |= ImGui::InputInt("Manual Choice", &manualChoice_);
 
     if (changed)
         raiseModified(ChangeImpact::NodeConfig);
@@ -211,22 +211,22 @@ void Switch::onShowProperties()
 
 void Switch::expandInputs()
 {
-    if (inputCount > inputs.size())
-        inputs.reserve(inputCount);
+    if (inputCount_ > inputs_.size())
+        inputs_.reserve(inputCount_);
 
-    while (inputCount > inputs.size()) {
-        int pinNum = static_cast<int>(inputs.size()) + 1;
+    while (inputCount_ > inputs_.size()) {
+        int pinNum = static_cast<int>(inputs_.size()) + 1;
         addSwitchInputPin(pinNum);
     }
 }
 
 void Switch::reduceInputs()
 {
-    auto priorSize = static_cast<int>(inputs.size());
+    auto priorSize = static_cast<int>(inputs_.size());
 
-    inputs.resize(inputCount);
+    inputs_.resize(inputCount_);
 
-    while (priorSize > inputCount) {
+    while (priorSize > inputCount_) {
         int pinNum = priorSize--;
         removeSwitchInputPin(pinNum);
     }
@@ -236,7 +236,7 @@ void Switch::addSwitchInputPin(int pinNumber)
 {
     std::string key = std::format("in{}", pinNumber);
     auto pinId      = addPin(key, {.direction = PinDirection::Input});
-    inputs.emplace_back(pinNumber, pinId, key);
+    inputs_.emplace_back(pinNumber, pinId, key);
 }
 
 void Switch::removeSwitchInputPin(int pinNumber)
@@ -247,11 +247,11 @@ void Switch::removeSwitchInputPin(int pinNumber)
 
 void Switch::handleToggleDynamic()
 {
-    if (dynamic && !choicePinId) {
-        choicePinId = addPin("choice", {.direction = PinDirection::Input});
-    } else if (choicePinId && !dynamic) {
+    if (dynamic_ && !choicePinId_) {
+        choicePinId_ = addPin("choice", {.direction = PinDirection::Input});
+    } else if (choicePinId_ && !dynamic_) {
         removePin("choice");
-        choicePinId = 0;
+        choicePinId_ = 0;
     } else {
         assert(false); // the above two cases should be the only cases we encounter
     }

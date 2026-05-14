@@ -27,7 +27,7 @@ class NodeTypeRegistry
 public:
     NodeTypeRegistry();
 
-    const std::vector<const char *> &names() const { return namesOrdered; }
+    const std::vector<const char *> &names() const { return namesOrdered_; }
 
     std::unique_ptr<Node> createNode(std::string_view typeName) const;
 
@@ -37,13 +37,13 @@ private:
         std::function<std::unique_ptr<Node>()> factory;
     };
 
-    std::unordered_map<std::string, Entry, TransparentStringHash, std::equal_to<>> entries;
-    std::vector<const char *> namesOrdered;
+    std::unordered_map<std::string, Entry, TransparentStringHash, std::equal_to<>> entries_;
+    std::vector<const char *> namesOrdered_;
 
     template <NodeType T> void registerType()
     {
-        auto name     = T::typeName();
-        entries[name] = {.name = name, .factory = []() { return std::make_unique<T>(); }};
+        auto name      = T::typeName();
+        entries_[name] = {.name = name, .factory = []() { return std::make_unique<T>(); }};
     }
 };
 

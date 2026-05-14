@@ -16,7 +16,7 @@ using json = nlohmann::json;
 
 void Project::showGraphs()
 {
-    for (auto &[id, graph] : graphMap) {
+    for (auto &[id, graph] : graphMap_) {
         graph->showView();
     }
 }
@@ -25,36 +25,36 @@ Project &Project::get() { return App::get().getProject(); }
 
 void Project::createNodeInLastFocusedGraphIfVisible(const char *nodeTypeName)
 {
-    auto it = graphMap.find(lastFocusedGraphId);
-    if (it != graphMap.end() && it->second->isVisible())
+    auto it = graphMap_.find(lastFocusedGraphId_);
+    if (it != graphMap_.end() && it->second->isVisible())
         it->second->userCreateNode(nodeTypeName);
 }
 
 Graph &Project::addNewGraph()
 {
     auto uid            = App::get().getNewUuidAsString();
-    auto id             = nextGraphId++;
-    auto [it, inserted] = graphMap.try_emplace(id, std::make_unique<Graph>(id, uid));
+    auto id             = nextGraphId_++;
+    auto [it, inserted] = graphMap_.try_emplace(id, std::make_unique<Graph>(id, uid));
     Graph &storedGraph  = *it->second;
     watchGraphChanges(storedGraph);
-    isModifiedFlag = true;
-    orderDirty     = true;
+    isModifiedFlag_ = true;
+    orderDirty_     = true;
     storedGraph.rename(std::format("Graph {}", id));
     return storedGraph;
 }
 
 void Project::removeGraph(GraphId id)
 {
-    if (graphMap.erase(id)) {
-        isModifiedFlag = true;
-        orderDirty     = true;
+    if (graphMap_.erase(id)) {
+        isModifiedFlag_ = true;
+        orderDirty_     = true;
     }
 }
 
 std::span<GraphId> Project::getGraphIdsInDisplayOrder()
 {
     updateDisplayOrder();
-    return displayOrder;
+    return displayOrder_;
 }
 
 void Project::watchGraphChanges(Graph &graph)
@@ -64,23 +64,23 @@ void Project::watchGraphChanges(Graph &graph)
         switch (impact) {
 
         case ChangeImpact::GraphName:
-            isModifiedFlag = true;
-            orderDirty     = true;
+            isModifiedFlag_ = true;
+            orderDirty_     = true;
             break;
 
         case ChangeImpact::GraphVisibility:
             if (changeTrackingSettings.graphVisibility)
-                isModifiedFlag = true;
+                isModifiedFlag_ = true;
             break;
 
         case ChangeImpact::NodePosition:
             if (changeTrackingSettings.moveNode)
-                isModifiedFlag = true;
+                isModifiedFlag_ = true;
             break;
 
         case ChangeImpact::GraphPanZoom:
             if (changeTrackingSettings.panZoom)
-                isModifiedFlag = true;
+                isModifiedFlag_ = true;
             break;
 
         case ChangeImpact::AddNode:
@@ -92,7 +92,7 @@ void Project::watchGraphChanges(Graph &graph)
         case ChangeImpact::RemoveLink:
             [[fallthrough]];
         case ChangeImpact::NodeConfig:
-            isModifiedFlag = true;
+            isModifiedFlag_ = true;
             break;
 
         default:
@@ -111,7 +111,7 @@ void Project::save(const std::filesystem::path &filepath)
     o << std::setw(4) << j;
     if (!o.good())
         throw std::runtime_error("Failed to write data to: " + filepath.string());
-    isModifiedFlag = false;
+    isModifiedFlag_ = false;
     storeFilepath(filepath);
 }
 
@@ -130,15 +130,15 @@ void Project::save(const std::filesystem::path &filepath)
 
 void Project::storeFilepath(std::filesystem::path filepath)
 {
-    lastFilepath = filepath;
-    fileName     = filepath.filename().string();
+    lastFilepath_ = filepath;
+    fileName_     = filepath.filename().string();
 }
 
 void Project::serialize(nlohmann::json &j) const
 {
-    assert(!orderDirty);
+    assert(!orderDirty_);
     j["graphs"] = json::object();
-    for (const auto &[id, graph] : graphMap) {
+    for (const auto &[id, graph] : graphMap_) {
         json graphJson;
         graph->serialize(graphJson);
         j["graphs"][std::to_string(id)] = graphJson;
@@ -156,7 +156,7 @@ void Project::serialize(nlohmann::json &j) const
     for (const auto &[key, value] : graphsObj.items()) {
         GraphId id          = static_cast<GraphId>(std::stoull(key));
         auto uid            = value["uid"].get<std::string>();
-        auto [it, inserted] = project->graphMap.try_emplace(id, Graph::deserialize(id, uid, value));
+        auto [it, inserted] = project->graphMap_.try_emplace(id, Graph::deserialize(id, uid, value));
         if (!inserted)
             throw std::runtime_error(std::format("Graph Id {} not inserted during deserialization.", id));
 
@@ -165,29 +165,29 @@ void Project::serialize(nlohmann::json &j) const
         project->watchGraphChanges(*it->second);
     }
 
-    project->nextGraphId    = lastId + 1;
-    project->isModifiedFlag = false;
-    project->orderDirty     = true;
+    project->nextGraphId_    = lastId + 1;
+    project->isModifiedFlag_ = false;
+    project->orderDirty_     = true;
 
     return project;
 }
 
 void Project::updateDisplayOrder()
 {
-    if (!orderDirty)
+    if (!orderDirty_)
         return;
 
-    displayOrder.clear();
-    displayOrder.reserve(graphMap.size());
+    displayOrder_.clear();
+    displayOrder_.reserve(graphMap_.size());
 
-    for (const auto &[id, _] : graphMap) {
-        displayOrder.push_back(id);
+    for (const auto &[id, _] : graphMap_) {
+        displayOrder_.push_back(id);
     }
 
-    std::sort(displayOrder.begin(), displayOrder.end(),
-              [this](GraphId a, GraphId b) { return SI::natural::compare(graphMap.at(a)->getName(), graphMap.at(b)->getName()); });
+    std::sort(displayOrder_.begin(), displayOrder_.end(),
+              [this](GraphId a, GraphId b) { return SI::natural::compare(graphMap_.at(a)->getName(), graphMap_.at(b)->getName()); });
 
-    orderDirty = false;
+    orderDirty_ = false;
 }
 
 }; // namespace Mirael

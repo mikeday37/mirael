@@ -19,30 +19,30 @@ namespace Mirael
 
 void Graph::rename(std::string newName)
 {
-    name = std::move(newName);
+    name_ = std::move(newName);
     rebuildWindowName();
     raiseModified(ChangeImpact::GraphName);
 }
 
 void Graph::serialize(nlohmann::json &j) const
 {
-    j["uid"]     = uid;
-    j["name"]    = name;
-    j["visible"] = visible;
+    j["uid"]     = uid_;
+    j["name"]    = name_;
+    j["visible"] = visible_;
 
-    j["x"]    = canvasInfo.orientation.origin.x;
-    j["y"]    = canvasInfo.orientation.origin.y;
-    j["zoom"] = canvasInfo.orientation.zoom;
+    j["x"]    = canvasInfo_.orientation.origin.x;
+    j["y"]    = canvasInfo_.orientation.origin.y;
+    j["zoom"] = canvasInfo_.orientation.zoom;
 
     j["nodes"] = json::object();
-    for (const auto &[nodeId, node] : nodes) {
+    for (const auto &[nodeId, node] : nodes_) {
         json nodeJson;
         node->serialize(nodeJson);
         j["nodes"][std::to_string(nodeId)] = nodeJson;
     }
 
     j["links"] = json::object();
-    for (const auto &[linkId, link] : links) {
+    for (const auto &[linkId, link] : links_) {
         json linkJson;
         serializeLink(linkJson, link);
         j["links"][std::to_string(linkId)] = linkJson;
@@ -53,16 +53,16 @@ std::unique_ptr<Graph> Graph::deserialize(GraphId id, std::string_view uid, cons
 {
     assert(uid == j["uid"].get<std::string>()); // during deserialization, the uid is parsed by the Project in advance
 
-    auto graph  = std::make_unique<Graph>(id, uid);
-    graph->name = j["name"].get<std::string>();
+    auto graph   = std::make_unique<Graph>(id, uid);
+    graph->name_ = j["name"].get<std::string>();
     graph->rebuildWindowName();
-    graph->visible = j["visible"].get<bool>();
+    graph->visible_ = j["visible"].get<bool>();
 
-    graph->canvasInfo.orientation.origin.x = j["x"].get<float>();
-    graph->canvasInfo.orientation.origin.y = j["y"].get<float>();
-    graph->canvasInfo.orientation.zoom     = j["zoom"].get<float>();
+    graph->canvasInfo_.orientation.origin.x = j["x"].get<float>();
+    graph->canvasInfo_.orientation.origin.y = j["y"].get<float>();
+    graph->canvasInfo_.orientation.zoom     = j["zoom"].get<float>();
 
-    graph->pendingSetInitialCanvasOrientation = graph->canvasInfo.orientation;
+    graph->pendingSetInitialCanvasOrientation_ = graph->canvasInfo_.orientation;
 
     const auto &nodesObj = j.at("nodes");
     if (!nodesObj.is_object())
@@ -72,10 +72,10 @@ std::unique_ptr<Graph> Graph::deserialize(GraphId id, std::string_view uid, cons
 
     for (const auto &[key, value] : nodesObj.items()) {
         NodeId nodeId       = static_cast<NodeId>(std::stoull(key));
-        auto [it, inserted] = graph->nodes.try_emplace(nodeId, Node::deserialize(*graph, nodeId, value));
+        auto [it, inserted] = graph->nodes_.try_emplace(nodeId, Node::deserialize(*graph, nodeId, value));
         if (!inserted)
             throw std::runtime_error(
-                std::format("Node Id {} not inserted into Graph Id {} during deserialization.", nodeId, graph->id));
+                std::format("Node Id {} not inserted into Graph Id {} during deserialization.", nodeId, graph->id_));
         auto maxElementIdInNode = it->second->getMaxElementId();
         maxElementId            = std::max(maxElementId, maxElementIdInNode);
     }
@@ -92,7 +92,7 @@ std::unique_ptr<Graph> Graph::deserialize(GraphId id, std::string_view uid, cons
         }
     }
 
-    graph->nextElementId = maxElementId + 1;
+    graph->nextElementId_ = maxElementId + 1;
 
     return graph;
 }
@@ -108,15 +108,15 @@ Link Graph::deserializeLink(const nlohmann::json &j)
     PinId a = static_cast<PinId>(j["a"].get<uint64_t>());
     PinId b = static_cast<PinId>(j["b"].get<uint64_t>());
 
-    return Link{.a = {.node = pins.at(a).nodeId, .pin = a}, //
-                .b = {.node = pins.at(b).nodeId, .pin = b}};
+    return Link{.a = {.node = pins_.at(a).nodeId, .pin = a}, //
+                .b = {.node = pins_.at(b).nodeId, .pin = b}};
 }
 
 void Graph::setVisible(bool visible)
 {
-    auto oldValue = this->visible;
-    this->visible = visible;
-    if (oldValue != this->visible)
+    auto oldValue  = this->visible_;
+    this->visible_ = visible;
+    if (oldValue != this->visible_)
         raiseModified(ChangeImpact::GraphVisibility);
 }
 
@@ -141,45 +141,45 @@ void Graph::activate()
 
 void Graph::showView()
 {
-    if (!visible)
+    if (!visible_)
         return;
 
-    if (!context)
+    if (!context_)
         initEditorContext();
 
     ImGui::SetNextWindowDockID(App::get().getDockspaceId(), ImGuiCond_FirstUseEver);
-    if (ImGui::Begin(getWindowName().c_str(), &visible)) {
+    if (ImGui::Begin(getWindowName().c_str(), &visible_)) {
 
         if (ImGui::IsWindowFocused())
-            Project::get().setLastFocusedGraphId(id);
+            Project::get().setLastFocusedGraphId(id_);
 
-        ne::SetCurrentEditor(&*context);
+        ne::SetCurrentEditor(&*context_);
         adjustEditorStyle();
 
-        if (pendingSetInitialCanvasOrientation) {
-            canvasInfo.orientation.zoom   = pendingSetInitialCanvasOrientation->zoom;
-            canvasInfo.orientation.origin = pendingSetInitialCanvasOrientation->origin;
-            ne::SetInitialViewOrientation(pendingSetInitialCanvasOrientation->zoom, pendingSetInitialCanvasOrientation->origin);
-            pendingSetInitialCanvasOrientation.reset();
+        if (pendingSetInitialCanvasOrientation_) {
+            canvasInfo_.orientation.zoom   = pendingSetInitialCanvasOrientation_->zoom;
+            canvasInfo_.orientation.origin = pendingSetInitialCanvasOrientation_->origin;
+            ne::SetInitialViewOrientation(pendingSetInitialCanvasOrientation_->zoom, pendingSetInitialCanvasOrientation_->origin);
+            pendingSetInitialCanvasOrientation_.reset();
         }
 
-        ne::Begin(editorId.c_str());
+        ne::Begin(editorId_.c_str());
 
-        if (pendingSetCanvasOrientation) {
-            ne::SetViewOrientation(pendingSetCanvasOrientation->zoom, pendingSetCanvasOrientation->origin);
-            pendingSetCanvasOrientation.reset();
+        if (pendingSetCanvasOrientation_) {
+            ne::SetViewOrientation(pendingSetCanvasOrientation_->zoom, pendingSetCanvasOrientation_->origin);
+            pendingSetCanvasOrientation_.reset();
         }
 
         if (!ne::IsPendingInitialViewOrientation()) {
 
             showNodesAndLinks(); // wait until view orientation is stable to avoid a glitchy-looking load
 
-            auto lastOrientation   = canvasInfo.orientation;
-            canvasInfo.orientation = {.zoom = ne::GetCurrentZoom(), .origin = ne::GetCurrentOrigin()};
-            canvasInfo.mousePos    = ImGui::GetMousePos();
-            ne::GetCurrentViewRect(&canvasInfo.viewRectMin, &canvasInfo.viewRectMax);
+            auto lastOrientation    = canvasInfo_.orientation;
+            canvasInfo_.orientation = {.zoom = ne::GetCurrentZoom(), .origin = ne::GetCurrentOrigin()};
+            canvasInfo_.mousePos    = ImGui::GetMousePos();
+            ne::GetCurrentViewRect(&canvasInfo_.viewRectMin, &canvasInfo_.viewRectMax);
 
-            if (isOrientationChangeSignificant(lastOrientation, canvasInfo.orientation))
+            if (isOrientationChangeSignificant(lastOrientation, canvasInfo_.orientation))
                 raiseModified(ChangeImpact::GraphPanZoom);
         }
         ne::Suspend();
@@ -202,7 +202,7 @@ void Graph::showView()
     }
     ImGui::End();
 
-    if (!visible)
+    if (!visible_)
         raiseModified(ChangeImpact::GraphVisibility);
 }
 
@@ -220,72 +220,72 @@ void Graph::userCreateNode(const char *nodeTypeName)
     node->init(*this, id, nodeTypeName);
     node->select();
     node->setPos(getCanvasViewCenter());
-    nodes.try_emplace(id, std::move(node));
+    nodes_.try_emplace(id, std::move(node));
     raiseModified(ChangeImpact::AddNode);
 }
 
 void Graph::showDiagnosticRows()
 {
     ImGuiEx::RowLabel("ID");
-    ImGui::Text("%llu", id);
+    ImGui::Text("%llu", id_);
 
     ImGuiEx::RowLabel("Name");
-    ImGui::TextUnformatted(name.c_str());
+    ImGui::TextUnformatted(name_.c_str());
 
     ImGuiEx::RowLabel("UID");
-    ImGui::TextUnformatted(uid.c_str());
+    ImGui::TextUnformatted(uid_.c_str());
 
     ImGuiEx::RowLabel("Nodes");
-    ImGui::Text("%zu", nodes.size());
+    ImGui::Text("%zu", nodes_.size());
 
     ImGuiEx::RowLabel("Pins");
-    ImGui::Text("%zu", pins.size());
+    ImGui::Text("%zu", pins_.size());
 
     ImGuiEx::RowLabel("Links");
-    ImGui::Text("%zu", links.size());
+    ImGui::Text("%zu", links_.size());
 
     ImGuiEx::RowLabel("Canvas Zoom");
-    ImGui::Text("%.6f", canvasInfo.orientation.zoom);
+    ImGui::Text("%.6f", canvasInfo_.orientation.zoom);
 
     ImGuiEx::RowLabel("Canvas Origin");
-    ImGui::Text("%.3f, %.3f", canvasInfo.orientation.origin.x, canvasInfo.orientation.origin.y);
+    ImGui::Text("%.3f, %.3f", canvasInfo_.orientation.origin.x, canvasInfo_.orientation.origin.y);
 
     ImGuiEx::RowLabel("Canvas View Rect");
     ImGui::Text("(%.3f, %.3f) - (%.3f, %.3f)", //
-                canvasInfo.viewRectMin.x, canvasInfo.viewRectMin.y, canvasInfo.viewRectMax.x, canvasInfo.viewRectMax.y);
+                canvasInfo_.viewRectMin.x, canvasInfo_.viewRectMin.y, canvasInfo_.viewRectMax.x, canvasInfo_.viewRectMax.y);
 
     ImGuiEx::RowLabel("Canvas Mouse Pos");
-    ImGui::Text("%.3f, %.3f", canvasInfo.mousePos.x, canvasInfo.mousePos.y);
+    ImGui::Text("%.3f, %.3f", canvasInfo_.mousePos.x, canvasInfo_.mousePos.y);
 
     ImGuiEx::RowLabel("Selection Status");
-    ImGui::TextUnformatted(to_string(selectionStatus));
+    ImGui::TextUnformatted(to_string(selectionStatus_));
 
     ImGuiEx::RowLabel("Selected NodeId", "Only populated if a single node is selected.");
-    if (selectedNodeId.has_value())
-        ImGui::Text("%llu", *selectedNodeId);
+    if (selectedNodeId_.has_value())
+        ImGui::Text("%llu", *selectedNodeId_);
     else
         ImGui::TextDisabled("n/a");
 
     ImGuiEx::RowLabel("Selected LinkId", "Only populated if a single link is selected.");
-    if (selectedLinkId.has_value())
-        ImGui::Text("%llu", *selectedLinkId);
+    if (selectedLinkId_.has_value())
+        ImGui::Text("%llu", *selectedLinkId_);
     else
         ImGui::TextDisabled("n/a");
 }
 
 ImVec2 Graph::getCanvasViewCenter() const
 {
-    return ImVec2((canvasInfo.viewRectMin.x + canvasInfo.viewRectMax.x) / 2.0f, //
-                  (canvasInfo.viewRectMin.y + canvasInfo.viewRectMax.y) / 2.0f);
+    return ImVec2((canvasInfo_.viewRectMin.x + canvasInfo_.viewRectMax.x) / 2.0f, //
+                  (canvasInfo_.viewRectMin.y + canvasInfo_.viewRectMax.y) / 2.0f);
 }
 
 void Graph::RepositionNodes()
 {
-    for (auto &[id, node] : nodes)
-        node->pendingSetPos = node->pos;
+    for (auto &[id, node] : nodes_)
+        node->pendingSetPos_ = node->pos_;
 }
 
-void Graph::Reorient() { pendingSetCanvasOrientation = canvasInfo.orientation; }
+void Graph::Reorient() { pendingSetCanvasOrientation_ = canvasInfo_.orientation; }
 
 void Graph::showProperties()
 {
@@ -312,12 +312,12 @@ const char *Graph::to_string(SelectionStatus status)
 
 Node *Graph::getSingleSelectedNode()
 {
-    if (selectionStatus != SelectionStatus::SingleNode)
+    if (selectionStatus_ != SelectionStatus::SingleNode)
         return nullptr;
 
-    auto nodeId = *selectedNodeId;
-    auto it     = nodes.find(nodeId);
-    if (it == nodes.end())
+    auto nodeId = *selectedNodeId_;
+    auto it     = nodes_.find(nodeId);
+    if (it == nodes_.end())
         return nullptr;
     else
         return &*it->second;
@@ -325,39 +325,39 @@ Node *Graph::getSingleSelectedNode()
 
 void Graph::onPinAdded(NodeId nodeId, PinId pinId, PinConfig pinConfig)
 {
-    auto [it, inserted] = pins.try_emplace(pinId, PinInfo{.nodeId = nodeId, .direction = pinConfig.direction});
+    auto [it, inserted] = pins_.try_emplace(pinId, PinInfo{.nodeId = nodeId, .direction = pinConfig.direction});
     assert(inserted); // each add should actually insert
-    auto [it2, inserted2] = pinLinks.try_emplace(pinId);
+    auto [it2, inserted2] = pinLinks_.try_emplace(pinId);
     assert(inserted2); // this should actually insert as well
 }
 
 void Graph::onPinRemoved(NodeId nodeId, PinId pinId)
 {
     // remove all links involving pin
-    auto &linkSet = pinLinks.at(pinId);
+    auto &linkSet = pinLinks_.at(pinId);
     while (!linkSet.empty())
         removeLink(*linkSet.begin());
 
     // remove the pin
-    auto it = pins.find(pinId);
+    auto it = pins_.find(pinId);
     assert(it->second.nodeId == nodeId); // removes should always correspond to the correct node
-    pins.erase(it);
+    pins_.erase(it);
 
     // remove the pin link set
-    pinLinks.erase(pinId);
+    pinLinks_.erase(pinId);
 }
 
-void Graph::rebuildWindowName() { windowName = std::format("{}###graph-{}", name, uid); }
+void Graph::rebuildWindowName() { windowName_ = std::format("{}###graph-{}", name_, uid_); }
 
 void Graph::initEditorContext()
 {
-    editorId = std::format("Graph {} Editor", id);
+    editorId_ = std::format("Graph {} Editor", id_);
     ne::Config config{};
     config.SettingsFile      = nullptr;
     config.CanvasSizeMode    = ne::CanvasSizeMode::CenterOnly;
     config.EnableSnapToGrid  = false;
     config.EnablePersistence = false;
-    context.reset(ne::CreateEditor(&config));
+    context_.reset(ne::CreateEditor(&config));
 }
 
 void Graph::adjustEditorStyle()
@@ -372,21 +372,21 @@ void Graph::addLink(Link &&link) { addLinkWithId(std::move(link), getNextElement
 void Graph::addLinkWithId(Link &&link, LinkId linkId)
 {
     PinId pinA = link.a.pin, pinB = link.b.pin;
-    const auto &[it, inserted] = links.try_emplace(linkId, std::move(link));
+    const auto &[it, inserted] = links_.try_emplace(linkId, std::move(link));
     assert(inserted);
-    pinLinks.at(pinA).insert(linkId);
-    pinLinks.at(pinB).insert(linkId);
+    pinLinks_.at(pinA).insert(linkId);
+    pinLinks_.at(pinB).insert(linkId);
 }
 
 void Graph::removeLink(LinkId linkId)
 {
-    auto it = links.find(linkId);
-    if (it == links.end())
+    auto it = links_.find(linkId);
+    if (it == links_.end())
         return;
     const auto &link = it->second;
-    pinLinks.at(link.a.pin).erase(linkId);
-    pinLinks.at(link.b.pin).erase(linkId);
-    links.erase(it);
+    pinLinks_.at(link.a.pin).erase(linkId);
+    pinLinks_.at(link.b.pin).erase(linkId);
+    links_.erase(it);
 }
 
 bool Graph::isOrientationChangeSignificant(CanvasOrientation a, CanvasOrientation b)
@@ -411,22 +411,22 @@ void Graph::processSelectionState()
     int nodeSelCount  = ne::GetSelectedNodes(&rawNodeId, 1);
     int linkSelCount  = ne::GetSelectedLinks(&rawLinkId, 1);
     if (nodeSelCount > 0 && totalSelCount == 1) {
-        selectionStatus = SelectionStatus::SingleNode;
-        selectedNodeId  = static_cast<NodeId>(rawNodeId);
-        selectedLinkId.reset();
+        selectionStatus_ = SelectionStatus::SingleNode;
+        selectedNodeId_  = static_cast<NodeId>(rawNodeId);
+        selectedLinkId_.reset();
     } else if (linkSelCount > 0 && totalSelCount == 1) {
-        selectionStatus = SelectionStatus::SingleLink;
-        selectedLinkId  = static_cast<LinkId>(rawLinkId);
-        selectedNodeId.reset();
+        selectionStatus_ = SelectionStatus::SingleLink;
+        selectedLinkId_  = static_cast<LinkId>(rawLinkId);
+        selectedNodeId_.reset();
     } else if (totalSelCount == 0) {
-        selectionStatus = SelectionStatus::None;
-        selectedNodeId.reset();
-        selectedLinkId.reset();
+        selectionStatus_ = SelectionStatus::None;
+        selectedNodeId_.reset();
+        selectedLinkId_.reset();
     } else {
         assert(totalSelCount > 1);
-        selectionStatus = SelectionStatus::Multiple;
-        selectedNodeId.reset();
-        selectedLinkId.reset();
+        selectionStatus_ = SelectionStatus::Multiple;
+        selectedNodeId_.reset();
+        selectedLinkId_.reset();
     }
 }
 
@@ -434,33 +434,33 @@ void Graph::showNodesAndLinks()
 {
     // this is called exclusively within the ne::Begin()/::End() region of ::show()
 
-    for (const auto &node : nodes | std::views::values) {
+    for (const auto &node : nodes_ | std::views::values) {
 
-        auto priorPos = node->pos;
+        auto priorPos = node->pos_;
 
         bool setPosThisFrame = false;
-        if (node->pendingSetPos) {
+        if (node->pendingSetPos_) {
             setPosThisFrame = true;
-            ne::SetNodePosition(node->id, *node->pendingSetPos);
-            node->pendingSetPos.reset();
+            ne::SetNodePosition(node->id_, *node->pendingSetPos_);
+            node->pendingSetPos_.reset();
         }
 
-        if (node->selectPending) {
-            node->selectPending = false;
+        if (node->selectPending_) {
+            node->selectPending_ = false;
             if (ne::GetSelectedObjectCount() > 0)
                 ne::ClearSelection();
-            ne::SelectNode(static_cast<ne::NodeId>(node->id));
+            ne::SelectNode(static_cast<ne::NodeId>(node->id_));
         }
 
         node->show();
 
-        node->pos = ne::GetNodePosition(node->id);
+        node->pos_ = ne::GetNodePosition(node->id_);
 
-        if (!setPosThisFrame && (node->pos.x != priorPos.x || node->pos.y != priorPos.y))
+        if (!setPosThisFrame && (node->pos_.x != priorPos.x || node->pos_.y != priorPos.y))
             raiseModified(ChangeImpact::NodePosition);
     }
 
-    for (const auto &[linkId, link] : links) {
+    for (const auto &[linkId, link] : links_) {
         ne::Link(static_cast<ne::LinkId>(linkId), link.a.pin, link.b.pin);
     }
 
@@ -490,7 +490,7 @@ void Graph::showNodesAndLinks()
                              && startPinInfo.nodeId != endPinInfo.nodeId;
 
                 // additional constraint: inputs cannot have more than one link
-                if (valid && !pinLinks.at(endPinId).empty())
+                if (valid && !pinLinks_.at(endPinId).empty())
                     valid = false;
 
                 if (!valid) {
@@ -532,12 +532,12 @@ void Graph::showNodesAndLinks()
 
 void Graph::removeNode(NodeId nodeId)
 {
-    auto it = nodes.find(nodeId);
-    if (it == nodes.end())
+    auto it = nodes_.find(nodeId);
+    if (it == nodes_.end())
         return;
 
     it->second->removeAllPins();
-    nodes.erase(it);
+    nodes_.erase(it);
 }
 
 void Graph::EditorDeleter::operator()(EditorContext *context) const { ne::DestroyEditor(context); }
