@@ -34,6 +34,9 @@ void Graph::serialize(nlohmann::json &j) const
     j["y"]    = canvasInfo_.orientation.origin.y;
     j["zoom"] = canvasInfo_.orientation.zoom;
 
+    j["ratemode"] = to_string(runRateMode_);
+    j["fps"] = frameRateSetting_;
+
     j["nodes"] = json::object();
     for (const auto &[nodeId, node] : nodes_) {
         json nodeJson;
@@ -63,6 +66,16 @@ std::unique_ptr<Graph> Graph::deserialize(GraphId id, std::string_view uid, cons
     graph->canvasInfo_.orientation.zoom     = j["zoom"].get<float>();
 
     graph->pendingSetInitialCanvasOrientation_ = graph->canvasInfo_.orientation;
+
+    if (j.contains("ratemode")) {
+        auto rateModeString = j["ratemode"].get<std::string>();
+        if (!try_parse(rateModeString, graph->runRateMode_))
+            throw std::runtime_error(std::format("Graph json parsing error: unknown ratemode string: {}", rateModeString));
+    }
+
+    if (j.contains("fps")) {
+        graph->frameRateSetting_ = j["fps"].get<float>();
+    }
 
     const auto &nodesObj = j.at("nodes");
     if (!nodesObj.is_object())
@@ -290,8 +303,44 @@ void Graph::Reorient() { pendingSetCanvasOrientation_ = canvasInfo_.orientation;
 void Graph::showProperties()
 {
     Node *node = getSingleSelectedNode();
-    if (node)
-        node->onShowProperties();
+    if (node) {
+        auto typeName = node->typeName_;
+        if (ImGui::CollapsingHeader("Node", ImGuiTreeNodeFlags_DefaultOpen)) {
+            node->onShowProperties();
+            ImGui::Separator();
+        }
+    }
+
+    if (ImGui::CollapsingHeader("Graph", ImGuiTreeNodeFlags_DefaultOpen)) {
+
+        RunRateMode priorMode                = runRateMode_;
+        static constexpr RunRateMode modes[] = {RunRateMode::Disabled, RunRateMode::SetRate,
+                                                RunRateMode::Unlimited}; // don't support UIRate yet
+        if (ImGui::BeginCombo("Run Rate Mode", to_display_string(runRateMode_), ImGuiComboFlags_WidthFitPreview)) {
+            for (auto mode : modes) {
+                bool selected = mode == runRateMode_;
+                if (ImGui::Selectable(to_display_string(mode), selected)) {
+                    runRateMode_ = mode;
+                }
+                if (selected) {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+        if (runRateMode_ != priorMode) {
+            raiseModified(ChangeImpact::GraphRunRate);
+        }
+
+        const float priorFrameRateSetting = frameRateSetting_;
+        ImGui::InputFloat("Desired FPS", &frameRateSetting_, 0.0f, 0.0f, "%.7g");
+        frameRateSetting_ = std::clamp(frameRateSetting_, 0.001f, 1e6f);
+        if (fabs(priorFrameRateSetting - frameRateSetting_) > 1e-9f && RunRateMode::SetRate == runRateMode_) {
+            raiseModified(ChangeImpact::GraphRunRate);
+        }
+        ImGui::SameLine();
+        ImGuiEx::ToolTipHint("Only used if Run Rate Mode = Set Rate.");
+    }
 }
 
 const char *Graph::to_string(SelectionStatus status)
@@ -345,6 +394,58 @@ void Graph::onPinRemoved(NodeId nodeId, PinId pinId)
 
     // remove the pin link set
     pinLinks_.erase(pinId);
+}
+
+const char *Graph::to_display_string(RunRateMode mode)
+{
+    switch (mode) {
+        using enum RunRateMode;
+    case Disabled:
+        return "Disabled";
+    case SetRate:
+        return "Set Rate";
+    case UIRate:
+        return "UI Rate";
+    case Unlimited:
+        return "Unlimited";
+    default:
+        return "(unknown)";
+    }
+}
+
+const char *Graph::to_string(RunRateMode mode)
+{
+    switch (mode) {
+        using enum RunRateMode;
+    case Disabled:
+        return "disabled";
+    case SetRate:
+        return "setrate";
+    case UIRate:
+        return "uirate";
+    case Unlimited:
+        return "unlimited";
+    default:
+        throw std::runtime_error(std::format("Unknown Graph::RunRateMode enum value: {}", static_cast<int>(mode)));
+    }
+}
+
+bool Graph::try_parse(std::string_view s, RunRateMode &out)
+{
+    if (s == "disabled") {
+        out = RunRateMode::Disabled;
+        return true;
+    } else if (s == "setrate") {
+        out = RunRateMode::SetRate;
+        return true;
+    } else if (s == "uirate") {
+        out = RunRateMode::UIRate;
+        return true;
+    } else if (s == "unlimited") {
+        out = RunRateMode::Unlimited;
+        return true;
+    } else
+        return false;
 }
 
 void Graph::rebuildWindowName() { windowName_ = std::format("{}###graph-{}", name_, uid_); }

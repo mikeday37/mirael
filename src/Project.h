@@ -32,6 +32,7 @@ public:
 
     void setLastFocusedGraphId(GraphId id) { lastFocusedGraphId_ = id; }
     Graph *getLastFocusedGraph() { return graphMap_.contains(lastFocusedGraphId_) ? &getGraph(lastFocusedGraphId_) : nullptr; }
+    std::optional<GraphId> getLastFocusedGraphId() const;
     void createNodeInLastFocusedGraphIfVisible(const char *nodeTypeName);
 
     // graph management
@@ -40,6 +41,7 @@ public:
     Graph &getGraph(GraphId id) { return *graphMap_.at(id); }
     const Graph &getGraph(GraphId id) const { return *graphMap_.at(id); }
     std::span<GraphId> getGraphIdsInDisplayOrder();
+    bool containsGraph(GraphId id) const { return graphMap_.contains(id); }
 
     // serialization
     void save(const std::filesystem::path &filepath);

@@ -143,6 +143,12 @@ void ProjectExplorer::load(std::filesystem::path filepath)
         project_ = Project::load(filepath);
 }
 
+void ProjectExplorer::attemptSetGraphFocus(GraphId graphId)
+{
+    if (project_ && project_->containsGraph(graphId))
+        project_->getGraph(graphId).activate();
+}
+
 void ProjectExplorer::clear() { project_ = std::make_unique<Project>(); }
 
 void ProjectExplorer::onUserNew()

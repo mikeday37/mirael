@@ -23,6 +23,14 @@ void Project::showGraphs()
 
 Project &Project::get() { return App::get().getProject(); }
 
+std::optional<GraphId> Project::getLastFocusedGraphId() const
+{
+    if (graphMap_.contains(lastFocusedGraphId_))
+        return lastFocusedGraphId_;
+    else
+        return std::nullopt;
+}
+
 void Project::createNodeInLastFocusedGraphIfVisible(const char *nodeTypeName)
 {
     auto it = graphMap_.find(lastFocusedGraphId_);
@@ -92,6 +100,8 @@ void Project::watchGraphChanges(Graph &graph)
         case ChangeImpact::RemoveLink:
             [[fallthrough]];
         case ChangeImpact::NodeConfig:
+            [[fallthrough]];
+        case ChangeImpact::GraphRunRate:
             isModifiedFlag_ = true;
             break;
 

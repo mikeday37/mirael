@@ -207,6 +207,8 @@ void App::mainLoop()
 
         if (initialShowWindowPending_) {
             glfwShowWindow(window_);
+            if (mainWindowSettings_.lastFocusedGraphId)
+                projectExplorer_.attemptSetGraphFocus(*mainWindowSettings_.lastFocusedGraphId);
             initialShowWindowPending_ = false;
         }
     }
@@ -408,6 +410,7 @@ void App::imGuiSettings_WriteAll(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *h
 {
     App &app                                = *static_cast<App *>(handler->UserData);
     app.mainWindowSettings_.lastProjectPath = app.getProject().getLastFilepath();
+    app.mainWindowSettings_.lastFocusedGraphId = app.getProject().getLastFocusedGraphId();
     const auto &settings                    = app.mainWindowSettings_;
 
     out_buf->appendf("[%s][MainWindow]\n", handler->TypeName);
@@ -424,6 +427,8 @@ void App::imGuiSettings_WriteAll(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *h
     out_buf->appendf("ImGuiDemo=%d\n", (int)settings.demo);
     if (settings.lastProjectPath)
         out_buf->appendf("LastProjectPath=%s\n", settings.lastProjectPath->string().c_str());
+    if (settings.lastFocusedGraphId)
+        out_buf->appendf("LastFocusedGraphId=%llu\n", static_cast<uint64_t>(*settings.lastFocusedGraphId));
     out_buf->appendf("\n");
 }
 
@@ -439,6 +444,7 @@ void App::imGuiSettings_ReadLine(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *h
     auto &mws = app.mainWindowSettings_;
 
     int x, y, width, height, maximized, fullscreen, library, properties, settings, diagnostics, demo;
+    uint64_t lastGraphId;
     if (sscanf_s(line, "Pos=%d,%d", &x, &y) == 2) {
         mws.x = x;
         mws.y = y;
@@ -459,6 +465,8 @@ void App::imGuiSettings_ReadLine(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *h
         mws.diagnostics = diagnostics != 0;
     } else if (sscanf_s(line, "ImGuiDemo=%d", &demo) == 1) {
         mws.demo = demo != 0;
+    } else if (sscanf_s(line, "LastFocusedGraphId=%llu", &lastGraphId) == 1) {
+        mws.lastFocusedGraphId = static_cast<GraphId>(lastGraphId);
     } else {
         std::string path;
         path.resize(strlen(line) + 1);

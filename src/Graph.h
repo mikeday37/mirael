@@ -74,11 +74,18 @@ public:
     void onPinAdded(NodeId nodeId, PinId pinId, PinConfig pinConfig);
     void onPinRemoved(NodeId nodeId, PinId pinId);
 
+    enum RunRateMode { Disabled = 0, SetRate = 1, UIRate = 2, Unlimited = 3 };
+    static const char *to_display_string(RunRateMode mode);
+    static const char *to_string(RunRateMode mode);
+    static bool try_parse(std::string_view s, RunRateMode &mode);
+
 private:
     GraphId id_;
     std::string uid_;
     std::string name_;
-    bool visible_ = true;
+    bool visible_           = true;
+    RunRateMode runRateMode_ = RunRateMode::SetRate;
+    float frameRateSetting_ = 60.0f;
 
     std::string windowName_; // derived from id and name, but cached so it doesn't reallocate every frame
     void rebuildWindowName();

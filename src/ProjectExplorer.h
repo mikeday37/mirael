@@ -30,6 +30,8 @@ public:
 
     void load(std::filesystem::path filepath);
 
+    void attemptSetGraphFocus(GraphId graphId);
+
 private:
     std::unique_ptr<Project> project_;
     void clear();

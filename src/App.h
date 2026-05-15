@@ -141,7 +141,8 @@ private:
     struct MainWindowSettings {
         std::optional<int> x, y, width, height; // screen coordinates
         bool maximized, fullscreen, library, properties, settings, diagnostics, demo, firstRun;
-        std::optional<std::filesystem::path> lastProjectPath;
+        std::optional<std::filesystem::path> lastProjectPath{};
+        std::optional<GraphId> lastFocusedGraphId{};
     };
     MainWindowSettings mainWindowSettings_ = {.maximized   = false,
                                               .fullscreen  = false,
