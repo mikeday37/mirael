@@ -123,12 +123,16 @@ set(INE_INCLUDES
 # === Other Includes ===
 #
 
-set(OTHER_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/external/other")
+set(OTHER_INCLUDES
+	"${CMAKE_CURRENT_SOURCE_DIR}/external/other"
+	"${CMAKE_CURRENT_SOURCE_DIR}/external/readerwriterqueue"
+)
 
 
 #
 # === Mirael ===
 #
+
 set(MIRAEL_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(MIRAEL_RES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/res")
 set(MIRAEL_PCH "${MIRAEL_SRC_DIR}/pch.h")
