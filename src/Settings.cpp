@@ -3,9 +3,9 @@
 #include "imgui.h"
 #include "ine/utilities/style_editor.h"
 
-#include "app.h"
-#include "imguiex.h"
-#include "settings.h"
+#include "App.h"
+#include "ImGuiEx.h"
+#include "Settings.h"
 
 namespace Mirael
 {

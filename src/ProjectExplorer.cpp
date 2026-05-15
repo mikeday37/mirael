@@ -4,11 +4,11 @@
 
 #include <filesystem>
 
-#include "app.h"
-#include "graph.h"
-#include "nfd_shim.h"
-#include "project.h"
-#include "project_explorer.h"
+#include "App.h"
+#include "Graph.h"
+#include "NfdShim.h"
+#include "Project.h"
+#include "ProjectExplorer.h"
 
 namespace Mirael
 {

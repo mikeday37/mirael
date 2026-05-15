@@ -5,11 +5,11 @@
 
 #include "ine/imgui_node_editor.h"
 
-#include "app.h"
+#include "App.h"
 #include "data.h"
-#include "graph.h"
-#include "imguiex.h"
-#include "registry.h"
+#include "Graph.h"
+#include "ImGuiEx.h"
+#include "NodeTypeRegistry.h"
 
 namespace ne = ax::NodeEditor;
 using json   = nlohmann::json;

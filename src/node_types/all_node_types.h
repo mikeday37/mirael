@@ -1,10 +1,10 @@
 #pragma once
 
-#include "comment.h"
-#include "display.h"
-#include "script.h"
-#include "switch.h"
-#include "value.h"
+#include "Comment.h"
+#include "Display.h"
+#include "Script.h"
+#include "Switch.h"
+#include "Value.h"
 
 namespace Mirael::NodeTypes
 {

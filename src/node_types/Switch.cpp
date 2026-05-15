@@ -6,9 +6,9 @@
 #include "ine/imgui_node_editor.h"
 #include "ine/utilities/widgets.h"
 
-#include "app.h"
+#include "App.h"
 #include "data.h"
-#include "switch.h"
+#include "Switch.h"
 
 namespace ne = ax::NodeEditor;
 

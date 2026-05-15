@@ -1,20 +1,20 @@
 #pragma once
 
-#include "node.h"
+#include "Node.h"
 
 namespace Mirael::NodeTypes
 {
 
-class Display : public Node
+class Script : public Node
 {
 public:
-    static const char *typeName() { return "display"; }
+    static const char *typeName() { return "script"; }
 
     void onInit() override;
     void onShow() override;
 
 private:
-    PinId inPinId_{};
+    PinId inPinId1_{}, inPinId2_{}, outPinId_{};
 };
 
 }; // namespace Mirael::NodeTypes

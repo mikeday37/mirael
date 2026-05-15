@@ -6,8 +6,8 @@
 #include <string>
 #include <unordered_map>
 
-#include "node.h"
-#include "registry.h"
+#include "Node.h"
+#include "NodeTypeRegistry.h"
 
 namespace Mirael
 {

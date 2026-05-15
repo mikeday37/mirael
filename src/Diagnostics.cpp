@@ -1,8 +1,8 @@
 #include "pch.h"
 
-#include "app.h"
-#include "diagnostics.h"
-#include "imguiex.h"
+#include "App.h"
+#include "Diagnostics.h"
+#include "ImGuiEx.h"
 
 namespace Mirael
 {

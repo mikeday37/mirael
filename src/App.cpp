@@ -15,11 +15,11 @@
 #include "imgui_impl_vulkan.h"
 #include "imgui_internal.h"
 
-#include "app.h"
-#include "fonts.h"
-#include "imguiex.h"
-#include "nfd_shim.h"
-#include "project_explorer.h"
+#include "App.h"
+#include "Fonts.h"
+#include "ImGuiEx.h"
+#include "NfdShim.h"
+#include "ProjectExplorer.h"
 #include "util.h"
 
 #ifdef WIN32

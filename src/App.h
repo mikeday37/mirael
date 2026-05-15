@@ -22,13 +22,13 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
-#include "diagnostics.h"
-#include "library.h"
-#include "project.h"
-#include "project_explorer.h"
-#include "properties.h"
-#include "registry.h"
-#include "settings.h"
+#include "Diagnostics.h"
+#include "Library.h"
+#include "Project.h"
+#include "ProjectExplorer.h"
+#include "Properties.h"
+#include "NodeTypeRegistry.h"
+#include "Settings.h"
 
 namespace Mirael
 {

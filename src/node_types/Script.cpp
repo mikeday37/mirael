@@ -2,7 +2,7 @@
 
 #include "ine/imgui_node_editor.h"
 
-#include "script.h"
+#include "Script.h"
 
 namespace ne = ax::NodeEditor;
 

@@ -9,7 +9,7 @@
 #include <unordered_map>
 
 #include "data.h"
-#include "graph.h"
+#include "Graph.h"
 
 namespace Mirael
 {

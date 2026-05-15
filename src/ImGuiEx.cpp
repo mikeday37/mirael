@@ -2,7 +2,7 @@
 
 #include "imgui.h"
 
-#include "imguiex.h"
+#include "ImGuiEx.h"
 
 namespace Mirael::ImGuiEx
 {

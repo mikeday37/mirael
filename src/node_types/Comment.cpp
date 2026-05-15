@@ -3,7 +3,7 @@
 #include "ine/imgui_node_editor.h"
 #include "misc/cpp/imgui_stdlib.h"
 
-#include "comment.h"
+#include "Comment.h"
 #include "data.h"
 
 namespace ne = ax::NodeEditor;

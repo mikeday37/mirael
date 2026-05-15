@@ -5,9 +5,9 @@
 #include <filesystem>
 #include <nlohmann/json.hpp>
 
-#include "app.h"
-#include "graph.h"
-#include "project.h"
+#include "App.h"
+#include "Graph.h"
+#include "Project.h"
 
 namespace Mirael
 {

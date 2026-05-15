@@ -3,10 +3,9 @@
 #include <stdexcept>
 #include <unordered_set>
 
-#include "app.h"
-#include "data.h"
-#include "graph.h"
-#include "node.h"
+#include "App.h"
+#include "Graph.h"
+#include "Node.h"
 
 using json = nlohmann::json;
 

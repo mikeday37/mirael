@@ -1,7 +1,7 @@
 #include "pch.h"
 
-#include "app.h"
-#include "library.h"
+#include "App.h"
+#include "Library.h"
 
 namespace Mirael
 {

@@ -8,7 +8,7 @@
 #include <string_view>
 #include <unordered_map>
 
-#include "node.h"
+#include "Node.h"
 #include "util.h"
 
 namespace Mirael

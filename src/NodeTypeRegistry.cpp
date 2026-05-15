@@ -5,7 +5,7 @@
 #include <string_view>
 
 #include "all_node_types.h"
-#include "registry.h"
+#include "NodeTypeRegistry.h"
 
 namespace Mirael
 {

@@ -8,7 +8,7 @@
 #include <unordered_set>
 
 #include "data.h"
-#include "node.h"
+#include "Node.h"
 
 namespace ax::NodeEditor
 {
