@@ -39,8 +39,7 @@ Before each Frame, the Runner checks for a new Execution Plan, and adopts it if 
 
 Within a Node, property edits and other user interactions (dragging a slider or clicking a button, etc.)
 do NOT result in updated Execution Plans, as they do not modify the topology of the Graph.
-Only addition or removal of Links modifies the topology (adding/removing disconnected Nodes has no effect,
-and removing a connected Node automatically removes any Links connected to its Pins).
+Only addition or removal of Nodes or Links modifies the topology.
 
 #### Nodes, Cores and Channels
 
