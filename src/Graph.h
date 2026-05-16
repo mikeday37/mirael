@@ -9,6 +9,7 @@
 
 #include "data.h"
 #include "Node.h"
+#include "Runner.h"
 
 namespace ax::NodeEditor
 {
@@ -65,7 +66,7 @@ public:
 
     void showProperties();
 
-    enum SelectionStatus { None, SingleLink, SingleNode, Multiple };
+    enum class SelectionStatus { None, SingleLink, SingleNode, Multiple };
     static const char *to_string(SelectionStatus status);
     SelectionStatus getSelectionStatus() const { return selectionStatus_; }
     Node *getSingleSelectedNode();
@@ -74,7 +75,6 @@ public:
     void onPinAdded(NodeId nodeId, PinId pinId, PinConfig pinConfig);
     void onPinRemoved(NodeId nodeId, PinId pinId);
 
-    enum RunRateMode { Disabled = 0, SetRate = 1, UIRate = 2, Unlimited = 3 };
     static const char *to_display_string(RunRateMode mode);
     static const char *to_string(RunRateMode mode);
     static bool try_parse(std::string_view s, RunRateMode &mode);

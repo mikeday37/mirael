@@ -10,7 +10,7 @@ namespace Mirael::NfdShim
 void Init();
 void Quit();
 
-enum Error { None, Cancel, Other };
+enum class Error { None, Cancel, Other };
 
 struct Results {
     std::filesystem::path filepath;

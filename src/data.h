@@ -9,7 +9,7 @@ using NodeId         = GraphElementId;
 using LinkId         = GraphElementId;
 using PinId          = GraphElementId;
 
-enum PinDirection {
+enum class PinDirection {
     Unknown, // value only used during deserialization, before DerivedNode::onInit()
     Input,
     Output
