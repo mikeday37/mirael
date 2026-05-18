@@ -32,4 +32,4 @@ void Script::onShow()
     ne::EndNode();
 }
 
-}; // namespace Mirael::NodeTypes
+} // namespace Mirael::NodeTypes

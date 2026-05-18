@@ -74,4 +74,4 @@ private:
     void updateDisplayOrder();
 };
 
-}; // namespace Mirael
+} // namespace Mirael

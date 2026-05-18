@@ -52,4 +52,4 @@ private:
     std::string renameBuffer_;
 };
 
-}; // namespace Mirael
+} // namespace Mirael

@@ -30,4 +30,4 @@ void ToolTipHint(const char *toolTipText)
     }
 }
 
-}; // namespace Mirael::ImGuiEx
+} // namespace Mirael::ImGuiEx

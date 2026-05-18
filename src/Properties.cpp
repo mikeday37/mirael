@@ -18,4 +18,4 @@ void Mirael::Properties::show(bool &open)
     ImGui::End();
 }
 
-}; // namespace Mirael
+} // namespace Mirael

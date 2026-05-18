@@ -24,10 +24,10 @@
 
 #include "Diagnostics.h"
 #include "Library.h"
+#include "NodeTypeRegistry.h"
 #include "Project.h"
 #include "ProjectExplorer.h"
 #include "Properties.h"
-#include "NodeTypeRegistry.h"
 #include "Settings.h"
 
 namespace Mirael
@@ -245,4 +245,4 @@ private:
     void drawFrame();
 };
 
-}; // namespace Mirael
+} // namespace Mirael

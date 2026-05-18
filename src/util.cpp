@@ -67,4 +67,4 @@ glm::mat3 calculateMappingTransform(glm::vec2 srcStart, glm::vec2 srcEnd, glm::v
     return transform;
 }
 
-}; // namespace Mirael
+} // namespace Mirael

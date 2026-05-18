@@ -37,4 +37,4 @@ struct SaveArgs {
 Results getOpenFilePath(const OpenArgs &args);
 Results getSaveAsFilePath(const SaveArgs &args);
 
-}; // namespace Mirael::NfdShim
+} // namespace Mirael::NfdShim

@@ -22,4 +22,4 @@ void Library::show(bool &open)
     ImGui::End();
 }
 
-}; // namespace Mirael
+} // namespace Mirael

@@ -138,4 +138,4 @@ private:
     void removeNode(NodeId nodeId);
 };
 
-}; // namespace Mirael
+} // namespace Mirael

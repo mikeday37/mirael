@@ -123,4 +123,4 @@ void Runner::prepareRunContext()
         runContext_.outputs.try_emplace(outputPinId, &*valueBuffer);
 }
 
-}; // namespace Mirael
+} // namespace Mirael

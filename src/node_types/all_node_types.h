@@ -18,4 +18,4 @@ template <typename F> inline void registerAll(F &&registrar)
         >();
 }
 
-}; // namespace Mirael::NodeTypes
+} // namespace Mirael::NodeTypes

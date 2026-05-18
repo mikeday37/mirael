@@ -47,4 +47,4 @@ private:
     }
 };
 
-}; // namespace Mirael
+} // namespace Mirael

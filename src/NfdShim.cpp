@@ -42,7 +42,7 @@ std::vector<nfdu8filteritem_t> getNfdFilters(const std::vector<Filter> &shimFilt
     return nfdFilters;
 }
 
-}; // namespace
+} // namespace
 
 Results getOpenFilePath(const OpenArgs &args)
 {
@@ -99,4 +99,4 @@ Results getSaveAsFilePath(const SaveArgs &args)
     return results;
 }
 
-}; // namespace Mirael::NfdShim
+} // namespace Mirael::NfdShim

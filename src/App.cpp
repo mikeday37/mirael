@@ -1127,4 +1127,4 @@ void App::drawFrame()
     frameIndex_ = (frameIndex_ + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-}; // namespace Mirael
+} // namespace Mirael

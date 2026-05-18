@@ -643,4 +643,4 @@ void Graph::removeNode(NodeId nodeId)
 
 void Graph::EditorDeleter::operator()(EditorContext *context) const { ne::DestroyEditor(context); }
 
-}; // namespace Mirael
+} // namespace Mirael

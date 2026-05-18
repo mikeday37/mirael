@@ -200,4 +200,4 @@ void Project::updateDisplayOrder()
     orderDirty_ = false;
 }
 
-}; // namespace Mirael
+} // namespace Mirael

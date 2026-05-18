@@ -37,4 +37,4 @@ std::vector<char> readSmallFile(const std::string &filepath); // intended for sm
 
 glm::mat3 calculateMappingTransform(glm::vec2 srcStart, glm::vec2 srcEnd, glm::vec2 dstStart, glm::vec2 dstEnd, bool mirrored);
 
-}; // namespace Mirael
+} // namespace Mirael

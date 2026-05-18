@@ -39,4 +39,4 @@ void Comment::onSerialize(nlohmann::json &j) const
         j["comment"] = comment_;
 }
 
-}; // namespace Mirael::NodeTypes
+} // namespace Mirael::NodeTypes

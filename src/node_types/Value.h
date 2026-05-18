@@ -20,4 +20,4 @@ private:
     PinId outPinId_{};
 };
 
-}; // namespace Mirael::NodeTypes
+} // namespace Mirael::NodeTypes

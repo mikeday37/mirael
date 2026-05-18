@@ -70,4 +70,4 @@ void Mirael::Diagnostics::show(bool &open)
     ImGui::End();
 }
 
-}; // namespace Mirael
+} // namespace Mirael

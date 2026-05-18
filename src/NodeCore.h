@@ -28,4 +28,4 @@ protected:
     friend Runner;
 };
 
-}; // namespace Mirael
+} // namespace Mirael

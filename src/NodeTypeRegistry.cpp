@@ -33,4 +33,4 @@ std::unique_ptr<Node> NodeTypeRegistry::createNode(std::string_view typeName) co
     return it->second.factory();
 }
 
-}; // namespace Mirael
+} // namespace Mirael

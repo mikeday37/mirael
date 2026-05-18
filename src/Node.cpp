@@ -168,4 +168,4 @@ void Node::removeAllPins()
     assert(pinKeyToId_.empty() && pinIdToConfig_.empty());
 }
 
-}; // namespace Mirael
+} // namespace Mirael

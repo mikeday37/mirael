@@ -202,4 +202,4 @@ void ProjectExplorer::saveViaFileDialog()
     }
 }
 
-}; // namespace Mirael
+} // namespace Mirael

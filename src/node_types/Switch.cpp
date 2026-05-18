@@ -90,7 +90,7 @@ void postNode(NodeId id)
     drawList->AddLine(ImVec2(ul.x, lr.y - 0.5f), ImVec2(lr.x - 1, lr.y - 0.5f), ImColor(255, 255, 255, 96 * alpha / (3 * 255)), 1.0f);
 }
 
-}; // namespace
+} // namespace
 
 void Switch::onShow()
 {
@@ -257,4 +257,4 @@ void Switch::handleToggleDynamic()
     }
 }
 
-}; // namespace Mirael::NodeTypes
+} // namespace Mirael::NodeTypes

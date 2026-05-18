@@ -42,4 +42,4 @@ void Value::onSerialize(nlohmann::json &j) const
         j["value"] = value_;
 }
 
-}; // namespace Mirael::NodeTypes
+} // namespace Mirael::NodeTypes

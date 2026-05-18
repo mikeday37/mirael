@@ -42,4 +42,4 @@ enum class ChangeImpact {
     GraphRunRate,
 };
 
-}; // namespace Mirael
+} // namespace Mirael

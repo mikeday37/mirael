@@ -66,4 +66,4 @@ private:
     friend Graph;
 };
 
-}; // namespace Mirael
+} // namespace Mirael

@@ -21,4 +21,4 @@ void Display::onShow()
     ne::EndNode();
 }
 
-}; // namespace Mirael::NodeTypes
+} // namespace Mirael::NodeTypes

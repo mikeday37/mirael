@@ -36,4 +36,4 @@ private:
     void handleToggleDynamic();
 };
 
-}; // namespace Mirael::NodeTypes
+} // namespace Mirael::NodeTypes

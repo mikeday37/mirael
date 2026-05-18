@@ -62,4 +62,4 @@ void Settings::showMiraelSetingsEditor()
     ImGui::ColorEdit4("Pin Icon", &colors.pinIconColor.x);
 }
 
-}; // namespace Mirael
+} // namespace Mirael

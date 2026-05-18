@@ -19,4 +19,4 @@ public:
     void show(bool &open);
 };
 
-}; // namespace Mirael
+} // namespace Mirael

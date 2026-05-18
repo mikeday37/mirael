@@ -37,7 +37,7 @@ void setWindowIcon(HWND hwnd)
     }
 }
 
-}; // namespace
+} // namespace
 
 void customizeMainWindow(GLFWwindow *mainWindow)
 {
@@ -54,6 +54,6 @@ void customizeSeparatedWindow(GLFWwindow *window)
     setWindowIcon(hwnd);
 }
 
-}; // namespace Mirael::WindowsOnly
+} // namespace Mirael::WindowsOnly
 
 #endif // WIN32

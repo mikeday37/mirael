@@ -19,4 +19,4 @@ private:
     std::string comment_;
 };
 
-}; // namespace Mirael::NodeTypes
+} // namespace Mirael::NodeTypes
