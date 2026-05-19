@@ -4,11 +4,11 @@
 #include <unordered_map>
 
 #include "data.h"
+#include "ValueBuffer.h"
 
 namespace Mirael
 {
 
-struct ValueBuffer;
 class Runner;
 
 class NodeCore

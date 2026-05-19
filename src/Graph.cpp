@@ -291,6 +291,12 @@ void Graph::showDiagnosticRows()
         ImGui::Text("%llu", *selectedLinkId_);
     else
         ImGui::TextDisabled("n/a");
+
+    ImGuiEx::RowLabel("Cycle Detected");
+    ImGui::TextUnformatted(cycleDetected_ ? "True" : "False");
+
+    ImGuiEx::RowLabel("Execution Plan Version");
+    ImGui::Text("%llu", currentPlanVersion_);
 }
 
 ImVec2 Graph::getCanvasViewCenter() const
@@ -546,6 +552,7 @@ void Graph::updateExecutionPlan()
     for (auto &[id, link] : links_)
         valueLinks.push_back(ExecutionPlan::Link{.output = link.a.pin, .input = link.b.pin});
 
+    currentPlanVersion_ = plan->version;
     runner_.postPlan(std::move(plan));
 }
 

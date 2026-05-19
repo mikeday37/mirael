@@ -18,7 +18,6 @@ void Runner::onNewUIFrame()
 void Runner::mainLoop(std::stop_token st)
 {
     updatePlan();
-    assert(currentPlan_); // runner should have a plan before it is started
 
     while (!st.stop_requested()) {
         executeFrame(st);
@@ -64,9 +63,17 @@ void Runner::updatePlan()
 
 void Runner::executeFrame(std::stop_token st)
 {
+    if (!currentPlan_)
+        return;
+
+    // prevent cross-frame references in the case of misbehaving nodes that might not set their outputs
+    // (for now, preventing the nasty class of bugs that may otherwise result warrants the small per-frame cost)
+    for (auto &[pinId, valueBuffer] : outputPinBuffers_)
+        valueBuffer->unsetReference();
+
     for (auto nodeId : currentPlan_->nodeExecutionOrder) {
         runContext_.nodeId = nodeId;
-        auto it = cores_.find(nodeId);
+        auto it            = cores_.find(nodeId);
         if (it != cores_.end())
             it->second->onFrame(runContext_);
         if (st.stop_requested())

@@ -4,6 +4,7 @@
 #include <limits>
 
 #include "Node.h"
+#include "Mailbox.h"
 
 namespace Mirael::NodeTypes
 {
@@ -31,7 +32,7 @@ protected:
 
     struct Channel {
         std::atomic<value_t> value;
-        std::atomic<std::shared_ptr<Config>> config{};
+        Mailbox<Config> pendingConfig{};
     };
 
     class Core : public NodeCore
@@ -44,19 +45,20 @@ protected:
     private:
         PinId outPinId_;
         std::shared_ptr<Channel> channel_;
-        value_t value = 0;
+        value_t value_ = 0;
+        Config config_;
 
-        inline Config getConfig()
+        inline void acceptLatestConfig()
         {
-            auto config = channel_->config.load(std::memory_order_acquire);
-            return *config;
+            if (auto taken = channel_->pendingConfig.tryAcceptLatest())
+                config_ = *taken;
         }
-        inline void putValue() { channel_->value.store(value, std::memory_order_relaxed); }
+        inline void putValue() { channel_->value.store(value_, std::memory_order_relaxed); }
     };
 
     std::unique_ptr<NodeCore> createCore()
     {
-        putConfig();
+        postConfig();
         return std::make_unique<Core>(outPinId_, channel_);
     };
 
@@ -65,7 +67,9 @@ private:
     Config config_{};
     PinId outPinId_{};
 
-    inline void putConfig() { channel_->config.store(std::make_shared<Config>(config_), std::memory_order_release); }
+    inline void postConfig() {
+        channel_->pendingConfig.postNew(std::make_unique<Config>(config_));
+    }
     inline value_t getValue() { return channel_->value.load(std::memory_order_relaxed); }
 };
 

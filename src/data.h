@@ -42,8 +42,4 @@ enum class ChangeImpact {
     GraphRunRate,
 };
 
-struct ValueBuffer {
-    std::string value; // this is temporary - for the first test we're basically TCL - everything is a string!  :D
-};
-
 } // namespace Mirael

@@ -89,6 +89,7 @@ private:
     RunRateSetting runRate_ = {.rateMode = RunRateMode::SetRate, .desiredFramesPerSecond = 60.0f};
     Runner runner_;
     PlanVersion nextPlanVersion_ = 1;
+    PlanVersion currentPlanVersion_ = 0;
     std::unique_ptr<ResourceDelta> pendingDelta_{nullptr};
     bool planDirty_ = true;
     bool cycleDetected_ = false;

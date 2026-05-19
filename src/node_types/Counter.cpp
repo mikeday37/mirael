@@ -11,18 +11,15 @@ namespace Mirael::NodeTypes
 
 void Mirael::NodeTypes::Counter::onDeserialize(const nlohmann::json &j)
 {
-	config_.step = j["step"].get<value_t>();
-    config_.clipMin = j["clipMin"].get<bool>();
-    config_.clipMax = j["clipMax"].get<bool>();
-	config_.minValue = j["min"].get<value_t>();
-	config_.maxValue = j["max"].get<value_t>();
-    config_.wrap = j["wrap"].get<bool>();
+    config_.step     = j["step"].get<value_t>();
+    config_.clipMin  = j["clipMin"].get<bool>();
+    config_.clipMax  = j["clipMax"].get<bool>();
+    config_.minValue = j["min"].get<value_t>();
+    config_.maxValue = j["max"].get<value_t>();
+    config_.wrap     = j["wrap"].get<bool>();
 }
 
-void Counter::onInit()
-{
-	outPinId_ = addPin("out", {.direction = PinDirection::Output});
-}
+void Counter::onInit() { outPinId_ = addPin("out", {.direction = PinDirection::Output}); }
 
 void Counter::onShow()
 {
@@ -37,14 +34,14 @@ void Counter::onShow()
     ne::EndNode();
 }
 
-void Counter::onSerialize(nlohmann::json & j) const
+void Counter::onSerialize(nlohmann::json &j) const
 {
-	j["step"] = config_.step;
+    j["step"]    = config_.step;
     j["clipMin"] = config_.clipMin;
     j["clipMax"] = config_.clipMax;
-	j["min"] = config_.minValue;
-	j["max"] = config_.maxValue;
-    j["wrap"] = config_.wrap;
+    j["min"]     = config_.minValue;
+    j["max"]     = config_.maxValue;
+    j["wrap"]    = config_.wrap;
 }
 
 void Counter::onShowProperties()
@@ -58,36 +55,37 @@ void Counter::onShowProperties()
         changed |= ImGui::InputInt("Max Value", &config_.maxValue);
     changed |= ImGui::Checkbox("Wrap", &config_.wrap);
     if (changed)
-        putConfig();
+        postConfig();
 }
 
-void Counter::Core::onFrame(const RunContext& context)
+void Counter::Core::onFrame(const RunContext &context)
 {
-    auto config = getConfig(); // gets latest config from the channel
+    acceptLatestConfig(); // gets latest config from the channel (if any)
 
-    // TODO: note: the below logic is likely flawed - but not worth resolving at the moment because this is a temporary/throwaway node type
-    value += config.step;
-    const value_t range = 1 + config.maxValue - config.minValue;
-    if (config.clipMax && value > config.maxValue) {
-        if (config.wrap)
-            value -= range;
+    // TODO: note: the below logic is likely flawed - but not worth resolving at the moment because this is a temporary/throwaway node
+    // type
+    value_ += config_.step;
+    const value_t range = 1 + config_.maxValue - config_.minValue;
+    if (config_.clipMax && value_ > config_.maxValue) {
+        if (config_.wrap)
+            value_ -= range;
         else
-            value = config.maxValue;
+            value_ = config_.maxValue;
     }
-    if (config.clipMin && value < config.minValue) {
-        if (config.wrap)
-            value += range;
+    if (config_.clipMin && value_ < config_.minValue) {
+        if (config_.wrap)
+            value_ += range;
         else
-            value = config.minValue;
+            value_ = config_.minValue;
     }
 
-    putValue(); // puts updated value on the channel
+    putValue(); // puts updated value on the channel for the UI to display
 
     // now we need to write to the output buffer
     auto outBufferPtr = context.outputs.at(outPinId_);
     assert(outBufferPtr); // should have been created by the Runner before onFrame() was called
     auto &outBuffer = *outBufferPtr;
-    outBuffer.value = std::format("{}", value);
+    outBuffer.setValue(std::format("{}", value_));
 }
 
 } // namespace Mirael::NodeTypes

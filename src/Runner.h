@@ -9,7 +9,9 @@
 #include "readerwriterqueue.h"
 
 #include "data.h"
+#include "Mailbox.h"
 #include "NodeCore.h"
+#include "ValueBuffer.h"
 
 namespace Mirael
 {
@@ -59,34 +61,39 @@ public:
             return;
         }
         runRate_ = runRate;
-        thread_ = std::jthread([this](std::stop_token st) { mainLoop(st); });
+        thread_  = std::jthread([this](std::stop_token st) { mainLoop(st); });
     }
-    void stop() { if (thread_) thread_->request_stop(); thread_.reset();}
+    void stop()
+    {
+        if (thread_)
+            thread_->request_stop();
+        thread_.reset();
+    }
     void adjustRunRate(RunRateSetting newSetting);
     void onNewUIFrame();
     void queueDelta(std::unique_ptr<ResourceDelta> delta) { deltaQueue_.enqueue(std::move(delta)); }
     void postPlan(std::unique_ptr<ExecutionPlan> newPlan)
     {
-        ExecutionPlan *prevPlan = pendingPlan_.exchange(newPlan.release(), std::memory_order_acq_rel);
-        std::unique_ptr<ExecutionPlan> cleanup{prevPlan};
+        pendingPlan_.postNew(std::move(newPlan));
     }
 
 private:
     // Graph API communications channels/buffer
     moodycamel::ReaderWriterQueue<std::unique_ptr<ResourceDelta>> deltaQueue_{};
     std::unique_ptr<ResourceDelta> pendingFutureDelta_{}; // used to store up to 1 dequeued delta for a future plan version
-    std::atomic<ExecutionPlan *> pendingPlan_{nullptr};
+    Mailbox<ExecutionPlan> pendingPlan_{};
     std::unique_ptr<ExecutionPlan> currentPlan_{};
 
     // Receiving Graph Communications
     bool try_dequeueDelta(std::unique_ptr<ResourceDelta> &out) { return deltaQueue_.try_dequeue(out); }
     bool try_acceptLatestPlan()
     {
-        ExecutionPlan *taken = pendingPlan_.exchange(nullptr, std::memory_order_acq_rel);
-        if (!taken)
+        if (auto taken = pendingPlan_.tryAcceptLatest()) {
+            currentPlan_ = std::move(taken);
+            return true;
+        } else {
             return false;
-        currentPlan_.reset(taken);
-        return true;
+        }
     }
 
     // main operations
