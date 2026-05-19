@@ -10,10 +10,10 @@ class Comment : public Node
 public:
     static const char *typeName() { return "comment"; }
 
-    virtual void onDeserialize(const nlohmann::json &j);
+    void onDeserialize(const nlohmann::json &j) override;
     void onInit() override;
     void onShow() override;
-    virtual void onSerialize(nlohmann::json &j) const;
+    void onSerialize(nlohmann::json &j) const override;
 
 private:
     std::string comment_;

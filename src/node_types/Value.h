@@ -10,10 +10,10 @@ class Value : public Node
 public:
     static const char *typeName() { return "value"; }
 
-    virtual void onDeserialize(const nlohmann::json &j);
+    void onDeserialize(const nlohmann::json &j) override;
     void onInit() override;
     void onShow() override;
-    virtual void onSerialize(nlohmann::json &j) const;
+    void onSerialize(nlohmann::json &j) const override;
 
 private:
     std::string value_;

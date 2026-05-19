@@ -34,8 +34,8 @@ void Graph::serialize(nlohmann::json &j) const
     j["y"]    = canvasInfo_.orientation.origin.y;
     j["zoom"] = canvasInfo_.orientation.zoom;
 
-    j["ratemode"] = to_string(runRateMode_);
-    j["fps"] = frameRateSetting_;
+    j["ratemode"] = to_string(runRate_.rateMode);
+    j["fps"] = runRate_.desiredFramesPerSecond;
 
     j["nodes"] = json::object();
     for (const auto &[nodeId, node] : nodes_) {
@@ -69,12 +69,12 @@ std::unique_ptr<Graph> Graph::deserialize(GraphId id, std::string_view uid, cons
 
     if (j.contains("ratemode")) {
         auto rateModeString = j["ratemode"].get<std::string>();
-        if (!try_parse(rateModeString, graph->runRateMode_))
+        if (!try_parse(rateModeString, graph->runRate_.rateMode))
             throw std::runtime_error(std::format("Graph json parsing error: unknown ratemode string: {}", rateModeString));
     }
 
     if (j.contains("fps")) {
-        graph->frameRateSetting_ = j["fps"].get<float>();
+        graph->runRate_.desiredFramesPerSecond = j["fps"].get<float>();
     }
 
     const auto &nodesObj = j.at("nodes");
@@ -91,6 +91,7 @@ std::unique_ptr<Graph> Graph::deserialize(GraphId id, std::string_view uid, cons
                 std::format("Node Id {} not inserted into Graph Id {} during deserialization.", nodeId, graph->id_));
         auto maxElementIdInNode = it->second->getMaxElementId();
         maxElementId            = std::max(maxElementId, maxElementIdInNode);
+        graph->onNodeAdded(it->second.get());
     }
 
     if (j.contains("links")) {
@@ -154,8 +155,10 @@ void Graph::activate()
 
 void Graph::showView()
 {
-    if (!visible_)
+    if (!visible_) {
+        updateExecutionPlan();
         return;
+    }
 
     if (!context_)
         initEditorContext();
@@ -217,6 +220,8 @@ void Graph::showView()
 
     if (!visible_)
         raiseModified(ChangeImpact::GraphVisibility);
+
+    updateExecutionPlan();
 }
 
 void Graph::raiseModified(ChangeImpact impact) const
@@ -233,7 +238,9 @@ void Graph::userCreateNode(const char *nodeTypeName)
     node->init(*this, id, nodeTypeName);
     node->select();
     node->setPos(getCanvasViewCenter());
+    auto node_ptr = node.get();
     nodes_.try_emplace(id, std::move(node));
+    onNodeAdded(node_ptr);
     raiseModified(ChangeImpact::AddNode);
 }
 
@@ -310,17 +317,16 @@ void Graph::showProperties()
             ImGui::Separator();
         }
     }
+    else if (ImGui::CollapsingHeader("Graph", ImGuiTreeNodeFlags_DefaultOpen)) {
 
-    if (ImGui::CollapsingHeader("Graph", ImGuiTreeNodeFlags_DefaultOpen)) {
-
-        RunRateMode priorMode                = runRateMode_;
+        RunRateMode priorMode                = runRate_.rateMode;
         static constexpr RunRateMode modes[] = {RunRateMode::Disabled, RunRateMode::SetRate,
                                                 RunRateMode::Unlimited}; // don't support UIRate yet
-        if (ImGui::BeginCombo("Run Rate Mode", to_display_string(runRateMode_), ImGuiComboFlags_WidthFitPreview)) {
+        if (ImGui::BeginCombo("Run Rate Mode", to_display_string(runRate_.rateMode), ImGuiComboFlags_WidthFitPreview)) {
             for (auto mode : modes) {
-                bool selected = mode == runRateMode_;
+                bool selected = mode == runRate_.rateMode;
                 if (ImGui::Selectable(to_display_string(mode), selected)) {
-                    runRateMode_ = mode;
+                    runRate_.rateMode = mode;
                 }
                 if (selected) {
                     ImGui::SetItemDefaultFocus();
@@ -328,14 +334,14 @@ void Graph::showProperties()
             }
             ImGui::EndCombo();
         }
-        if (runRateMode_ != priorMode) {
+        if (runRate_.rateMode != priorMode) {
             raiseModified(ChangeImpact::GraphRunRate);
         }
 
-        const float priorFrameRateSetting = frameRateSetting_;
-        ImGui::InputFloat("Desired FPS", &frameRateSetting_, 0.0f, 0.0f, "%.7g");
-        frameRateSetting_ = std::clamp(frameRateSetting_, 0.001f, 1e6f);
-        if (fabs(priorFrameRateSetting - frameRateSetting_) > 1e-9f && RunRateMode::SetRate == runRateMode_) {
+        const float priorFrameRateSetting = runRate_.desiredFramesPerSecond;
+        ImGui::InputFloat("Desired FPS", &runRate_.desiredFramesPerSecond, 0.0f, 0.0f, "%.7g");
+        runRate_.desiredFramesPerSecond = std::clamp(runRate_.desiredFramesPerSecond, 0.001f, 1e6f);
+        if (fabs(priorFrameRateSetting - runRate_.desiredFramesPerSecond) > 1e-9f && RunRateMode::SetRate == runRate_.rateMode) {
             raiseModified(ChangeImpact::GraphRunRate);
         }
         ImGui::SameLine();
@@ -378,6 +384,11 @@ void Graph::onPinAdded(NodeId nodeId, PinId pinId, PinConfig pinConfig)
     assert(inserted); // each add should actually insert
     auto [it2, inserted2] = pinLinks_.try_emplace(pinId);
     assert(inserted2); // this should actually insert as well
+
+    if (pinConfig.direction == PinDirection::Output) {
+        establishDelta();
+        pendingDelta_->addedOutputs.push_back(pinId);
+    }
 }
 
 void Graph::onPinRemoved(NodeId nodeId, PinId pinId)
@@ -389,11 +400,18 @@ void Graph::onPinRemoved(NodeId nodeId, PinId pinId)
 
     // remove the pin
     auto it = pins_.find(pinId);
+    bool wasOutput = it->second.direction == PinDirection::Output;
     assert(it->second.nodeId == nodeId); // removes should always correspond to the correct node
     pins_.erase(it);
 
     // remove the pin link set
     pinLinks_.erase(pinId);
+
+    // add to delta if it was an output
+    if (wasOutput) {
+        establishDelta();
+        pendingDelta_->deletedOutputs.push_back(pinId);
+    }
 }
 
 const char *Graph::to_display_string(RunRateMode mode)
@@ -448,6 +466,89 @@ bool Graph::try_parse(std::string_view s, RunRateMode &out)
         return false;
 }
 
+void Graph::initRunner()
+{
+    updateExecutionPlan();
+    runner_.run(runRate_);
+}
+
+void Graph::establishDelta()
+{
+    if (!pendingDelta_) {
+        pendingDelta_ = std::make_unique<ResourceDelta>();
+        pendingDelta_->version = nextPlanVersion_++;
+    }
+}
+
+std::vector<NodeId> Graph::toposort(bool &cycleDetected)
+{
+    std::vector<NodeId> result;
+    std::unordered_map<NodeId, int> inDegree;
+    std::unordered_map<NodeId, std::vector<NodeId>> downstream;
+    std::vector<NodeId> queue;
+
+    const auto nodeCount = nodes_.size();
+    result.reserve(nodeCount);
+    inDegree.reserve(nodeCount);
+    downstream.reserve(nodeCount);
+    queue.reserve(nodeCount);
+
+    for (auto &[id, node] : nodes_) {
+        inDegree.try_emplace(id, 0);
+        downstream.try_emplace(id);
+    }
+
+    for (auto &[id, link] : links_) {
+        inDegree.at(link.b.node)++;
+        downstream.at(link.a.node).push_back(link.b.node);
+    }
+
+    for (auto &[id, degree] : inDegree)
+        if (degree == 0)
+            queue.push_back(id);
+
+    while (!queue.empty()) {
+        auto id = queue.back();
+        queue.pop_back();
+        result.push_back(id);
+        for (auto next : downstream.at(id))
+            if (!--inDegree.at(next))
+                queue.push_back(next);
+    }
+
+    cycleDetected = result.size() != nodes_.size();
+    return result;
+}
+
+void Graph::updateExecutionPlan()
+{
+    if (!planDirty_)
+        return;
+    planDirty_ = false;
+
+    auto sortedNodes = toposort(cycleDetected_);
+
+    // TODO: if cycle detected, flag newly added links as potentially cyclic
+    // TODO: if no cycle detected, clear all such flags
+
+    if (cycleDetected_) return;
+
+    auto plan = std::make_unique<ExecutionPlan>();
+    plan->version = pendingDelta_ ? pendingDelta_->version : nextPlanVersion_++;
+
+    if (pendingDelta_)
+        runner_.queueDelta(std::move(pendingDelta_));
+    assert(!pendingDelta_); // the move should clear this ptr
+
+    plan->nodeExecutionOrder = std::move(sortedNodes);
+
+    auto &valueLinks = plan->valueLinks;
+    for (auto &[id, link] : links_)
+        valueLinks.push_back(ExecutionPlan::Link{.output = link.a.pin, .input = link.b.pin});
+
+    runner_.postPlan(std::move(plan));
+}
+
 void Graph::rebuildWindowName() { windowName_ = std::format("{}###graph-{}", name_, uid_); }
 
 void Graph::initEditorContext()
@@ -477,6 +578,7 @@ void Graph::addLinkWithId(Link &&link, LinkId linkId)
     assert(inserted);
     pinLinks_.at(pinA).insert(linkId);
     pinLinks_.at(pinB).insert(linkId);
+    planDirty_ = true;
 }
 
 void Graph::removeLink(LinkId linkId)
@@ -488,6 +590,7 @@ void Graph::removeLink(LinkId linkId)
     pinLinks_.at(link.a.pin).erase(linkId);
     pinLinks_.at(link.b.pin).erase(linkId);
     links_.erase(it);
+    planDirty_ = true;
 }
 
 bool Graph::isOrientationChangeSignificant(CanvasOrientation a, CanvasOrientation b)
@@ -639,6 +742,21 @@ void Graph::removeNode(NodeId nodeId)
 
     it->second->removeAllPins();
     nodes_.erase(it);
+
+    establishDelta();
+    pendingDelta_->deletedCores.push_back(nodeId);
+    planDirty_ = true;
+}
+
+void Graph::onNodeAdded(Node *node)
+{
+    auto core = node->createCore();
+    if (!core)
+        return;
+    establishDelta();
+    auto [it, inserted] = pendingDelta_->addedCores.try_emplace(node->id_, std::move(core));
+    assert(inserted);
+    planDirty_ = true;
 }
 
 void Graph::EditorDeleter::operator()(EditorContext *context) const { ne::DestroyEditor(context); }

@@ -48,6 +48,7 @@ Graph &Project::addNewGraph()
     isModifiedFlag_ = true;
     orderDirty_     = true;
     storedGraph.rename(std::format("Graph {}", id));
+    storedGraph.initRunner();
     return storedGraph;
 }
 
@@ -135,6 +136,10 @@ void Project::save(const std::filesystem::path &filepath)
     // TODO: catch parse errors and fail gracefully with user notice
     auto project = deserialize(j);
     project->storeFilepath(filepath);
+
+    for (auto &[id, graph] : project->graphMap_)
+        graph->initRunner();
+
     return project;
 }
 

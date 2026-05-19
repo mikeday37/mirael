@@ -79,13 +79,23 @@ public:
     static const char *to_string(RunRateMode mode);
     static bool try_parse(std::string_view s, RunRateMode &mode);
 
+    void initRunner();
+
 private:
     GraphId id_;
     std::string uid_;
     std::string name_;
     bool visible_           = true;
-    RunRateMode runRateMode_ = RunRateMode::SetRate;
-    float frameRateSetting_ = 60.0f;
+    RunRateSetting runRate_ = {.rateMode = RunRateMode::SetRate, .desiredFramesPerSecond = 60.0f};
+    Runner runner_;
+    PlanVersion nextPlanVersion_ = 1;
+    std::unique_ptr<ResourceDelta> pendingDelta_{nullptr};
+    bool planDirty_ = true;
+    bool cycleDetected_ = false;
+
+    void establishDelta();
+    std::vector<NodeId> toposort(bool &cycleDetected);
+    void updateExecutionPlan();
 
     std::string windowName_; // derived from id and name, but cached so it doesn't reallocate every frame
     void rebuildWindowName();
@@ -136,6 +146,7 @@ private:
     void showNodesAndLinks();
 
     void removeNode(NodeId nodeId);
+    void onNodeAdded(Node *node);
 };
 
 } // namespace Mirael

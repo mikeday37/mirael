@@ -66,7 +66,9 @@ void Runner::executeFrame(std::stop_token st)
 {
     for (auto nodeId : currentPlan_->nodeExecutionOrder) {
         runContext_.nodeId = nodeId;
-        cores_.at(nodeId)->onFrame(runContext_);
+        auto it = cores_.find(nodeId);
+        if (it != cores_.end())
+            it->second->onFrame(runContext_);
         if (st.stop_requested())
             return;
     }
@@ -108,19 +110,19 @@ void Runner::prepareRunContext()
     runContext_.outputs.clear();
     inputsBackingVectors_.clear();
 
-    for (auto [inputPinId, outputPinId] : currentPlan_->valueLinks) {
+    for (auto [outputPinId, inputPinId] : currentPlan_->valueLinks) {
         auto it = inputsBackingVectors_.find(inputPinId);
         if (it == inputsBackingVectors_.end()) {
             it = inputsBackingVectors_.try_emplace(inputPinId, std::vector<const ValueBuffer *>()).first;
         }
-        it->second.push_back(&*outputPinBuffers_.at(outputPinId));
+        it->second.push_back(outputPinBuffers_.at(outputPinId).get());
     }
 
     for (auto &[inputPinId, backingVector] : inputsBackingVectors_)
         runContext_.inputs.try_emplace(inputPinId, std::span(backingVector));
 
     for (auto &[outputPinId, valueBuffer] : outputPinBuffers_)
-        runContext_.outputs.try_emplace(outputPinId, &*valueBuffer);
+        runContext_.outputs.try_emplace(outputPinId, valueBuffer.get());
 }
 
 } // namespace Mirael

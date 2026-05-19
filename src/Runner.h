@@ -16,12 +16,8 @@ namespace Mirael
 
 using PlanVersion = uint64_t;
 
-struct ValueBuffer {
-    std::string value; // this is temporary - for the first test we're basically TCL - everything is a string!  :D
-};
-
 struct ResourceDelta {
-    PlanVersion version;
+    PlanVersion version = 0;
     std::vector<NodeId> deletedCores;
     std::unordered_map<NodeId, std::unique_ptr<NodeCore>> addedCores;
     std::vector<PinId> deletedOutputs;
@@ -32,7 +28,7 @@ struct ExecutionPlan {
     PlanVersion version;
     std::vector<NodeId> nodeExecutionOrder;
     struct Link {
-        PinId input, output;
+        PinId output, input;
     };
     std::vector<Link> valueLinks; // only includes links that tie an input to an output - excludes node-internal sublinks
 };
@@ -58,6 +54,10 @@ public:
     // Graph API
     void run(RunRateSetting runRate)
     {
+        if (thread_) {
+            adjustRunRate(runRate);
+            return;
+        }
         runRate_ = runRate;
         thread_ = std::jthread([this](std::stop_token st) { mainLoop(st); });
     }

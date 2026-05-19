@@ -26,7 +26,7 @@ struct PinRef {
 };
 
 struct Link {
-    PinRef a, b; // a -> b, usually, though in the future we may support undirected or bidirectional links
+    PinRef a, b; // a -> b, always
 };
 
 enum class ChangeImpact {
@@ -40,6 +40,10 @@ enum class ChangeImpact {
     NodePosition,
     NodeConfig,
     GraphRunRate,
+};
+
+struct ValueBuffer {
+    std::string value; // this is temporary - for the first test we're basically TCL - everything is a string!  :D
 };
 
 } // namespace Mirael

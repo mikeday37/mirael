@@ -2,6 +2,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <memory>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -9,6 +10,7 @@
 
 #include "data.h"
 #include "util.h"
+#include "NodeCore.h"
 
 namespace Mirael
 {
@@ -27,6 +29,8 @@ protected:
     virtual void onSerialize(nlohmann::json &j) const {}
 
     virtual void onShowProperties() {}
+
+    virtual std::unique_ptr<NodeCore> createCore() { return nullptr; }
 
     NodeId getId() const { return id_; }
     void *getIdAsPointer() const { return (void *)(uintptr_t)(uint64_t)(id_); } // this is necessary for using ImGui::PushID()
