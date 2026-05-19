@@ -21,6 +21,24 @@ protected:
         NodeId nodeId;
         std::unordered_map<PinId, std::span<const ValueBuffer *>> inputs; // input PinId -> linked output pin value buffers
         std::unordered_map<PinId, ValueBuffer *> outputs;                 // output PinId -> output value buffer for that pin
+
+        const ValueBuffer *getFirstInput(PinId inputPinId) const
+        {
+            auto it = inputs.find(inputPinId);
+            if (it == inputs.end() || it->second.empty())
+                return nullptr;
+            else
+                return it->second.front();
+        }
+
+        ValueBuffer *getOutput(PinId outputPinId) const
+        {
+            auto it = outputs.find(outputPinId);
+            if (it == outputs.end())
+                return nullptr;
+            else
+                return it->second;
+        }
     };
 
     virtual void onFrame(const RunContext &context) = 0;

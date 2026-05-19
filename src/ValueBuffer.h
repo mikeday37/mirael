@@ -35,7 +35,7 @@ public:
         value_     = value;
     }
 
-    void setAsReference(ValueBuffer *to)
+    void setAsReferenceTo(const ValueBuffer *to)
     {
         assert(to);         // it is an error to try to set to nullptr
         assert(to != this); // it is an error to set this as a ref to itself
@@ -58,7 +58,7 @@ public:
     void unsetReference() { reference_ = nullptr; }
 
 private:
-    ValueBuffer *reference_ =
+    const ValueBuffer *reference_ =
         nullptr;          // non-owning reference - ValueBuffers are owned by the Runner and remain valid within one Frame.
     std::string value_{}; // this is temporary - for the first test we're basically TCL - everything is a string!  :D
 };

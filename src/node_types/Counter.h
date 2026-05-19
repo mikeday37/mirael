@@ -40,6 +40,7 @@ protected:
     public:
         Core(PinId outPinId, std::shared_ptr<Channel> channel) : outPinId_(outPinId), channel_(std::move(channel)) {}
 
+    protected:
         void onFrame(const RunContext &context) override;
 
     private:
@@ -48,12 +49,12 @@ protected:
         value_t value_ = 0;
         Config config_;
 
-        inline void acceptLatestConfig()
+        void acceptLatestConfig()
         {
             if (auto taken = channel_->pendingConfig.tryAcceptLatest())
                 config_ = *taken;
         }
-        inline void putValue() { channel_->value.store(value_, std::memory_order_relaxed); }
+        void putValue() { channel_->value.store(value_, std::memory_order_relaxed); }
     };
 
     std::unique_ptr<NodeCore> createCore()
@@ -67,10 +68,10 @@ private:
     Config config_{};
     PinId outPinId_{};
 
-    inline void postConfig() {
+    void postConfig() {
         channel_->pendingConfig.postNew(std::make_unique<Config>(config_));
     }
-    inline value_t getValue() { return channel_->value.load(std::memory_order_relaxed); }
+    value_t getValue() { return channel_->value.load(std::memory_order_relaxed); }
 };
 
 } // namespace Mirael::NodeTypes

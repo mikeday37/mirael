@@ -24,15 +24,9 @@ void Display::onShow()
 }
 
 void Display::Core::onFrame(const RunContext &context) {
-    auto it = context.inputs.find(inPinId_);
-    if (it == context.inputs.end())
-        return;
-
-    for (const auto *valueBuffer : it->second) {
-        // TODO: this is allocating per frame - switch to something like an expandable ring buffer or triple buffer
-        channel_->pendingValue.postNew(std::make_unique<std::string>(valueBuffer->getValue()));
-        break; // if there's more than one input, we don't care
-    }
+    if (auto buf = context.getFirstInput(inPinId_))
+        channel_->pendingValue.postNew(std::make_unique<std::string>(buf->getValue()));
+    // TODO: this is allocating per frame - switch to something like an expandable ring buffer or triple buffer
 }
 
 } // namespace Mirael::NodeTypes

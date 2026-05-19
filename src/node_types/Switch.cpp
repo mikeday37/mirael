@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include <utility>
+#include <charconv>
 
 #include "imgui.h"
 #include "ine/imgui_node_editor.h"
@@ -94,6 +95,8 @@ void postNode(NodeId id)
 
 void Switch::onShow()
 {
+    bool changed = false;
+
     auto &style = ImGui::GetStyle();
 
     ne::BeginNode(getId());
@@ -106,11 +109,11 @@ void Switch::onShow()
     postHeader();
     ImGui::Dummy({0, style.ItemSpacing.y / 2.0f});
 
-    auto outPin = [this]() {
+    auto outPin = [this, &changed]() {
         prePin(false);
         ne::BeginPin(outPinId_, ne::PinKind::Output);
         if (ImGui::Checkbox("out", &enabled_))
-            raiseModified(ChangeImpact::NodeConfig);
+            changed = true;
         ImGui::SameLine();
         drawPin();
         ne::EndPin();
@@ -135,7 +138,10 @@ void Switch::onShow()
 
     // loop through inputs
     bool first = true;
+    int inputIndex = 0;
     for (const auto &[n, id, label] : inputs_) {
+        assert(n == inputIndex + 1); // TODO: just get rid of n - it is redundant
+        ++inputIndex;
         prePin();
         ne::BeginPin(id, ne::PinKind::Input);
         drawPin();
@@ -145,7 +151,7 @@ void Switch::onShow()
         else {
             if (ImGui::RadioButton(label.c_str(), manualChoice_ == n)) {
                 if (manualChoice_ != n)
-                    raiseModified(ChangeImpact::NodeConfig);
+                    changed = true;
                 manualChoice_ = n;
             }
         }
@@ -167,6 +173,11 @@ void Switch::onShow()
     ne::EndNode();
 
     postNode(getId());
+
+    if (changed) {
+        raiseModified(ChangeImpact::NodeConfig);
+        postConfig();
+    }
 }
 
 void Switch::onSerialize(nlohmann::json &j) const
@@ -205,8 +216,56 @@ void Switch::onShowProperties()
     if (!dynamic_)
         changed |= ImGui::InputInt("Manual Choice", &manualChoice_);
 
-    if (changed)
+    if (changed) {
         raiseModified(ChangeImpact::NodeConfig);
+        postConfig();
+    }
+}
+
+void Switch::Core::onFrame(const RunContext &context)
+{
+    acceptLatestConfig();
+    
+    auto output = context.getOutput(config_.outPin);
+
+    if (!config_.enabled) {
+        if (output)
+            output->clear();
+        return;
+    }
+
+    int choice;
+
+    if (config_.dynamic) {
+        if (auto buf = context.getFirstInput(config_.choicePin)) {
+            auto val = buf->getValue();
+            int parsed{};
+            auto [ptr, err] = std::from_chars(val.data(), val.data() + val.size(), parsed);
+            if (err == std::errc{})
+                choice = parsed;
+            else
+                choice = 0; // TODO: in this case we may also want to set a visual error flag
+        } else {
+            choice = 0;
+        }
+    } else {
+        choice = config_.manualChoice;
+    }
+
+    if (choice < 1 || choice > config_.inPins.size()) {
+        if (output)
+            output->clear();
+        // TODO: also set visual error here
+        return;
+    }
+
+    auto input = context.getFirstInput(config_.inPins[choice - 1]);
+    if (output) {
+        if (input)
+            output->setAsReferenceTo(input);
+        else
+            output->clear();
+    }
 }
 
 void Switch::expandInputs()
