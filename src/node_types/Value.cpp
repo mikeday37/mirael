@@ -26,8 +26,10 @@ void Value::onShow()
     ImGui::Text("Value:");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(24.0f * ImGui::CalcTextSize("0").x);
-    if (ImGui::InputText("###value", &value_))
+    if (ImGui::InputText("###value", &value_)) {
         raiseModified(ChangeImpact::NodeConfig);
+        postValue();
+    }
     ImGui::SameLine();
     ne::BeginPin(outPinId_, ne::PinKind::Output);
     ImGui::Text("out ->");
@@ -40,6 +42,14 @@ void Value::onSerialize(nlohmann::json &j) const
 {
     if (!value_.empty())
         j["value"] = value_;
+}
+
+void Value::Core::onFrame(const RunContext &context)
+{
+    acceptLatestValue();
+
+    if (auto buf = context.getOutput(outPinId_))
+        buf->setValue(value_);
 }
 
 } // namespace Mirael::NodeTypes
