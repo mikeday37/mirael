@@ -120,6 +120,30 @@ set(INE_INCLUDES
 
 
 #
+# === LuaJIT ===
+#
+
+set(LUAJIT_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/luajit/src")
+set(LUAJIT_LIB "${LUAJIT_SRC_DIR}/lua51.lib")
+set(LUAJIT_INCLUDES "${LUAJIT_SRC_DIR}")
+include(ExternalProject)
+externalproject_add(luajit_build # TODO: portability
+	SOURCE_DIR "${LUAJIT_SRC_DIR}"
+	CONFIGURE_COMMAND ""
+	BUILD_COMMAND cmd /c "${LUAJIT_SRC_DIR}/msvcbuild.bat" static
+	INSTALL_COMMAND ""
+	BUILD_IN_SOURCE TRUE
+	BUILD_BYPRODUCTS "${LUAJIT_LIB}"
+)
+add_library(LuaJIT::LuaJIT STATIC IMPORTED GLOBAL)
+set_target_properties(LuaJIT::LuaJIT PROPERTIES
+	IMPORTED_LOCATION "${LUAJIT_LIB}"
+	INTERFACE_INCLUDE_DIRECTORIES "${LUAJIT_INCLUDES}"
+)
+add_dependencies(LuaJIT::LuaJIT luajit_build)
+
+
+#
 # === Other Includes ===
 #
 
@@ -164,6 +188,7 @@ set_property(TARGET Mirael PROPERTY CXX_STANDARD 20)
 target_link_libraries(Mirael PRIVATE
 	glfw
 	glm::glm
+	LuaJIT::LuaJIT
 	nfd
 	nlohmann_json::nlohmann_json
 	stduuid
