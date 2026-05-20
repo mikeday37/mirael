@@ -8,3 +8,7 @@
 [submodule "external/imgui-node-editor"]
 	path = external/imgui-node-editor/ine
 	url = https://github.com/mikeday37/mirael-node-editor.git
+[submodule "external/luajit"]
+	path = external/luajit
+	url = https://luajit.org/git/luajit.git
+	branch = v2.1
