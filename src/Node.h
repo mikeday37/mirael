@@ -28,6 +28,8 @@ public:
     std::span<PinId> getPinOrder() { return pinOrder_; } // value is undefined unless the derived set it in onOrderPins()
     size_t getPinCount() const { return pinIdToConfig_.size(); }
 
+    bool isDeserializing() const { return deserializing_; }
+
 protected:
     virtual void onDeserialize(const nlohmann::json &j) {}
     virtual void onInit() = 0;
