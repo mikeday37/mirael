@@ -22,7 +22,8 @@ PinId Node::addPin(std::string_view pinKey, PinConfig config)
      * deserialization.
      */
 
-    auto it = pinKeyToId_.find(pinKey);
+    pinOrderDirty_ = true;
+    auto it        = pinKeyToId_.find(pinKey);
     if (it != pinKeyToId_.end()) {
         auto pinId = it->second;
         auto cit   = pinIdToConfig_.find(pinId);
@@ -54,7 +55,8 @@ void Node::removePin(std::string_view key)
 {
     auto it = pinKeyToId_.find(key);
     if (it != pinKeyToId_.end()) {
-        auto pinId = it->second;
+        pinOrderDirty_ = true;
+        auto pinId     = it->second;
         pinIdToConfig_.erase(pinId);
         pinKeyToId_.erase(it);
         graph_->onPinRemoved(id_, pinId);
@@ -90,7 +92,16 @@ void Node::init(Graph &owner, NodeId id, std::string_view nodeTypeName)
     onInit();
 }
 
-void Node::show() { onShow(); }
+void Node::show()
+{
+    if (pinOrderDirty_) {
+        onOrderPins(pinOrder_);
+        assert(pinOrder_.empty() || pinOrder_.size() == pinIdToConfig_.size());
+        pinOrderDirty_ = false;
+    }
+
+    onShow();
+}
 
 void Node::serialize(nlohmann::json &j) const
 {

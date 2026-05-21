@@ -1,7 +1,7 @@
 #include "pch.h"
 
-#include <utility>
 #include <charconv>
+#include <utility>
 
 #include "imgui.h"
 #include "ine/imgui_node_editor.h"
@@ -9,6 +9,7 @@
 
 #include "App.h"
 #include "data.h"
+#include "NodeEditorEx.h"
 #include "Switch.h"
 
 namespace ne = ax::NodeEditor;
@@ -42,137 +43,82 @@ void Switch::onInit()
     outPinId_ = addPin("out", {.direction = PinDirection::Output});
 }
 
-namespace
+void Switch::onOrderPins(std::vector<PinId> &pinOrder)
 {
+    pinOrder.clear();
+    pinOrder.reserve(getPinCount());
 
-ImVec2 HeaderMin, HeaderMax;
+    if (dynamic_)
+        pinOrder.push_back(choicePinId_);
 
-void postHeader()
-{
-    HeaderMin = ImGui::GetItemRectMin();
-    HeaderMax = ImGui::GetItemRectMax();
+    for (auto &input : inputs_)
+        pinOrder.push_back(input.id);
+
+    outPinIndex_ = pinOrder.size();
+    pinOrder.push_back(outPinId_);
 }
-
-void prePin(bool input = true)
-{
-    ne::PushStyleVar(ne::StyleVar_PivotAlignment, input ? ImVec2(0, 0.5f) : ImVec2(1.0f, 0.5f));
-    ne::PushStyleVar(ne::StyleVar_PivotSize, ImVec2(0, 0));
-}
-
-void drawPin()
-{
-    const auto &style = App::get().getStyle();
-    ax::Widgets::Icon({style.values.pinIconSize, style.values.pinIconSize}, ax::Drawing::IconType::Circle, false,
-                      style.colors.pinIconColor);
-}
-
-void postPin() { ne::PopStyleVar(2); }
-
-void postNode(NodeId id)
-{
-    if (!ImGui::IsItemVisible())
-        return;
-
-    auto &style = App::get().getStyle();
-
-    auto itemMin = ImGui::GetItemRectMin();
-    auto itemMax = ImGui::GetItemRectMax();
-
-    auto alpha = static_cast<int>(255 * ImGui::GetStyle().Alpha);
-
-    auto drawList = ne::GetNodeBackgroundDrawList(id);
-
-    const auto halfBorderWidth = ne::GetStyle().NodeBorderWidth * 0.5f;
-
-    auto ul = ImVec2(itemMin.x + halfBorderWidth, itemMin.y + halfBorderWidth);
-    auto lr = ImVec2(itemMax.x - halfBorderWidth, HeaderMax.y);
-    drawList->AddRectFilled(ul, lr, ImColor(style.colors.nodeHeaderFill), ne::GetStyle().NodeRounding, ImDrawFlags_RoundCornersTop);
-
-    drawList->AddLine(ImVec2(ul.x, lr.y - 0.5f), ImVec2(lr.x - 1, lr.y - 0.5f), ImColor(255, 255, 255, 96 * alpha / (3 * 255)), 1.0f);
-}
-
-} // namespace
 
 void Switch::onShow()
 {
     bool changed = false;
+    auto pins    = std::span{getPinOrder()};
 
-    auto &style = ImGui::GetStyle();
-
-    ne::BeginNode(getId());
-    ImGui::PushID(getIdAsPointer());
-
-    ImGui::Dummy({style.ItemInnerSpacing.x / 2.0f, 0});
-    ImGui::SameLine();
-    ImGui::TextUnformatted("Switch");
-    ImGui::Dummy({0, style.ItemSpacing.y / 2.0f});
-    postHeader();
-    ImGui::Dummy({0, style.ItemSpacing.y / 2.0f});
-
-    auto outPin = [this, &changed]() {
-        prePin(false);
-        ne::BeginPin(outPinId_, ne::PinKind::Output);
-        if (ImGui::Checkbox("out", &enabled_))
-            changed = true;
-        ImGui::SameLine();
-        drawPin();
-        ne::EndPin();
-        postPin();
-    };
-
-    // if dynamic, choice input and the output are on the same row
-    if (dynamic_) {
-        prePin();
-        ne::BeginPin(choicePinId_, ne::PinKind::Input);
-        drawPin();
-        ImGui::SameLine();
-        ImGui::AlignTextToFramePadding();
-        ImGui::TextUnformatted("choice");
-        ne::EndPin();
-        postPin();
-
-        ImGui::SameLine();
-
-        outPin();
-    }
-
-    // loop through inputs
-    bool first = true;
-    int inputIndex = 0;
-    for (const auto &[n, id, label] : inputs_) {
-        assert(n == inputIndex + 1); // TODO: just get rid of n - it is redundant
-        ++inputIndex;
-        prePin();
-        ne::BeginPin(id, ne::PinKind::Input);
-        drawPin();
-        ImGui::SameLine();
-        if (dynamic_)
-            ImGui::TextUnformatted(label.c_str());
-        else {
-            if (ImGui::RadioButton(label.c_str(), manualChoice_ == n)) {
-                if (manualChoice_ != n)
-                    changed = true;
-                manualChoice_ = n;
+    NodeEditorEx::StandardNode(
+        *this,                                              // node
+        []() -> void { ImGui::TextUnformatted("Switch"); }, // header UI
+        pins.subspan(0, outPinIndex_),                      // input pin order
+        pins.subspan(outPinIndex_),                         // output pin order
+        [this](size_t index, PinId id, PinDirection dir) -> float {
+            switch (dir) {
+            case PinDirection::Input:
+                if (dynamic_ && id == choicePinId_) {
+                    return ImGui::CalcTextSize("choice").x;
+                } else {
+                    auto &[n, checkPinId, label] = dynamic_ ? inputs_[index - 1] : inputs_[index];
+                    assert(id == checkPinId);
+                    if (dynamic_)
+                        return ImGui::CalcTextSize(label.c_str()).x;
+                    else {
+                        return ImGui::GetFrameHeight() + ImGui::GetStyle().ItemInnerSpacing.x + ImGui::CalcTextSize(label.c_str()).x;
+                    }
+                }
+                break;
+            case PinDirection::Output:
+                return ImGui::GetFrameHeight() + ImGui::GetStyle().ItemInnerSpacing.x + ImGui::CalcTextSize("out").x;
+            default:
+                assert(false); // this should not occur
+                return 0;
             }
-        }
-        ne::EndPin();
-        postPin();
-
-        // output will be aligned with the first input if not dynamic
-        if (!dynamic_ && first) {
-            first = false;
-            ImGui::SameLine();
-            ImGui::Dummy({ImGui::CalcTextSize("W").x * 1.0f, 0});
-            ImGui::SameLine();
-
-            outPin();
-        }
-    }
-
-    ImGui::PopID();
-    ne::EndNode();
-
-    postNode(getId());
+        },
+        [this, &changed](size_t index, PinId id, PinDirection dir) -> void {
+            switch (dir) {
+            case PinDirection::Input:
+                if (dynamic_ && id == choicePinId_) {
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::TextUnformatted("choice");
+                } else {
+                    auto &[n, checkPinId, label] = dynamic_ ? inputs_[index - 1] : inputs_[index];
+                    assert(id == checkPinId);
+                    if (dynamic_)
+                        ImGui::TextUnformatted(label.c_str());
+                    else {
+                        if (ImGui::RadioButton(label.c_str(), manualChoice_ == n)) {
+                            if (manualChoice_ != n)
+                                changed = true;
+                            manualChoice_ = n;
+                        }
+                    }
+                }
+                break;
+            case PinDirection::Output:
+                if (ImGui::Checkbox("out", &enabled_))
+                    changed = true;
+                break;
+            default:
+                assert(false); // this should not occur
+                break;
+            }
+        });
 
     if (changed) {
         raiseModified(ChangeImpact::NodeConfig);
@@ -225,7 +171,7 @@ void Switch::onShowProperties()
 void Switch::Core::onFrame(const RunContext &context)
 {
     acceptLatestConfig();
-    
+
     auto output = context.getOutput(config_.outPin);
 
     if (!config_.enabled) {

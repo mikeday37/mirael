@@ -1,0 +1,99 @@
+#include "pch.h"
+
+#include "ine/imgui_node_editor.h"
+#include "ine/utilities/widgets.h"
+
+#include "App.h"
+#include "ImGuiEx.h"
+#include "NodeEditorEx.h"
+
+namespace ne = ax::NodeEditor;
+
+namespace Mirael::NodeEditorEx::StandardNodeHelper
+{
+
+void Builder::begin()
+{
+    ne::BeginNode(node_.getId());
+    ImGui::PushID(node_.getIdAsPointer());
+}
+
+void Builder::preHeader()
+{
+    const auto &style = ImGui::GetStyle();
+    ImGui::Dummy({style.ItemInnerSpacing.x / 2.0f, 0});
+    ImGui::SameLine();
+}
+
+void Builder::postHeader()
+{
+    const auto &style = ImGui::GetStyle();
+    ImGui::Dummy({0, style.ItemSpacing.y / 2.0f});
+    headerMin_ = ImGui::GetItemRectMin();
+    headerMax_ = ImGui::GetItemRectMax();
+    ImGui::Dummy({0, style.ItemSpacing.y / 2.0f});
+}
+
+void Builder::prePin(PinId id, PinDirection dir)
+{
+    const bool input = dir == PinDirection::Input;
+    ne::PushStyleVar(ne::StyleVar_PivotAlignment, input ? ImVec2(0, 0.5f) : ImVec2(1.0f, 0.5f));
+    ne::PushStyleVar(ne::StyleVar_PivotSize, ImVec2(0, 0));
+
+    ne::BeginPin(id, input ? ne::PinKind::Input : ne::PinKind::Output);
+
+    if (input) {
+        drawIcon();
+        ImGui::SameLine();
+    }
+}
+
+void Builder::postPin(PinDirection dir)
+{
+    if (dir == PinDirection::Output) {
+        ImGui::SameLine();
+        drawIcon();
+    }
+
+    ne::EndPin();
+    ne::PopStyleVar(2);
+}
+
+void Builder::missingPin(float width) { ImGui::Dummy({width + App::get().getStyle().values.pinIconSize, 0}); }
+
+void Builder::spacing(float width) { ImGui::Dummy({width, 0}); }
+
+void Builder::end()
+{
+    ImGui::PopID();
+    ne::EndNode();
+
+    if (!ImGui::IsItemVisible())
+        return;
+
+    auto &style = App::get().getStyle();
+
+    auto itemMin = ImGui::GetItemRectMin();
+    auto itemMax = ImGui::GetItemRectMax();
+
+    auto alpha = static_cast<int>(255 * ImGui::GetStyle().Alpha);
+
+    auto drawList = ne::GetNodeBackgroundDrawList(node_.getId());
+
+    const auto halfBorderWidth = ne::GetStyle().NodeBorderWidth * 0.5f;
+
+    auto ul = ImVec2(itemMin.x + halfBorderWidth, itemMin.y + halfBorderWidth);
+    auto lr = ImVec2(itemMax.x - halfBorderWidth, headerMax_.y);
+    drawList->AddRectFilled(ul, lr, ImColor(style.colors.nodeHeaderFill), ne::GetStyle().NodeRounding, ImDrawFlags_RoundCornersTop);
+
+    drawList->AddLine(ImVec2(ul.x, lr.y - 0.5f), ImVec2(lr.x - 1, lr.y - 0.5f), ImColor(255, 255, 255, 96 * alpha / (3 * 255)), 1.0f);
+}
+
+void Builder::drawIcon()
+{
+    const auto &style = App::get().getStyle();
+    ax::Widgets::Icon({style.values.pinIconSize, style.values.pinIconSize}, ax::Drawing::IconType::Circle, false,
+                      style.colors.pinIconColor);
+}
+
+} // namespace Mirael::NodeEditorEx::StandardNodeHelper

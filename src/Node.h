@@ -9,8 +9,8 @@
 #include <xutility>
 
 #include "data.h"
-#include "util.h"
 #include "NodeCore.h"
+#include "util.h"
 
 namespace Mirael
 {
@@ -22,18 +22,22 @@ class Node
 public:
     virtual ~Node() = default;
 
+    NodeId getId() const { return id_; }
+    void *getIdAsPointer() const { return (void *)(uintptr_t)(uint64_t)(id_); } // this is necessary for using ImGui::PushID()
+
+    std::span<PinId> getPinOrder() { return pinOrder_; } // value is undefined unless the derived set it in onOrderPins()
+    size_t getPinCount() const { return pinIdToConfig_.size(); }
+
 protected:
     virtual void onDeserialize(const nlohmann::json &j) {}
     virtual void onInit() = 0;
+    virtual void onOrderPins(std::vector<PinId> &pinOrder) {} // called if pins have changed since last call to onShow
     virtual void onShow() = 0;
     virtual void onSerialize(nlohmann::json &j) const {}
 
     virtual void onShowProperties() {}
 
     virtual std::unique_ptr<NodeCore> createCore() { return nullptr; }
-
-    NodeId getId() const { return id_; }
-    void *getIdAsPointer() const { return (void *)(uintptr_t)(uint64_t)(id_); } // this is necessary for using ImGui::PushID()
 
     PinId addPin(std::string_view key, PinConfig config);
     void removePin(std::string_view key);
@@ -51,6 +55,8 @@ private:
     std::string typeName_;
     std::unordered_map<std::string, PinId, TransparentStringHash, std::equal_to<>> pinKeyToId_;
     std::unordered_map<PinId, PinConfig> pinIdToConfig_;
+    std::vector<PinId> pinOrder_;
+    bool pinOrderDirty_ = true;
 
     void init(Graph &owner, NodeId id, std::string_view nodeTypeName);
     void show();

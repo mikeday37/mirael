@@ -13,6 +13,7 @@ public:
 protected:
     void onDeserialize(const nlohmann::json &j) override;
     void onInit() override;
+    void onOrderPins(std::vector<PinId> &pinOrder) override;
     void onShow() override;
     void onSerialize(nlohmann::json &j) const override;
 
@@ -78,6 +79,7 @@ private:
         std::string label;
     };
     std::vector<InputPin> inputs_;
+    size_t outPinIndex_{};
     void expandInputs();
     void reduceInputs();
     void addSwitchInputPin(int pinNumber);    // 1-indexed
