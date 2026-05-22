@@ -53,6 +53,8 @@ void Settings::showMiraelSetingsEditor()
     ImGui::SeparatorText("Mirael Style Values");
 
     auto &values = app.getStyle().values;
+    ImGui::SliderFloat("Node Header Indent", &values.nodeHeaderIndent, 1.0f, 50.f, "%.1f");
+    ImGui::SliderFloat("Pin Column Spacing", &values.pinColumnSpacing, 1.0f, 50.f, "%.1f");
     ImGui::SliderFloat("Pin Icon Size", &values.pinIconSize, 1.0f, 50.f, "%.1f");
 
     ImGui::SeparatorText("Mirael Style Colors");

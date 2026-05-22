@@ -94,6 +94,8 @@ public:
 
     struct Style {
         struct Values {
+            float nodeHeaderIndent = 8.0f;
+            float pinColumnSpacing = 16.0f;
             float pinIconSize = 20.0f;
         };
         struct Colors {

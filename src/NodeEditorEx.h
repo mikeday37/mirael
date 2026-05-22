@@ -10,22 +10,6 @@
 namespace Mirael::NodeEditorEx
 {
 
-namespace StandardNodeCallback
-{
-
-template <typename F>
-concept Header = std::invocable<F> && std::same_as<std::invoke_result_t<F>, void>;
-
-template <typename F>
-concept GetPinWidth =
-    std::invocable<F, size_t, PinId, PinDirection> && std::same_as<std::invoke_result_t<F, size_t, PinId, PinDirection>, float>;
-
-template <typename F>
-concept Pin =
-    std::invocable<F, size_t, PinId, PinDirection> && std::same_as<std::invoke_result_t<F, size_t, PinId, PinDirection>, void>;
-
-} // namespace StandardNodeCallback
-
 namespace StandardNodeHelper
 {
 
@@ -49,12 +33,31 @@ public:
 
     void drawIcon();
 
+    float getMiddleSpacing(bool hasInputs, float maxInputWidth, float extraMiddleWidth, float maxOutputWidth);
+
 private:
     Node &node_;
-    ImVec2 headerMin_, headerMax_;
+    ImVec2 headerMin_{}, headerMax_{};
+    float pinDecorationWidth_{}, preHeaderX_{}, headerContentWidth_{};
 };
 
 } // namespace StandardNodeHelper
+
+namespace StandardNodeCallback
+{
+
+template <typename F>
+concept Header = std::invocable<F> && std::same_as<std::invoke_result_t<F>, void>;
+
+template <typename F>
+concept GetPinWidth =
+    std::invocable<F, size_t, PinId, PinDirection> && std::same_as<std::invoke_result_t<F, size_t, PinId, PinDirection>, float>;
+
+template <typename F>
+concept Pin =
+    std::invocable<F, size_t, PinId, PinDirection> && std::same_as<std::invoke_result_t<F, size_t, PinId, PinDirection>, void>;
+
+} // namespace StandardNodeCallback
 
 template <StandardNodeCallback::Header Header, StandardNodeCallback::GetPinWidth GetPinWidth, StandardNodeCallback::Pin Pin>
 void StandardNode(Node &node,                    //
@@ -82,7 +85,8 @@ void StandardNode(Node &node,                    //
     for (size_t index : std::views::iota(0u, outputPinIds.size()))
         maxOutputWidth = std::max(maxOutputWidth, getPinWidth(index, outputPinIds[index], PinDirection::Output));
 
-    float totalMiddleSpacing = ImGui::GetStyle().ItemSpacing.x * 2.0f + extraMiddleSpacing;
+    bool hasInputs           = !inputPinIds.empty();
+    float totalMiddleSpacing = builder.getMiddleSpacing(hasInputs, maxInputWidth, extraMiddleSpacing, maxOutputWidth);
 
     size_t rowCount = std::max(inputPinIds.size(), outputPinIds.size());
 
@@ -100,19 +104,23 @@ void StandardNode(Node &node,                    //
             pin(index, id, dir);
             ImGui::SameLine(0, 0);
             float pinWidth = ImGui::GetCursorPosX() - preX;
+#ifndef NDEBUG
+            float estimatedWidth = getPinWidth(index, id, dir);
+            float discrepancy    = fabs(estimatedWidth - pinWidth);
+            assert(discrepancy < 1e-4); // if the discrepancy is significant, I want to know so I can fix the estimators
+#endif
             builder.postPin(dir);
             ImGui::SameLine(0, 0);
             builder.spacing(maxInputWidth - pinWidth);
-        } else {
+        } else if (hasInputs) {
             builder.missingPin(maxInputWidth);
         }
 
-        if (left && right)
-            ImGui::SameLine(0, 0);
-
-        dir = PinDirection::Output;
-
         if (right) {
+            if (hasInputs)
+                ImGui::SameLine();
+            dir = PinDirection::Output;
+
             PinId id        = outputPinIds[index];
             float thisWidth = getPinWidth(index, id, dir);
             builder.spacing(totalMiddleSpacing + maxOutputWidth - thisWidth);

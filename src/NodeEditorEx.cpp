@@ -14,19 +14,25 @@ namespace Mirael::NodeEditorEx::StandardNodeHelper
 
 void Builder::begin()
 {
+    const auto &style = ImGui::GetStyle();
+    pinDecorationWidth_ = App::get().getStyle().values.pinIconSize + style.ItemSpacing.x;
+
     ne::BeginNode(node_.getId());
     ImGui::PushID(node_.getIdAsPointer());
 }
 
 void Builder::preHeader()
 {
-    const auto &style = ImGui::GetStyle();
-    ImGui::Dummy({style.ItemInnerSpacing.x / 2.0f, 0});
-    ImGui::SameLine();
+    ImGui::Dummy({App::get().getStyle().values.nodeHeaderIndent, 0});
+    ImGui::SameLine(0, 0);
+
+    preHeaderX_ = ImGui::GetCursorScreenPos().x;
 }
 
 void Builder::postHeader()
 {
+    headerContentWidth_ = ImGui::GetItemRectMax().x - preHeaderX_;
+
     const auto &style = ImGui::GetStyle();
     ImGui::Dummy({0, style.ItemSpacing.y / 2.0f});
     headerMin_ = ImGui::GetItemRectMin();
@@ -59,7 +65,7 @@ void Builder::postPin(PinDirection dir)
     ne::PopStyleVar(2);
 }
 
-void Builder::missingPin(float width) { ImGui::Dummy({width + App::get().getStyle().values.pinIconSize, 0}); }
+void Builder::missingPin(float width) { ImGui::Dummy({width + pinDecorationWidth_, 0}); }
 
 void Builder::spacing(float width) { ImGui::Dummy({width, 0}); }
 
@@ -94,6 +100,18 @@ void Builder::drawIcon()
     const auto &style = App::get().getStyle();
     ax::Widgets::Icon({style.values.pinIconSize, style.values.pinIconSize}, ax::Drawing::IconType::Circle, false,
                       style.colors.pinIconColor);
+}
+
+float Builder::getMiddleSpacing(bool hasInputs, float maxInputWidth, float extraMiddleWidth, float maxOutputWidth)
+{
+    const auto &appStyle = App::get().getStyle();
+    float expectedMiddleWidth = (hasInputs ? appStyle.values.pinColumnSpacing : 0) + extraMiddleWidth;
+    float expectedTotalWidth = maxInputWidth + expectedMiddleWidth + maxOutputWidth + (hasInputs ? 2.0f : 1.0f) * pinDecorationWidth_;
+    float headerExcessWidth = headerContentWidth_ + appStyle.values.nodeHeaderIndent - expectedTotalWidth;
+    if (headerExcessWidth > 0)
+        return expectedMiddleWidth + headerExcessWidth;
+    else
+        return expectedMiddleWidth;
 }
 
 } // namespace Mirael::NodeEditorEx::StandardNodeHelper
