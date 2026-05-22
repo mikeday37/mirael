@@ -3,6 +3,7 @@
 #include "imgui.h"
 #include "misc/cpp/imgui_stdlib.h"
 
+#include "ImGuiEx.h"
 #include "NodeEditorEx.h"
 #include "Script.h"
 
@@ -116,10 +117,53 @@ void Script::onSerialize(nlohmann::json &j) const
     }
 }
 
+namespace
+{
+
+const char *to_display_string(Script::ScriptCompilationMode mode)
+{
+    switch (mode) {
+        using enum Script::ScriptCompilationMode;
+    case None:
+        return "None";
+    case Live:
+        return "Live";
+    case Explicit:
+        return "Explicit";
+    default:
+        assert(false);
+        return "(unknown)";
+    }
+}
+
+const char *to_display_string(Script::ScriptStatus status)
+{
+    switch (status) {
+        using enum Script::ScriptStatus;
+    case Empty:
+        return "Empty";
+    case Good:
+        return "Good";
+    case CompileError:
+        return "Compile Error";
+    case RuntimeError:
+        return "Runtime Error";
+    default:
+        return "(unknown)";
+    }
+}
+
+bool isError(Script::ScriptStatus status)
+{
+    return status == Script::ScriptStatus::CompileError || status == Script::ScriptStatus::RuntimeError;
+}
+
+} // namespace
+
 void Script::onShowProperties()
 {
     bool postRequired = false;
-    bool otherChange = false;
+    bool otherChange  = false;
 
     if (ImGui::InputText("Name", &scriptName_))
         otherChange = true;
@@ -136,11 +180,71 @@ void Script::onShowProperties()
 
     if (ImGui::Checkbox("Enabled", &enabled_)) {
         otherChange = true;
-        channel_->enabled.store(enabled_, std::memory_order_relaxed);
+        putEnabled();
     }
 
     if (ImGui::Checkbox("Inline Editor", &inlineEditor_))
         otherChange = true;
+
+    if (ImGui::BeginCombo("Compile Mode", to_display_string(compileMode_), ImGuiComboFlags_WidthFitPreview)) {
+        static constexpr ScriptCompilationMode compileModes[] = {ScriptCompilationMode::None, ScriptCompilationMode::Live,
+                                                                 ScriptCompilationMode::Explicit};
+        for (auto mode : compileModes) {
+            bool selected = mode == compileMode_;
+            if (ImGui::Selectable(to_display_string(mode), selected)) {
+                compileMode_ = mode;
+                otherChange  = true;
+            }
+            if (selected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+
+    ImGuiTableFlags tableFlags = ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuterH | ImGuiTableFlags_RowBg |
+                                 ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Resizable;
+    if (ImGui::BeginTable("##statusTable", 2, tableFlags)) {
+
+        ImGuiEx::RowLabel("Version - Posted");
+        ImGui::Text("%llu", latestPostedScriptVersion_);
+
+        updateCoreStatus();
+
+        ImGuiEx::RowLabel("Version - Received");
+        ImGui::Text("%llu", coreStatus_.receivedScriptVersion);
+
+        ImGuiEx::RowLabel("Version - Running");
+        ImGui::Text("%llu", coreStatus_.runningScriptVersion);
+
+        ImGuiEx::RowLabel("Status");
+        ImGui::TextUnformatted(to_display_string(coreStatus_.scriptStatus));
+        if (isError(coreStatus_.scriptStatus)) {
+            ImGui::SameLine();
+            ImGuiEx::ToolTipHint(coreStatus_.errorText.c_str());
+        }
+        if (autoDisabled_) {
+            ImGui::SameLine();
+            ImGui::TextUnformatted("Auto-Disabled");
+        }
+
+        ImGui::EndTable();
+    }
+
+    if (ImGui::Button("Compile Now")) {
+        if (ScriptCompilationMode::None != compileMode_) {
+            ++scriptVersion_;
+            postRequired = true;
+        }
+    }
+
+    if (ImGui::InputTextMultiline("Script", &script_, ImVec2(0, 0), ImGuiInputTextFlags_AllowTabInput)) {
+        otherChange = true;
+        if (ScriptCompilationMode::Live == compileMode_) {
+            ++scriptVersion_;
+            postRequired = true;
+        }
+    }
 
     if (otherChange || postRequired)
         raiseModified(ChangeImpact::NodeConfig);

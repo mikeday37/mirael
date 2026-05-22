@@ -11,6 +11,10 @@ class Script : public Node
 public:
     static const char *typeName() { return "script"; }
 
+    using ScriptVersion = uint64_t;
+    enum class ScriptCompilationMode { None, Live, Explicit };
+    enum class ScriptStatus { Empty, Good, CompileError, RuntimeError };
+
 protected:
     void onDeserialize(const nlohmann::json &j) override;
     void onInit() override;
@@ -19,12 +23,6 @@ protected:
     void onSerialize(nlohmann::json &j) const override;
 
     void onShowProperties() override;
-
-    using ScriptVersion = int;
-
-    enum class ScriptCompilationMode { None, Live, Explicit };
-
-    enum class ScriptStatus { Empty, Good, CompileError, RuntimeError };
 
     struct Config {
         std::vector<PinId> inPins, outPins;
@@ -55,13 +53,26 @@ protected:
         void onFrame(const RunContext &context) override;
 
     private:
-        Config config_{};
         std::shared_ptr<Channel> channel_;
+        Config config_{};
+        CoreStatus status_{};
         bool enabled_      = true;
         bool autoDisabled_ = false;
 
         std::string receivedScript_, runningScript_;
         ScriptVersion receivedScriptVersion_ = 0, runningScriptVersion_ = 0;
+
+        void postStatus() { channel_->pendingCoreStatus.postNew(std::make_unique<CoreStatus>(status_)); }
+
+        void putAutoDisabled() { channel_->autoDisabled.store(autoDisabled_, std::memory_order_relaxed); }
+
+        void acceptLatestConfig()
+        {
+            if (auto taken = channel_->pendingConfig.tryAcceptLatest())
+                config_ = std::move(*taken);
+        }
+
+        bool getEnabled() { return channel_->enabled.load(std::memory_order_relaxed); }
     };
 
     virtual std::unique_ptr<NodeCore> createCore() { return std::make_unique<Core>(buildConfig(), channel_); }
@@ -98,6 +109,18 @@ private:
     {
         channel_->pendingConfig.postNew(std::make_unique<Config>(buildConfig()));
         latestPostedScriptVersion_ = scriptVersion_;
+    }
+
+    void putEnabled() { channel_->enabled.store(enabled_, std::memory_order_relaxed); }
+
+    void updateCoreStatus()
+    {
+        if (auto taken = channel_->pendingCoreStatus.tryAcceptLatest())
+            coreStatus_ = std::move(*taken);
+
+        // this inclusion of both channels is intentional
+        // this function updates the entire core status view - there's no reason to separate them on the UI side
+        autoDisabled_ = channel_->autoDisabled.load(std::memory_order_relaxed);
     }
 
     void establishPins(PinDirection dir, const std::string &csv, std::vector<std::string> &labels, std::vector<PinId> &pinIds);
