@@ -118,21 +118,35 @@ void Script::onSerialize(nlohmann::json &j) const
 
 void Script::onShowProperties()
 {
-    bool configChanged = false;
+    bool postRequired = false;
+    bool otherChange = false;
 
-    ImGui::InputText("Name", &scriptName_);
+    if (ImGui::InputText("Name", &scriptName_))
+        otherChange = true;
 
     if (ImGui::InputText("Input Pins", &inputsCsv_)) {
-        configChanged = true;
+        postRequired = true;
         establishPins(PinDirection::Input, inputsCsv_, inputLabels_, inputPinIds_);
     }
 
     if (ImGui::InputText("Output Pins", &outputsCsv_)) {
-        configChanged = true;
+        postRequired = true;
         establishPins(PinDirection::Output, outputsCsv_, outputLabels_, outputPinIds_);
     }
 
-    ImGui::Checkbox("Inline Editor", &inlineEditor_);
+    if (ImGui::Checkbox("Enabled", &enabled_)) {
+        otherChange = true;
+        channel_->enabled.store(enabled_, std::memory_order_relaxed);
+    }
+
+    if (ImGui::Checkbox("Inline Editor", &inlineEditor_))
+        otherChange = true;
+
+    if (otherChange || postRequired)
+        raiseModified(ChangeImpact::NodeConfig);
+
+    if (postRequired)
+        postConfig();
 }
 
 void Script::establishPins(PinDirection dir, const std::string &csv, std::vector<std::string> &labels, std::vector<PinId> &pinIds)
