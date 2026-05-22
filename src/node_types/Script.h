@@ -11,21 +11,20 @@ class Script : public Node
 public:
     static const char *typeName() { return "script"; }
 
+    struct DebugInfo {                    // used for debug purposes
+        std::string graphNameWhenCreated; // will not be kept up-to-date with Graph name changes
+        std::string graphUid;
+        GraphId graphId;
+        NodeId nodeId;
+    };
+
     using ScriptVersion = uint64_t;
     enum class ScriptCompilationMode { None, Live, Explicit };
     enum class ScriptStatus { Empty, Good, CompileError, RuntimeError };
 
-protected:
-    void onDeserialize(const nlohmann::json &j) override;
-    void onInit() override;
-    void onOrderPins(std::vector<PinId> &pinOrder) override;
-    void onShow() override;
-    void onSerialize(nlohmann::json &j) const override;
-
-    void onShowProperties() override;
-
     struct Config {
         std::vector<PinId> inPins, outPins;
+        std::string scriptNameWhenPosted; // used for debug purposes - only current as of the last script post
         std::string script;
         ScriptVersion scriptVersion;
     };
@@ -44,38 +43,16 @@ protected:
         std::atomic<bool> autoDisabled = false; // core -> ui
     };
 
-    class Core : public NodeCore
-    {
-    public:
-        Core(Config &&initialConfig, std::shared_ptr<Channel> channel) : config_(std::move(initialConfig)), channel_(channel) {}
+protected:
+    void onDeserialize(const nlohmann::json &j) override;
+    void onInit() override;
+    void onOrderPins(std::vector<PinId> &pinOrder) override;
+    void onShow() override;
+    void onSerialize(nlohmann::json &j) const override;
 
-    protected:
-        void onFrame(const RunContext &context) override;
+    void onShowProperties() override;
 
-    private:
-        std::shared_ptr<Channel> channel_;
-        Config config_{};
-        CoreStatus status_{};
-        bool enabled_      = true;
-        bool autoDisabled_ = false;
-
-        std::string receivedScript_, runningScript_;
-        ScriptVersion receivedScriptVersion_ = 0, runningScriptVersion_ = 0;
-
-        void postStatus() { channel_->pendingCoreStatus.postNew(std::make_unique<CoreStatus>(status_)); }
-
-        void putAutoDisabled() { channel_->autoDisabled.store(autoDisabled_, std::memory_order_relaxed); }
-
-        void acceptLatestConfig()
-        {
-            if (auto taken = channel_->pendingConfig.tryAcceptLatest())
-                config_ = std::move(*taken);
-        }
-
-        bool getEnabled() { return channel_->enabled.load(std::memory_order_relaxed); }
-    };
-
-    virtual std::unique_ptr<NodeCore> createCore() { return std::make_unique<Core>(buildConfig(), channel_); }
+    virtual std::unique_ptr<NodeCore> createCore();
 
 private:
     std::shared_ptr<Channel> channel_ = std::make_shared<Channel>();
@@ -100,9 +77,15 @@ private:
     CoreStatus coreStatus_{};
     bool autoDisabled_ = false;
 
+    DebugInfo buildDebugInfo();
+
     Config buildConfig()
     {
-        return Config{.inPins = inputPinIds_, .outPins = outputPinIds_, .script = script_, .scriptVersion = scriptVersion_};
+        return Config{.inPins               = inputPinIds_,
+                      .outPins              = outputPinIds_,
+                      .scriptNameWhenPosted = scriptName_,
+                      .script               = script_,
+                      .scriptVersion        = scriptVersion_};
     }
 
     void postConfig()

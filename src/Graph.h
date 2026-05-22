@@ -37,6 +37,8 @@ public:
 
     void rename(std::string newName);
     std::string_view getName() const { return name_; }
+    std::string_view getUid() const { return uid_; }
+    GraphId getId() const { return id_; }
 
     void serialize(nlohmann::json &j) const;
     static std::unique_ptr<Graph> deserialize(GraphId id, std::string_view uid, const nlohmann::json &j);
@@ -88,10 +90,10 @@ private:
     bool visible_           = true;
     RunRateSetting runRate_ = {.rateMode = RunRateMode::SetRate, .desiredFramesPerSecond = 60.0f};
     Runner runner_;
-    PlanVersion nextPlanVersion_ = 1;
+    PlanVersion nextPlanVersion_    = 1;
     PlanVersion currentPlanVersion_ = 0;
     std::unique_ptr<ResourceDelta> pendingDelta_{nullptr};
-    bool planDirty_ = true;
+    bool planDirty_     = true;
     bool cycleDetected_ = false;
 
     void establishDelta();

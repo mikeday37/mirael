@@ -3,9 +3,11 @@
 #include "imgui.h"
 #include "misc/cpp/imgui_stdlib.h"
 
+#include "Graph.h"
 #include "ImGuiEx.h"
 #include "NodeEditorEx.h"
 #include "Script.h"
+#include "ScriptCore.h"
 
 namespace Mirael::NodeTypes
 {
@@ -253,6 +255,20 @@ void Script::onShowProperties()
         postConfig();
 }
 
+std::unique_ptr<NodeCore> Script::createCore()
+{
+    return std::make_unique<Cores::ScriptCore>(buildConfig(), channel_, buildDebugInfo());
+}
+
+Script::DebugInfo Script::buildDebugInfo()
+{
+    const auto *g = getGraph();
+    return DebugInfo{.graphNameWhenCreated = std::string{g->getName()},
+                     .graphUid             = std::string{g->getUid()},
+                     .graphId              = g->getId(),
+                     .nodeId               = getId()};
+}
+
 void Script::establishPins(PinDirection dir, const std::string &csv, std::vector<std::string> &labels, std::vector<PinId> &pinIds)
 {
     labels.clear();
@@ -274,7 +290,5 @@ void Script::establishPins(PinDirection dir, const std::string &csv, std::vector
         pinIds.push_back(id);
     }
 }
-
-void Script::Core::onFrame(const RunContext &context) {}
 
 } // namespace Mirael::NodeTypes

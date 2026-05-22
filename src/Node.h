@@ -30,6 +30,8 @@ public:
 
     bool isDeserializing() const { return deserializing_; }
 
+    const Graph *getGraph() const { return graph_; }
+
 protected:
     virtual void onDeserialize(const nlohmann::json &j) {}
     virtual void onInit() = 0;
