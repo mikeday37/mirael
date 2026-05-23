@@ -58,7 +58,7 @@ private:
     std::string chunkName_{"(none)"};
     std::optional<int> chunkRef_{};
 
-    void establishLuaState();
+    bool establishLuaState();
     void updatePinAccess();
     void compileNewScript();
     void runScript();

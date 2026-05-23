@@ -7,10 +7,11 @@
 namespace Mirael::NodeTypes::Cores
 {
 
-void ScriptCore::establishLuaState()
+bool ScriptCore::establishLuaState()
 {
     if (L_)
-        return;
+        return false;
+
     assert(!L);
 
     L_.reset(luaL_newstate());
@@ -21,6 +22,8 @@ void ScriptCore::establishLuaState()
     L = L_.get();
 
     luaL_openlibs(L);
+
+    return true;
 }
 
 void ScriptCore::updatePinAccess() {}
@@ -71,8 +74,12 @@ void ScriptCore::runScript()
     if (ret != LUA_OK) {
         bool willReport = status_.scriptStatus != ScriptStatus::CompileError;
         auto *errorText = lua_tostring(L, -1);
-        if (willReport)
-            status_.errorText = errorText;
+        if (willReport) {
+            if (errorText)
+                status_.errorText = errorText;
+            else
+                status_.errorText.clear();
+        }
         lua_pop(L, 1);
         autoDisabled_ = true;
         putAutoDisabled();
@@ -93,15 +100,11 @@ void ScriptCore::runScript()
 
 void ScriptCore::onFrame(const RunContext &context)
 {
-    establishLuaState();
+    if (establishLuaState())
+        compileNewScript();
 
-    auto priorReceivedScriptVersion = status_.receivedScriptVersion;
-    if (tryAcceptLatestConfig()) {
-        // updatePinAccess();
-
-        if (config_.scriptVersion > priorReceivedScriptVersion)
-            compileNewScript();
-    }
+    if (tryAcceptLatestConfig() && config_.scriptVersion > status_.receivedScriptVersion)
+        compileNewScript();
 
     runScript();
 }

@@ -40,6 +40,12 @@ void Script::onInit()
 
     establishPins(PinDirection::Input, inputsCsv_, inputLabels_, inputPinIds_);
     establishPins(PinDirection::Output, outputsCsv_, outputLabels_, outputPinIds_);
+
+    if (!script_.empty())
+    {
+        latestPostedScriptVersion_ = 1;
+        scriptVersion_ = 1;
+    }
 }
 
 void Script::onOrderPins(std::vector<PinId> &pinOrder)
@@ -221,14 +227,13 @@ void Script::onShowProperties()
 
         ImGuiEx::RowLabel("Status");
         ImGui::TextUnformatted(to_display_string(coreStatus_.scriptStatus));
-        if (isError(coreStatus_.scriptStatus)) {
-            ImGui::SameLine();
-            ImGuiEx::ToolTipHint(coreStatus_.errorText.c_str());
-        }
         if (autoDisabled_) {
-            ImGui::SameLine();
-            ImGui::TextUnformatted("Auto-Disabled");
+            ImGui::SameLine(0, 0);
+            ImGui::TextUnformatted(", Auto-Disabled");
         }
+
+        ImGuiEx::RowLabel("Error Text");
+        ImGui::TextUnformatted(isError(coreStatus_.scriptStatus) ? coreStatus_.errorText.c_str() : "");
 
         ImGui::EndTable();
     }
