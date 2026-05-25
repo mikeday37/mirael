@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "lua.hpp"
 #include "readerwriterqueue.h"
 
 #include "data.h"
@@ -45,7 +46,7 @@ struct RunRateSetting {
 class Runner
 {
 public:
-    Runner() = default;
+    Runner();
 
     // forbid copy, move
     Runner(const Runner &)            = delete;
@@ -110,9 +111,17 @@ private:
     std::unordered_map<NodeId, std::unique_ptr<NodeCore>> cores_;
     std::unordered_map<PinId, std::unique_ptr<ValueBuffer>> outputPinBuffers_;
     std::unordered_map<PinId, std::vector<const ValueBuffer *>> inputsBackingVectors_;
-    NodeCore::RunContext runContext_;
+    NodeCore::RunContext runContext_{};
     RunRateSetting runRate_ = {.rateMode = RunRateMode::Disabled, .desiredFramesPerSecond = 60.0f};
     std::optional<std::jthread> thread_{};
+
+    // lua
+    struct LuaStateDeleter {
+        void operator()(lua_State *s) const { lua_close(s); }
+    };
+    std::unique_ptr<lua_State, LuaStateDeleter> L_{nullptr}; // lives for the life of the core
+    lua_State *L = nullptr; // handy alias for L_.get();
+    void establishLuaState();
 };
 
 } // namespace Mirael

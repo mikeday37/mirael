@@ -3,6 +3,8 @@
 #include <span>
 #include <unordered_map>
 
+#include "lua.hpp"
+
 #include "data.h"
 #include "ValueBuffer.h"
 
@@ -21,6 +23,7 @@ protected:
         NodeId nodeId;
         std::unordered_map<PinId, std::span<const ValueBuffer *>> inputs; // input PinId -> linked output pin value buffers
         std::unordered_map<PinId, ValueBuffer *> outputs;                 // output PinId -> output value buffer for that pin
+        lua_State *L = nullptr;
 
         const ValueBuffer *getFirstInput(PinId inputPinId) const
         {

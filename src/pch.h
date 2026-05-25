@@ -1,6 +1,7 @@
 #pragma once
 
 #include "imgui.h"
+#include "lua.hpp"
 #include "readerwriterqueue.h"
 
 #define GLM_FORCE_RADIANS

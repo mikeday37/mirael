@@ -40,12 +40,6 @@ void Script::onInit()
 
     establishPins(PinDirection::Input, inputsCsv_, inputLabels_, inputPinIds_);
     establishPins(PinDirection::Output, outputsCsv_, outputLabels_, outputPinIds_);
-
-    if (!script_.empty())
-    {
-        latestPostedScriptVersion_ = 1;
-        scriptVersion_ = 1;
-    }
 }
 
 void Script::onOrderPins(std::vector<PinId> &pinOrder)
@@ -262,7 +256,12 @@ void Script::onShowProperties()
 
 std::unique_ptr<NodeCore> Script::createCore()
 {
-    return std::make_unique<Cores::ScriptCore>(buildConfig(), channel_, buildDebugInfo());
+    // should only be called once per Node instance
+    assert(scriptVersion_ == 1);
+    assert(latestPostedScriptVersion_ == 0);
+    postConfig();
+    assert(latestPostedScriptVersion_ == 1);
+    return std::make_unique<Cores::ScriptCore>(channel_, buildDebugInfo());
 }
 
 Script::DebugInfo Script::buildDebugInfo()

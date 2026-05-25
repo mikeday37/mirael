@@ -5,6 +5,11 @@
 namespace Mirael
 {
 
+Runner::Runner()
+{
+    establishLuaState();
+}
+
 void Runner::adjustRunRate(RunRateSetting newSetting)
 {
     // TODO: impl
@@ -28,7 +33,7 @@ void Runner::mainLoop(std::stop_token st)
             delayFrame(st);
             updatePlan();
         }
-        // why update the plan twice?
+        // why update the plan twice in the loop body?
         // if we only update before the frame delay, the lag before using the latest plan will often be greater than necessary.
         // if we only update after the delay, then the time taken to update the plan may unnecessarily extend the frame delay if
         // it could have been handled before the delay.
@@ -45,6 +50,8 @@ void Runner::updatePlan()
         applyDelta(*pendingFutureDelta_);
         pendingFutureDelta_.reset();
     }
+
+    // TODO: directly clarify why we're doing it this way, or link to doc
 
     if (!pendingFutureDelta_) {
         std::unique_ptr<ResourceDelta> delta;
@@ -70,6 +77,8 @@ void Runner::executeFrame(std::stop_token st)
     // (for now, preventing the nasty class of bugs that may otherwise result warrants the small per-frame cost)
     for (auto &[pinId, valueBuffer] : outputPinBuffers_)
         valueBuffer->unsetReference();
+
+    runContext_.L = L;
 
     for (auto nodeId : currentPlan_->nodeExecutionOrder) {
         runContext_.nodeId = nodeId;
@@ -131,5 +140,23 @@ void Runner::prepareRunContext()
     for (auto &[outputPinId, valueBuffer] : outputPinBuffers_)
         runContext_.outputs.try_emplace(outputPinId, valueBuffer.get());
 }
+
+void Runner::establishLuaState()
+{
+    if (L_)
+        return;
+
+    assert(!L);
+
+    L_.reset(luaL_newstate());
+
+    if (!L_)
+        throw std::runtime_error("Unable to initialize Lua.");
+
+    L = L_.get();
+
+    luaL_openlibs(L);
+}
+
 
 } // namespace Mirael

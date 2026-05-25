@@ -7,25 +7,6 @@
 namespace Mirael::NodeTypes::Cores
 {
 
-bool ScriptCore::establishLuaState()
-{
-    if (L_)
-        return false;
-
-    assert(!L);
-
-    L_.reset(luaL_newstate());
-
-    if (!L_)
-        throw std::runtime_error("Unable to initialize Lua.");
-
-    L = L_.get();
-
-    luaL_openlibs(L);
-
-    return true;
-}
-
 void ScriptCore::updatePinAccess() {}
 
 void ScriptCore::compileNewScript()
@@ -100,11 +81,12 @@ void ScriptCore::runScript()
 
 void ScriptCore::onFrame(const RunContext &context)
 {
-    if (establishLuaState())
-        compileNewScript();
+    L = context.L;
 
     if (tryAcceptLatestConfig() && config_.scriptVersion > status_.receivedScriptVersion)
         compileNewScript();
+
+    assert(status_.receivedScriptVersion > 0); // the above should always compile a script on first frame, as the UI side should post config before create
 
     runScript();
 }

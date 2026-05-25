@@ -24,9 +24,9 @@ public:
 
     struct Config {
         std::vector<PinId> inPins, outPins;
-        std::string scriptNameWhenPosted; // used for debug purposes - only current as of the last script post
-        std::string script;
-        ScriptVersion scriptVersion;
+        std::string scriptNameWhenPosted = ""; // used for debug purposes - only current as of the last script post
+        std::string script = "";
+        ScriptVersion scriptVersion = 0;
     };
 
     struct CoreStatus {
@@ -65,7 +65,7 @@ private:
     std::vector<std::string> outputLabels_;
     bool inlineEditor_ = true;
     std::string script_;
-    ScriptVersion scriptVersion_ = 0, latestPostedScriptVersion_ = 0;
+    ScriptVersion scriptVersion_ = 1, latestPostedScriptVersion_ = 0;
     ScriptCompilationMode compileMode_ = ScriptCompilationMode::Live;
     bool enabled_                      = true;
 

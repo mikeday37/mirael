@@ -19,8 +19,8 @@ using Channel       = Script::Channel;
 class ScriptCore : public NodeCore
 {
 public:
-    ScriptCore(Config &&initialConfig, std::shared_ptr<Channel> channel, DebugInfo &&debugInfo)
-        : config_(std::move(initialConfig)), channel_(channel), debugInfo_(std::move(debugInfo))
+    ScriptCore(std::shared_ptr<Channel> channel, DebugInfo &&debugInfo)
+        : channel_(channel), debugInfo_(std::move(debugInfo))
     {
     }
 
@@ -50,15 +50,10 @@ private:
 
     bool getEnabled() { return channel_->enabled.load(std::memory_order_relaxed); }
 
-    struct LuaStateDeleter {
-        void operator()(lua_State *s) const { lua_close(s); }
-    };
-    std::unique_ptr<lua_State, LuaStateDeleter> L_{nullptr}; // lives for the life of the core
-    lua_State *L{nullptr};                                   // handy alias for L_.get()
+    lua_State *L{nullptr};                                   // handy alias for context.L
     std::string chunkName_{"(none)"};
     std::optional<int> chunkRef_{};
 
-    bool establishLuaState();
     void updatePinAccess();
     void compileNewScript();
     void runScript();
