@@ -267,10 +267,10 @@ std::unique_ptr<NodeCore> Script::createCore()
 
 Script::DebugInfo Script::buildDebugInfo()
 {
-    const auto *g = getGraph();
-    return DebugInfo{.graphNameWhenCreated = std::string{g->getName()},
-                     .graphUid             = std::string{g->getUid()},
-                     .graphId              = g->getId(),
+    const auto &g = getGraph();
+    return DebugInfo{.graphNameWhenCreated = std::string{g.getName()},
+                     .graphUid             = std::string{g.getUid()},
+                     .graphId              = g.getId(),
                      .nodeId               = getId()};
 }
 

@@ -30,7 +30,9 @@ public:
 
     bool isDeserializing() const { return deserializing_; }
 
-    const Graph *getGraph() const { return graph_; }
+    const Graph &getGraph() const {
+        assert(graph_); // it is an error to call getGraph before init() sets the graph_ pointer.
+        return *graph_; }
 
 protected:
     virtual void onDeserialize(const nlohmann::json &j) {}
