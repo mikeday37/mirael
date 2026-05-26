@@ -1,66 +1,193 @@
 #pragma once
 
+#include <optional>
+#include <type_traits>
+#include <variant>
+
+#include "lua.hpp"
+
 namespace Mirael
 {
 
 /*
- * The ValueBuffer wraps the value at an Output Pin.
+ * A ValueBuffer wraps the value at an Output Pin.
  *
- * The Runner assigns each Output Pin its own ValueBuffer.  Each Node Core is responsible for
- * updating the value of the ValueBuffer for each of its Output Pins.  It can do that directly
- * by calling setValue(), or indirectly by calling setAsReference() and passing it a pointer
- * to the ValueBuffer of one of its Inputs.  For non-modifying data passthrough, setAsReference()
- * should be preferred to copying when dealing with arbitrary values (when implementing switches,
- * junctions, etc.), since values may be very large.
- *
- * This is safe within the calculation of a single frame, because ValueBuffers referenced by
- * Input Pins during a Core's execution will never be modified again during that frame.
- *
- * NOTE: References cannot be relied upon between frames.  They are valid only within the context
- * of a single frame, since the Execution Plan can be updated between frames, resulting in the
- * destruction of ValueBuffers for any removed Output Pins.
+ * The Runner assigns each Output Pin its own ValueBuffer, and that assignment persists
+ * between frames for as long as that Pin exists.  Each Node Core is responsible for
+ * updating the value of the ValueBuffers for its Output Pins as desired.  It is valid
+ * for a Core to avoid updating the value if it wants, or to read the value that persisted
+ * from the previous frame.
  */
 class ValueBuffer final
 {
 public:
-    void setValue(std::string &&value)
+    explicit ValueBuffer(lua_State *luaState) : L(luaState) {}
+    ~ValueBuffer() { clear(); }
+
+    // disable move/copy
+    ValueBuffer(const ValueBuffer &)            = delete;
+    ValueBuffer &operator=(const ValueBuffer &) = delete;
+    ValueBuffer(ValueBuffer &&)                 = delete;
+    ValueBuffer &operator=(ValueBuffer &&)      = delete;
+
+    bool isTrivial() const noexcept { return value_.index() <= LastTrivialTypeIndex; }
+    bool isLuaRef() const noexcept { return value_.index() > LastTrivialTypeIndex; }
+
+    void clear() { internalSafeSetValue(std::monostate()); }
+
+    void setValue(bool other) { internalSafeSetValue(other); }
+    void setValue(double other) { internalSafeSetValue(other); }
+
+    void setValue(std::string_view other)
     {
-        reference_ = nullptr;
-        value_     = std::move(value);
+        lua_pushlstring(L, other.data(), other.size());
+        internalSafeSetValue(LuaString{luaL_ref(L, LUA_REGISTRYINDEX)});
     }
 
-    void setValue(std::string_view value)
+    void setValue(const ValueBuffer &other)
     {
-        reference_ = nullptr;
-        value_     = value;
+        if (other.isTrivial()) {
+            internalSafeSetValue(other.value_);
+            return;
+        }
+
+        // acquire new ref to the other's value
+        std::visit(
+            overloaded{[this](const LuaRefBase &b) { lua_rawgeti(L, LUA_REGISTRYINDEX, b.ref); }, [](auto &&) { assert(false); }},
+            other.value_);
+        int newRef = luaL_ref(L, LUA_REGISTRYINDEX);
+
+        // prepare replacement variant
+        value_t newValue = other.value_; // sets proper type efficiently, no destructor risk, other.value_.ref to be replaced
+        std::visit(                      // now set correct ref value
+            overloaded{[&](LuaRefBase &b) { b.ref = newRef; }, [](auto &&) { assert(false); }}, newValue);
+
+        // set it
+        internalSafeSetValue(newValue);
     }
 
-    void setAsReferenceTo(const ValueBuffer *to)
+    bool toBool() const noexcept
     {
-        assert(to);         // it is an error to try to set to nullptr
-        assert(to != this); // it is an error to set this as a ref to itself
-#ifndef NDEBUG
-        value_.clear(); // not strictly necessary but makes debugging clearer
-#endif
-        reference_ = to->reference_ ? to->reference_ : to;
-        assert(!reference_->reference_); // topological ordering of the runner should ensure that this always collapses to no more than
-                                         // one level deep
+        if (isBool())
+            return std::get<bool>(value_);
+        else if (isNil())
+            return false;
+        else
+            return true; // lua standard - all but nil and false are considered true
     }
 
-    const std::string &getValue() const { return reference_ ? reference_->value_ : value_; }
-
-    void clear()
+    std::optional<double> toDouble() const
     {
-        reference_ = nullptr;
-        value_.clear();
+        if (isDouble())
+            return std::get<double>(value_);
+        else if (isString()) {
+            lua_rawgeti(L, LUA_REGISTRYINDEX, std::get<LuaString>(value_).ref);
+            std::optional<double> result{};
+            if (lua_isnumber(L, -1))
+                result = lua_tonumber(L, -1);
+            lua_pop(L, 1);
+            return result;
+        } else
+            return std::nullopt;
     }
 
-    void unsetReference() { reference_ = nullptr; }
+    std::optional<int> toInt() const
+    {
+        // use saturation math for actual numbers, but nullopt for non-numbers/NaN
+        auto d = toDouble(); // allow strings to convert by reusing toDouble()
+        // TODO: can probably increase efficiency by going straight to int in the string case, but that's low priority for now
+        if (!d || std::isnan(*d))
+            return std::nullopt;
+        else if (*d >= static_cast<double>(INT_MAX))
+            return INT_MAX;
+        else if (*d <= static_cast<double>(INT_MIN))
+            return INT_MIN;
+        else
+            return static_cast<int>(*d); // in range we truncate toward zero, same as C++ and LuaJIT internally
+    }
+
+    std::string toString() const // no optional<T> needed - this will always yield a string
+    {
+        if (isNil())
+            return "nil";
+        else if (isBool())
+            return std::get<bool>(value_) ? "true" : "false";
+
+        std::visit(overloaded{
+                       [this](double d) { lua_pushnumber(L, d); },
+                       [this](const LuaRefBase &b) { lua_rawgeti(L, LUA_REGISTRYINDEX, b.ref); },
+                       [](auto &&) { assert(false); } // all other value alternatives should already be handled above
+                   },
+                   value_);
+
+        size_t len    = 0;
+        // NOTE: we're relying on LuaJIT-specific behavior that isn't in the Lua specification, where
+        // it returns "type: 0x..." for non-coercible types.
+        const char *s = lua_tolstring(L, -1, &len);
+        assert(s); // should alwys be non-null with LuaJIT
+        std::string result(s, len);
+        lua_pop(L, 1);
+
+        return result;
+    }
+
+    bool isNil() const noexcept { return std::holds_alternative<std::monostate>(value_); }
+    bool isBool() const noexcept { return std::holds_alternative<bool>(value_); }
+    bool isDouble() const noexcept { return std::holds_alternative<double>(value_); }
+    bool isString() const noexcept { return std::holds_alternative<LuaString>(value_); }
+    bool isFunction() const noexcept { return std::holds_alternative<LuaFunction>(value_); }
+    bool isThread() const noexcept { return std::holds_alternative<LuaThread>(value_); }
+    bool isTable() const noexcept { return std::holds_alternative<LuaTable>(value_); }
 
 private:
-    const ValueBuffer *reference_ =
-        nullptr;          // non-owning reference - ValueBuffers are owned by the Runner and remain valid within one Frame.
-    std::string value_{}; // this is temporary - for the first test we're basically TCL - everything is a string!  :D
+    struct LuaRefBase {
+        int ref;
+        explicit LuaRefBase(int r) : ref(r) {}
+    };
+
+    template <int Tag> struct LuaRef : public LuaRefBase {
+        using LuaRefBase::LuaRefBase;
+    };
+
+    using LuaString   = LuaRef<LUA_TSTRING>;
+    using LuaFunction = LuaRef<LUA_TFUNCTION>;
+    using LuaThread   = LuaRef<LUA_TTHREAD>;
+    using LuaTable    = LuaRef<LUA_TTABLE>;
+
+    // Userdata is intentionally omitted for now.  In the future we will support several different flavors of userdata,
+    // each with its own LuaRefBase-derived variant alternative and metatable.  For example, Vulkan Host-Visible Buffers
+    // for manipulating textures or setting up compute shader inputs from Lua scripts when desired.
+
+    using value_t = std::variant<std::monostate, // lua nil
+                                 bool,           // lua bool
+                                 double,         // lua number
+                                 LuaString,      //
+                                 LuaFunction,    //
+                                 LuaThread,      //
+                                 LuaTable        //
+                                 >;
+
+    static constexpr int LastTrivialTypeIndex = 2;
+    static_assert(std::is_same_v<std::variant_alternative_t<LastTrivialTypeIndex, value_t>, double>,
+                  "LastTrivialTypeIndex must be in sync with value_t.");
+    static_assert(std::is_trivially_copyable_v<value_t>, "ValueBuffer::value_t must be trivially copyable.");
+
+    template <typename... Ts> struct overloaded : Ts... { // helper for std::visit()
+        using Ts::operator()...;
+    };
+
+    void internalSafeSetValue(value_t newValue)
+    {
+        if (isLuaRef())
+            std::visit(
+                overloaded{[this](const LuaRefBase &v) { luaL_unref(L, LUA_REGISTRYINDEX, v.ref); }, [](auto &&) { assert(false); }},
+                value_);
+
+        value_ = newValue; // this is the ONLY line of code which should directly modify the value_ member
+    }
+
+    lua_State *L = nullptr; // traditional name in all examples, which I'm adopting even at odds to the naming standard for members
+    value_t value_{};
 };
 
 } // namespace Mirael
