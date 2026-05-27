@@ -44,6 +44,7 @@ protected:
         }
     };
 
+    virtual void onExecutionPlanUpdated(const RunContext &context) {}
     virtual void onFrame(const RunContext &context) = 0;
 
     friend Runner;

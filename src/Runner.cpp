@@ -66,17 +66,15 @@ void Runner::updatePlan()
     }
 
     prepareRunContext();
+
+    for (auto &[nodeId, core] : cores_)
+        core->onExecutionPlanUpdated(runContext_);
 }
 
 void Runner::executeFrame(std::stop_token st)
 {
     if (!currentPlan_)
         return;
-
-    // prevent cross-frame references in the case of misbehaving nodes that might not set their outputs
-    // (for now, preventing the nasty class of bugs that may otherwise result warrants the small per-frame cost)
-    for (auto &[pinId, valueBuffer] : outputPinBuffers_)
-        valueBuffer->unsetReference();
 
     runContext_.L = L;
 
@@ -105,7 +103,7 @@ void Runner::applyDelta(ResourceDelta &delta)
         outputPinBuffers_.erase(deletedOutputPinId);
 
     for (auto addedOutputPinId : delta.addedOutputs) {
-        auto [it, inserted] = outputPinBuffers_.try_emplace(addedOutputPinId, std::make_unique<ValueBuffer>());
+        auto [it, inserted] = outputPinBuffers_.try_emplace(addedOutputPinId, std::make_unique<ValueBuffer>(L));
         assert(inserted);
     }
 
@@ -119,7 +117,7 @@ void Runner::prepareRunContext()
 {
     runContext_.nodeId = 0;
 
-    // TODO: in the future we could probably do this in a way with less memory churn, but because run contexts are only prepared after
+    // TODO: in the future we could probably do this with less memory churn, but because run contexts are only prepared after
     // topology edits, rather than every frame, this is acceptable for now
 
     runContext_.inputs.clear();
@@ -157,6 +155,5 @@ void Runner::establishLuaState()
 
     luaL_openlibs(L);
 }
-
 
 } // namespace Mirael
