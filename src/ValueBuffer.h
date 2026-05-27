@@ -52,15 +52,25 @@ public:
         }
 
         // acquire new ref to the other's value
-        std::visit(
-            overloaded{[this](const LuaRefBase &b) { lua_rawgeti(L, LUA_REGISTRYINDEX, b.ref); }, [](auto &&) { assert(false); }},
-            other.value_);
+        std::visit(overloaded{[this]<typename T>(T &base)
+                                  requires std::derived_from<T, LuaRefBase>
+                              { lua_rawgeti(L, LUA_REGISTRYINDEX, base.ref); },
+
+                              [](auto &&) { assert(false); }},
+
+                              other.value_);
         int newRef = luaL_ref(L, LUA_REGISTRYINDEX);
 
         // prepare replacement variant
         value_t newValue = other.value_; // sets proper type efficiently, no destructor risk, other.value_.ref to be replaced
         std::visit(                      // now set correct ref value
-            overloaded{[&](LuaRefBase &b) { b.ref = newRef; }, [](auto &&) { assert(false); }}, newValue);
+            overloaded{[&]<typename T>(T &base)
+                           requires std::derived_from<T, LuaRefBase>
+                       { base.ref = newRef; },
+
+                       [](auto &&) { assert(false); }},
+
+                       newValue);
 
         // set it
         internalSafeSetValue(newValue);
@@ -104,11 +114,9 @@ public:
             internalSafeSetValue(LuaThread{luaL_ref(L, LUA_REGISTRYINDEX)});
             return true;
 
-        // we'll silently and harmlessly allow unsupported types in release,
-        // but while developing, for now, I want an assert to fire if I accidentally use them.
-        default:
-            assert(false); // type not yet supported
+        default: // TODO: we should have some sort of non-fatal indicator of this error, until the remaining types are supported
             lua_pop(L, 1);
+            clear();
             return false;
         }
     }
@@ -161,11 +169,16 @@ public:
             return std::get<bool>(value_) ? "true" : "false";
 
         std::visit(overloaded{
-                       [this](double d) { lua_pushnumber(L, d); },
-                       [this](const LuaRefBase &b) { lua_rawgeti(L, LUA_REGISTRYINDEX, b.ref); },
-                       [](auto &&) { assert(false); } // all other value alternatives should already be handled above
-                   },
-                   value_);
+            [this](double d) { lua_pushnumber(L, d); },
+
+            [this]<typename T>(T &base)
+                requires std::derived_from<T, LuaRefBase>
+            { lua_rawgeti(L, LUA_REGISTRYINDEX, base.ref); },
+
+            [](auto &&) { assert(false); } // all other value alternatives should already be handled above
+
+            },
+            value_);
 
         size_t len = 0;
         // NOTE: we're relying on LuaJIT-specific behavior that isn't in the Lua specification, where
@@ -181,16 +194,21 @@ public:
     void pushValueToLuaStack() const
     {
         std::visit(overloaded{
-                       [this](std::monostate) { lua_pushnil(L); },                                      //
-                       [this](bool b) { lua_pushboolean(L, b ? 1 : 0); },                               //
-                       [this](double d) { lua_pushnumber(L, d); },                                      //
-                       [this](const LuaRefBase &base) { lua_rawgeti(L, LUA_REGISTRYINDEX, base.ref); }, //
-                       [this](auto &&) {
-                           assert(false); // shouldn't occur, but we handle it safely just in case
-                           lua_pushnil(L);
-                       },
-                   },
-                   value_);
+            [this](std::monostate) { lua_pushnil(L); },
+            [this](bool b) { lua_pushboolean(L, b ? 1 : 0); },
+            [this](double d) { lua_pushnumber(L, d); },
+
+            [this]<typename T>(T &base)
+                requires std::derived_from<T, LuaRefBase>
+            { lua_rawgeti(L, LUA_REGISTRYINDEX, base.ref); },
+
+            [this](auto &&) {
+                assert(false); // shouldn't occur, but we handle it safely just in case
+                lua_pushnil(L);
+            },
+
+            },
+            value_);
     }
 
     bool isNil() const noexcept { return std::holds_alternative<std::monostate>(value_); }
@@ -241,9 +259,14 @@ private:
     void internalSafeSetValue(value_t newValue)
     {
         if (isLuaRef())
-            std::visit(
-                overloaded{[this](const LuaRefBase &v) { luaL_unref(L, LUA_REGISTRYINDEX, v.ref); }, [](auto &&) { assert(false); }},
-                value_);
+            std::visit(overloaded{[this]<typename T>(T &base)
+                                      requires std::derived_from<T, LuaRefBase>
+                                  { luaL_unref(L, LUA_REGISTRYINDEX, base.ref); },
+
+                                  [](auto &&) { assert(false); }
+
+                                  },
+                                  value_);
 
         value_ = newValue; // this is the ONLY line of code which should directly modify the value_ member
     }

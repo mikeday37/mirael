@@ -5,9 +5,18 @@
 namespace Mirael
 {
 
-Runner::Runner()
+Runner::Runner() { scriptEnv_.emplace(runContext_); }
+
+Runner::~Runner()
 {
-    establishLuaState();
+    stop();
+
+    for (auto &[pinId, buf] : outputPinBuffers_)
+        buf->clear();
+
+    scriptEnv_.reset();
+
+    // the above is required before the lua state autodestructs
 }
 
 void Runner::adjustRunRate(RunRateSetting newSetting)
@@ -66,9 +75,6 @@ void Runner::updatePlan()
     }
 
     prepareRunContext();
-
-    for (auto &[nodeId, core] : cores_)
-        core->onExecutionPlanUpdated(runContext_);
 }
 
 void Runner::executeFrame(std::stop_token st)
@@ -76,13 +82,13 @@ void Runner::executeFrame(std::stop_token st)
     if (!currentPlan_)
         return;
 
-    runContext_.L = L;
-
     for (auto nodeId : currentPlan_->nodeExecutionOrder) {
         runContext_.nodeId = nodeId;
         auto it            = cores_.find(nodeId);
-        if (it != cores_.end())
+        if (it != cores_.end()) {
+            scriptEnv_->setCurrentNode(it->first);
             it->second->onFrame(runContext_);
+        }
         if (st.stop_requested())
             return;
     }
@@ -96,14 +102,16 @@ void Runner::delayFrame(std::stop_token st)
 
 void Runner::applyDelta(ResourceDelta &delta)
 {
-    for (auto deletedNodeId : delta.deletedCores)
-        cores_.erase(deletedNodeId);
+    for (auto deletedCoreNodeId : delta.deletedCores) {
+        scriptEnv_->forgetNode(deletedCoreNodeId);
+        cores_.erase(deletedCoreNodeId);
+    }
 
     for (auto deletedOutputPinId : delta.deletedOutputs)
         outputPinBuffers_.erase(deletedOutputPinId);
 
     for (auto addedOutputPinId : delta.addedOutputs) {
-        auto [it, inserted] = outputPinBuffers_.try_emplace(addedOutputPinId, std::make_unique<ValueBuffer>(L));
+        auto [it, inserted] = outputPinBuffers_.try_emplace(addedOutputPinId, std::make_unique<ValueBuffer>(scriptEnv_->L));
         assert(inserted);
     }
 
@@ -137,23 +145,6 @@ void Runner::prepareRunContext()
 
     for (auto &[outputPinId, valueBuffer] : outputPinBuffers_)
         runContext_.outputs.try_emplace(outputPinId, valueBuffer.get());
-}
-
-void Runner::establishLuaState()
-{
-    if (L_)
-        return;
-
-    assert(!L);
-
-    L_.reset(luaL_newstate());
-
-    if (!L_)
-        throw std::runtime_error("Unable to initialize Lua.");
-
-    L = L_.get();
-
-    luaL_openlibs(L);
 }
 
 } // namespace Mirael

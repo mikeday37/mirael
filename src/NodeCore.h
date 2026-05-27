@@ -12,6 +12,7 @@ namespace Mirael
 {
 
 class Runner;
+class ScriptEnv;
 
 class NodeCore
 {
@@ -23,7 +24,8 @@ protected:
         NodeId nodeId;
         std::unordered_map<PinId, std::span<const ValueBuffer *>> inputs; // input PinId -> linked output pin value buffers
         std::unordered_map<PinId, ValueBuffer *> outputs;                 // output PinId -> output value buffer for that pin
-        lua_State *L = nullptr;
+        lua_State *L   = nullptr;
+        ScriptEnv *env = nullptr;
 
         const ValueBuffer *getFirstInput(PinId inputPinId) const
         {
@@ -44,10 +46,10 @@ protected:
         }
     };
 
-    virtual void onExecutionPlanUpdated(const RunContext &context) {}
     virtual void onFrame(const RunContext &context) = 0;
 
     friend Runner;
+    friend ScriptEnv;
 };
 
 } // namespace Mirael

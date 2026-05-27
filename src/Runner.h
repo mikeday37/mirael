@@ -6,12 +6,12 @@
 #include <unordered_map>
 #include <vector>
 
-#include "lua.hpp"
 #include "readerwriterqueue.h"
 
 #include "data.h"
 #include "Mailbox.h"
 #include "NodeCore.h"
+#include "ScriptEnv.h"
 #include "ValueBuffer.h"
 
 namespace Mirael
@@ -47,6 +47,7 @@ class Runner
 {
 public:
     Runner();
+    ~Runner();
 
     // forbid copy, move
     Runner(const Runner &)            = delete;
@@ -73,10 +74,7 @@ public:
     void adjustRunRate(RunRateSetting newSetting);
     void onNewUIFrame();
     void queueDelta(std::unique_ptr<ResourceDelta> delta) { deltaQueue_.enqueue(std::move(delta)); }
-    void postPlan(std::unique_ptr<ExecutionPlan> newPlan)
-    {
-        pendingPlan_.postNew(std::move(newPlan));
-    }
+    void postPlan(std::unique_ptr<ExecutionPlan> newPlan) { pendingPlan_.postNew(std::move(newPlan)); }
 
 private:
     // Graph API communications channels/buffer
@@ -116,12 +114,7 @@ private:
     std::optional<std::jthread> thread_{};
 
     // lua
-    struct LuaStateDeleter {
-        void operator()(lua_State *s) const { lua_close(s); }
-    };
-    std::unique_ptr<lua_State, LuaStateDeleter> L_{nullptr}; // lives for the life of the core
-    lua_State *L = nullptr; // handy alias for L_.get();
-    void establishLuaState();
+    std::optional<ScriptEnv> scriptEnv_{};
 };
 
 } // namespace Mirael

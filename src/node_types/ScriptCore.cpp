@@ -3,11 +3,10 @@
 #include "lua.hpp"
 
 #include "ScriptCore.h"
+#include "ScriptEnv.h"
 
 namespace Mirael::NodeTypes::Cores
 {
-
-void ScriptCore::updatePinAccess() {}
 
 void ScriptCore::compileNewScript()
 {
@@ -44,12 +43,20 @@ void ScriptCore::compileNewScript()
     postStatus();
 }
 
-void ScriptCore::runScript()
+void ScriptCore::updatePinAccess(const RunContext &context)
+{
+    assert(context.env);
+    context.env->registerPins({.inPins = &config_.inPins, .outPins = &config_.outPins});
+}
+
+void ScriptCore::runScript(const RunContext &context)
 {
     if (autoDisabled_ || !chunkRef_ || !getEnabled())
         return;
 
     lua_rawgeti(L, LUA_REGISTRYINDEX, *chunkRef_);
+    context.env->pushChunkEnv();
+    lua_setfenv(L, -2);
     auto ret = lua_pcall(L, 0, LUA_MULTRET, 0);
 
     if (ret != LUA_OK) {
@@ -83,12 +90,15 @@ void ScriptCore::onFrame(const RunContext &context)
 {
     L = context.L;
 
-    if (tryAcceptLatestConfig() && config_.scriptVersion > status_.receivedScriptVersion)
+    if (tryAcceptLatestConfig() && config_.scriptVersion > status_.receivedScriptVersion) {
         compileNewScript();
+        updatePinAccess(context);
+    }
 
-    assert(status_.receivedScriptVersion > 0); // the above should always compile a script on first frame, as the UI side should post config before create
+    assert(status_.receivedScriptVersion >
+           0); // the above should always compile a script on first frame, as the UI side should post config before create
 
-    runScript();
+    runScript(context);
 }
 
 } // namespace Mirael::NodeTypes::Cores
