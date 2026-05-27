@@ -66,6 +66,53 @@ public:
         internalSafeSetValue(newValue);
     }
 
+    bool setValueFromLuaStack()
+    {
+        int t = lua_type(L, -1);
+
+        switch (t) {
+
+        // trivial types require an explicit pop
+        case LUA_TNIL:
+            lua_pop(L, 1);
+            clear(); // nil is the default/cleared value
+            return true;
+        case LUA_TBOOLEAN: {
+            bool b = lua_toboolean(L, -1) != 0;
+            lua_pop(L, 1);
+            internalSafeSetValue(b);
+            return true;
+        }
+        case LUA_TNUMBER: {
+            double d = lua_tonumber(L, -1);
+            lua_pop(L, 1);
+            internalSafeSetValue(d);
+            return true;
+        }
+
+        // ref types automatically pop as part of the luaL_ref() call
+        case LUA_TSTRING:
+            internalSafeSetValue(LuaString{luaL_ref(L, LUA_REGISTRYINDEX)});
+            return true;
+        case LUA_TTABLE:
+            internalSafeSetValue(LuaTable{luaL_ref(L, LUA_REGISTRYINDEX)});
+            return true;
+        case LUA_TFUNCTION:
+            internalSafeSetValue(LuaFunction{luaL_ref(L, LUA_REGISTRYINDEX)});
+            return true;
+        case LUA_TTHREAD:
+            internalSafeSetValue(LuaThread{luaL_ref(L, LUA_REGISTRYINDEX)});
+            return true;
+
+        // we'll silently and harmlessly allow unsupported types in release,
+        // but while developing, for now, I want an assert to fire if I accidentally use them.
+        default:
+            assert(false); // type not yet supported
+            lua_pop(L, 1);
+            return false;
+        }
+    }
+
     bool toBool() const noexcept
     {
         if (isBool())
@@ -95,7 +142,7 @@ public:
     {
         // use saturation math for actual numbers, but nullopt for non-numbers/NaN
         auto d = toDouble(); // allow strings to convert by reusing toDouble()
-        // TODO: can probably increase efficiency by going straight to int in the string case, but that's low priority for now
+        // TODO: can increase efficiency by going straight to int in the string case, but that's low priority for now
         if (!d || std::isnan(*d))
             return std::nullopt;
         else if (*d >= static_cast<double>(INT_MAX))
@@ -120,7 +167,7 @@ public:
                    },
                    value_);
 
-        size_t len    = 0;
+        size_t len = 0;
         // NOTE: we're relying on LuaJIT-specific behavior that isn't in the Lua specification, where
         // it returns "type: 0x..." for non-coercible types.
         const char *s = lua_tolstring(L, -1, &len);
@@ -129,6 +176,21 @@ public:
         lua_pop(L, 1);
 
         return result;
+    }
+
+    void pushValueToLuaStack() const
+    {
+        std::visit(overloaded{
+                       [this](std::monostate) { lua_pushnil(L); },                                      //
+                       [this](bool b) { lua_pushboolean(L, b ? 1 : 0); },                               //
+                       [this](double d) { lua_pushnumber(L, d); },                                      //
+                       [this](const LuaRefBase &base) { lua_rawgeti(L, LUA_REGISTRYINDEX, base.ref); }, //
+                       [this](auto &&) {
+                           assert(false); // shouldn't occur, but we handle it safely just in case
+                           lua_pushnil(L);
+                       },
+                   },
+                   value_);
     }
 
     bool isNil() const noexcept { return std::holds_alternative<std::monostate>(value_); }
