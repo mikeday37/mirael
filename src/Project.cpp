@@ -151,7 +151,6 @@ void Project::storeFilepath(std::filesystem::path filepath)
 
 void Project::serialize(nlohmann::json &j) const
 {
-    assert(!orderDirty_);
     j["graphs"] = json::object();
     for (const auto &[id, graph] : graphMap_) {
         json graphJson;
