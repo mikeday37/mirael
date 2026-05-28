@@ -184,13 +184,11 @@ void Switch::Core::onFrame(const RunContext &context)
 
     if (config_.dynamic) {
         if (auto buf = context.getFirstInput(config_.choicePin)) {
-            /*auto val = buf->getValue(); // TODO: impl
-            int parsed{};
-            auto [ptr, err] = std::from_chars(val.data(), val.data() + val.size(), parsed);
-            if (err == std::errc{})
-                choice = parsed;
+            auto val = buf->toInt();
+            if (val)
+                choice = *val;
             else
-                choice = 0; // TODO: in this case we may also want to set a visual error flag*/
+                choice = 0; // TODO: in this case we may also want to set a visual error flag
         } else {
             choice = 0;
         }
@@ -207,10 +205,10 @@ void Switch::Core::onFrame(const RunContext &context)
 
     auto input = context.getFirstInput(config_.inPins[choice - 1]);
     if (output) {
-        /*if (input) // TODO: impl
-            output->setAsReferenceTo(input); 
+        if (input)
+            output->setValue(*input);
         else
-            output->clear();*/
+            output->clear();
     }
 }
 

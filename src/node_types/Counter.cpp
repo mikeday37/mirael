@@ -85,7 +85,7 @@ void Counter::Core::onFrame(const RunContext &context)
     auto outBufferPtr = context.outputs.at(outPinId_);
     assert(outBufferPtr); // should have been created by the Runner before onFrame() was called
     auto &outBuffer = *outBufferPtr;
-    /*outBuffer.setValue(std::format("{}", value_));*/ // TODO: impl
+    outBuffer.setValue(value_);
 }
 
 } // namespace Mirael::NodeTypes

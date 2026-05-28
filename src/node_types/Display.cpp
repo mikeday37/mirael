@@ -23,9 +23,10 @@ void Display::onShow()
     ne::EndNode();
 }
 
-void Display::Core::onFrame(const RunContext &context) {
-    /*if (auto buf = context.getFirstInput(inPinId_))
-        channel_->pendingValue.postNew(std::make_unique<std::string>(buf->getValue()));*/ // TODO: impl
+void Display::Core::onFrame(const RunContext &context)
+{
+    if (auto buf = context.getFirstInput(inPinId_))
+        channel_->pendingValue.postNew(std::make_unique<std::string>(buf->toString()));
     // TODO: this is allocating per frame - switch to something like an expandable ring buffer or triple buffer
 }
 

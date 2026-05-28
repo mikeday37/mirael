@@ -37,6 +37,7 @@ public:
 
     void setValue(bool other) { internalSafeSetValue(other); }
     void setValue(double other) { internalSafeSetValue(other); }
+    void setValue(int other) { internalSafeSetValue(static_cast<double>(other)); }
 
     void setValue(std::string_view other)
     {
@@ -184,7 +185,8 @@ public:
         // NOTE: we're relying on LuaJIT-specific behavior that isn't in the Lua specification, where
         // it returns "type: 0x..." for non-coercible types.
         const char *s = lua_tolstring(L, -1, &len);
-        assert(s); // should alwys be non-null with LuaJIT
+        if (!s)
+            s = ""; // TODO: should really flag some kind of live warning when things like this happen
         std::string result(s, len);
         lua_pop(L, 1);
 
