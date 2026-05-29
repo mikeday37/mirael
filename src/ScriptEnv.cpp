@@ -48,11 +48,11 @@ void ScriptEnv::establishRootMiraelKeywords()
     lua_pushvalue(L, LUA_GLOBALSINDEX);
 
     lua_pushstring(L, "input");
-    pushArrayAccessUserData(l_inputIndex, nullptr);
+    pushNewUserData(l_inputIndex, nullptr, l_inputCall);
     lua_rawset(L, -3);
 
     lua_pushstring(L, "output");
-    pushArrayAccessUserData(l_outputIndex, l_outputNewIndex);
+    pushNewUserData(l_outputIndex, l_outputNewIndex, l_outputCall);
     lua_rawset(L, -3);
 
     lua_pop(L, 1);
@@ -84,7 +84,7 @@ void ScriptEnv::establishEnvTable()
     assert(!lua_gettop(L));
 }
 
-void ScriptEnv::pushArrayAccessUserData(lua_CFunction indexFn, lua_CFunction newIndexFn)
+void ScriptEnv::pushNewUserData(lua_CFunction indexFn, lua_CFunction newIndexFn, lua_CFunction callFn)
 {
     lua_newuserdata(L, 0);
     lua_newtable(L); // the userdata's metatable
@@ -99,6 +99,12 @@ void ScriptEnv::pushArrayAccessUserData(lua_CFunction indexFn, lua_CFunction new
         lua_pushlightuserdata(L, this);
         lua_pushcclosure(L, newIndexFn, 1);
         lua_setfield(L, -2, "__newindex");
+    }
+
+    if (callFn) {
+        lua_pushlightuserdata(L, this);
+        lua_pushcclosure(L, callFn, 1);
+        lua_setfield(L, -2, "__call");
     }
 
     lua_setmetatable(L, -2);
@@ -129,6 +135,22 @@ int ScriptEnv::l_inputIndex(lua_State *L)
 
     buf->pushValueToLuaStack();
     return 1;
+}
+
+int ScriptEnv::l_inputCall(lua_State *L)
+{
+    auto *self = static_cast<ScriptEnv *>(lua_touserdata(L, lua_upvalueindex(1)));
+
+    auto &pins = *self->currentInPins_;
+    for (auto pinId : pins) {
+        const auto *buf = self->runContext_.getFirstInput(pinId);
+        if (buf)
+            buf->pushValueToLuaStack();
+        else
+            lua_pushnil(L);
+    }
+
+    return static_cast<int>(pins.size());
 }
 
 int ScriptEnv::l_outputIndex(lua_State *L)
@@ -168,6 +190,25 @@ int ScriptEnv::l_outputNewIndex(lua_State *L)
     lua_pushvalue(L, 3);
     buf->setValueFromLuaStack();
     return 0;
+}
+
+int ScriptEnv::l_outputCall(lua_State *L)
+{
+    auto *self = static_cast<ScriptEnv *>(lua_touserdata(L, lua_upvalueindex(1)));
+
+    auto &pins = *self->currentOutPins_;
+
+    // TODO: allow setting all outputs with a call as well
+
+    for (auto pinId : pins) {
+        const auto *buf = self->runContext_.getOutput(pinId);
+        if (buf)
+            buf->pushValueToLuaStack();
+        else
+            lua_pushnil(L);
+    }
+
+    return static_cast<int>(pins.size());
 }
 
 bool ScriptEnv::tryGetPinId(const std::vector<PinId> *pins, int n, PinId &outPinId)

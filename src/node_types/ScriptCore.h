@@ -15,6 +15,7 @@ using ScriptStatus  = Script::ScriptStatus;
 using Config        = Script::Config;
 using CoreStatus    = Script::CoreStatus;
 using Channel       = Script::Channel;
+using ErrorMode     = Script::RuntimeErrorHandlingMode;
 
 class ScriptCore : public NodeCore
 {
@@ -35,7 +36,6 @@ private:
     void postStatus() { channel_->pendingCoreStatus.postNew(std::make_unique<CoreStatus>(status_)); }
 
     void putAutoDisabled() { channel_->autoDisabled.store(autoDisabled_, std::memory_order_relaxed); }
-
     bool tryAcceptLatestConfig()
     {
         if (auto taken = channel_->pendingConfig.tryAcceptLatest()) {
@@ -46,6 +46,7 @@ private:
     }
 
     bool getEnabled() { return channel_->enabled.load(std::memory_order_relaxed); }
+    ErrorMode getErrorMode() { return channel_->errorMode.load(std::memory_order_relaxed); }
 
     lua_State *L = nullptr; // handy alias for context.L
     std::string chunkName_{"(none)"};

@@ -49,7 +49,7 @@ void Settings::showMiraelSetingsEditor()
     ImGui::Checkbox("Pan/Zoom of a Graph", &changeTrackingSettings.panZoom);
     ImGui::Checkbox("Moving a Node", &changeTrackingSettings.moveNode);
     ImGui::Checkbox("Toggling Graph Visiblity", &changeTrackingSettings.graphVisibility);
-    
+
     ImGui::SeparatorText("Mirael Style Values");
 
     auto &values = app.getStyle().values;
@@ -61,6 +61,7 @@ void Settings::showMiraelSetingsEditor()
 
     auto &colors = app.getStyle().colors;
     ImGui::ColorEdit4("Node Header", &colors.nodeHeaderFill.x);
+    ImGui::ColorEdit4("Error Node Header", &colors.errorNodeBackground.x);
     ImGui::ColorEdit4("Pin Icon", &colors.pinIconColor.x);
 }
 

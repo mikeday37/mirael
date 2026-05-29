@@ -50,16 +50,18 @@ private:
     const std::vector<PinId> *currentInPins_  = nullptr;
     const std::vector<PinId> *currentOutPins_ = nullptr;
 
-    int chunkEnvRef_       = LUA_NOREF;
+    int chunkEnvRef_ = LUA_NOREF;
 
     void establishRootMiraelKeywords();
     void establishEnvTable();
-    void pushArrayAccessUserData(lua_CFunction indexFn, lua_CFunction newIndexFn);
+    void pushNewUserData(lua_CFunction indexFn, lua_CFunction newIndexFn, lua_CFunction callFn);
 
     static int l_forbidGlobalNewIndex(lua_State *L);
     static int l_inputIndex(lua_State *L);
+    static int l_inputCall(lua_State *L);
     static int l_outputIndex(lua_State *L);
     static int l_outputNewIndex(lua_State *L);
+    static int l_outputCall(lua_State *L);
 
     static bool tryGetPinId(const std::vector<PinId> *pins, int n, PinId &outPinId);
 

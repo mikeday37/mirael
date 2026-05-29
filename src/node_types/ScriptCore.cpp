@@ -69,7 +69,8 @@ void ScriptCore::runScript(const RunContext &context)
                 status_.errorText.clear();
         }
         lua_pop(L, 1);
-        autoDisabled_ = true;
+        if (getErrorMode() == ErrorMode::AutoDisable)
+            autoDisabled_ = true;
         putAutoDisabled();
         if (willReport) {
             status_.errorScript  = runningScript_;

@@ -96,11 +96,12 @@ public:
         struct Values {
             float nodeHeaderIndent = 8.0f;
             float pinColumnSpacing = 16.0f;
-            float pinIconSize = 20.0f;
+            float pinIconSize      = 20.0f;
         };
         struct Colors {
-            ImVec4 nodeHeaderFill = ImColor(66, 230, 218, 127);
-            ImVec4 pinIconColor   = ImColor(134, 134, 134, 255);
+            ImVec4 nodeHeaderFill      = ImColor(66, 230, 218, 127);
+            ImVec4 errorNodeBackground = ImColor(210, 0, 0, 191);
+            ImVec4 pinIconColor        = ImColor(134, 134, 134, 255);
         };
         Values values{};
         Colors colors{};

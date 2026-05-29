@@ -20,13 +20,14 @@ public:
 
     using ScriptVersion = uint64_t;
     enum class ScriptCompilationMode { None, Live, Explicit };
+    enum class RuntimeErrorHandlingMode { Silent, Visual, AutoDisable };
     enum class ScriptStatus { Empty, Good, CompileError, RuntimeError };
 
     struct Config {
         std::vector<PinId> inPins, outPins;
         std::string scriptNameWhenPosted = ""; // used for debug purposes - only current as of the last script post
-        std::string script = "";
-        ScriptVersion scriptVersion = 0;
+        std::string script               = "";
+        ScriptVersion scriptVersion      = 0;
     };
 
     struct CoreStatus {
@@ -37,10 +38,11 @@ public:
     };
 
     struct Channel {
-        Mailbox<Config> pendingConfig;          // ui -> core
-        Mailbox<CoreStatus> pendingCoreStatus;  // core -> ui
-        std::atomic<bool> enabled      = true;  // ui -> core
-        std::atomic<bool> autoDisabled = false; // core -> ui
+        Mailbox<Config> pendingConfig;                                                      // ui -> core
+        Mailbox<CoreStatus> pendingCoreStatus;                                              // core -> ui
+        std::atomic<bool> enabled                       = true;                             // ui -> core
+        std::atomic<bool> autoDisabled                  = false;                            // core -> ui
+        std::atomic<RuntimeErrorHandlingMode> errorMode = RuntimeErrorHandlingMode::Visual; // ui->core
     };
 
 protected:
@@ -66,8 +68,9 @@ private:
     bool inlineEditor_ = true;
     std::string script_;
     ScriptVersion scriptVersion_ = 1, latestPostedScriptVersion_ = 0;
-    ScriptCompilationMode compileMode_ = ScriptCompilationMode::Live;
-    bool enabled_                      = true;
+    ScriptCompilationMode compileMode_  = ScriptCompilationMode::Live;
+    RuntimeErrorHandlingMode errorMode_ = RuntimeErrorHandlingMode::Visual;
+    bool enabled_                       = true;
 
     // pin information
     std::vector<PinId> inputPinIds_;
@@ -95,6 +98,7 @@ private:
     }
 
     void putEnabled() { channel_->enabled.store(enabled_, std::memory_order_relaxed); }
+    void putErrorMode() { channel_->errorMode.store(errorMode_, std::memory_order_relaxed); }
 
     void updateCoreStatus()
     {
