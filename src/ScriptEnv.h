@@ -20,7 +20,6 @@ class ScriptEnv final
 {
 public:
     explicit ScriptEnv(NodeCore::RunContext &runContext);
-    ~ScriptEnv();
 
     // forbid copy/move
     ScriptEnv(const ScriptEnv &)            = delete;
@@ -51,13 +50,13 @@ private:
     const std::vector<PinId> *currentInPins_  = nullptr;
     const std::vector<PinId> *currentOutPins_ = nullptr;
 
-    int inputUserdataRef_  = LUA_NOREF;
-    int outputUserdataRef_ = LUA_NOREF;
     int chunkEnvRef_       = LUA_NOREF;
 
+    void establishRootMiraelKeywords();
     void establishEnvTable();
-    [[nodiscard]] int createArrayAccessTable(const char *name, lua_CFunction indexFn, lua_CFunction newIndexFn);
+    void pushArrayAccessUserData(lua_CFunction indexFn, lua_CFunction newIndexFn);
 
+    static int l_forbidGlobalNewIndex(lua_State *L);
     static int l_inputIndex(lua_State *L);
     static int l_outputIndex(lua_State *L);
     static int l_outputNewIndex(lua_State *L);

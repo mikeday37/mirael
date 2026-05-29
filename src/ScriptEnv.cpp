@@ -9,23 +9,8 @@ ScriptEnv::ScriptEnv(NodeCore::RunContext &runContext) : runContext_(runContext)
 {
     runContext.env = this;
     establishLuaState();
+    establishRootMiraelKeywords();
     establishEnvTable();
-}
-
-ScriptEnv::~ScriptEnv()
-{
-    auto unref = [this](int &ref) {
-        if (ref != LUA_NOREF) {
-            luaL_unref(L, LUA_REGISTRYINDEX, ref);
-            ref = LUA_NOREF;
-        }
-    };
-    unref(inputUserdataRef_);
-    unref(outputUserdataRef_);
-    unref(chunkEnvRef_);
-
-    // cleanup of the lua_State is handled via RAII
-    // TODO: see if we can make RAII wrappers for the above in a worthwhile way
 }
 
 void ScriptEnv::registerPins(PinMapping pinMapping)
@@ -58,34 +43,51 @@ void ScriptEnv::establishLuaState()
     luaL_openlibs(L);
 }
 
-void ScriptEnv::establishEnvTable()
+void ScriptEnv::establishRootMiraelKeywords()
 {
-    assert(inputUserdataRef_ == LUA_NOREF);
-    inputUserdataRef_ = createArrayAccessTable("mirael.input", l_inputIndex, nullptr);
-
-    assert(outputUserdataRef_ == LUA_NOREF);
-    outputUserdataRef_ = createArrayAccessTable("mirael.output", l_outputIndex, l_outputNewIndex);
-
-    lua_newtable(L); // the env table itself
-    lua_rawgeti(L, LUA_REGISTRYINDEX, inputUserdataRef_);
-    lua_setfield(L, -2, "input");
-    lua_rawgeti(L, LUA_REGISTRYINDEX, outputUserdataRef_);
-    lua_setfield(L, -2, "output");
-
-    lua_newtable(L); // env's metatable, will fallthrough to globals
     lua_pushvalue(L, LUA_GLOBALSINDEX);
-    lua_setfield(L, -2, "__index");
-    lua_setmetatable(L, -2);
 
-    assert(chunkEnvRef_ == LUA_NOREF);
-    chunkEnvRef_ = luaL_ref(L, LUA_REGISTRYINDEX);
+    lua_pushstring(L, "input");
+    pushArrayAccessUserData(l_inputIndex, nullptr);
+    lua_rawset(L, -3);
+
+    lua_pushstring(L, "output");
+    pushArrayAccessUserData(l_outputIndex, l_outputNewIndex);
+    lua_rawset(L, -3);
+
+    lua_pop(L, 1);
 }
 
-[[nodiscard]] int ScriptEnv::createArrayAccessTable(const char *name, lua_CFunction indexFn, lua_CFunction newIndexFn)
+void ScriptEnv::establishEnvTable()
+{
+    assert(chunkEnvRef_ == LUA_NOREF);
+
+    lua_newtable(L); // the env table itself
+    lua_newtable(L); // env's metatable
+
+    lua_pushvalue(L, LUA_GLOBALSINDEX);
+    lua_setfield(L, -2, "__index"); // env reads passthrough to globals
+
+    lua_pushcfunction(L, l_forbidGlobalNewIndex);
+    lua_setfield(L, -2, "__newindex"); // forbid writing to env
+
+    lua_setmetatable(L, -2);
+
+    chunkEnvRef_ = luaL_ref(L, LUA_REGISTRYINDEX);
+
+    lua_pushvalue(L, LUA_GLOBALSINDEX);
+    lua_pushstring(L, "_G");
+    lua_rawgeti(L, LUA_REGISTRYINDEX, chunkEnvRef_);
+    lua_rawset(L, -3); // _G now points to env, making it effictively a read-only version of its former self
+    lua_pop(L, 1);
+
+    assert(!lua_gettop(L));
+}
+
+void ScriptEnv::pushArrayAccessUserData(lua_CFunction indexFn, lua_CFunction newIndexFn)
 {
     lua_newuserdata(L, 0);
-
-    luaL_newmetatable(L, name);
+    lua_newtable(L); // the userdata's metatable
 
     if (indexFn) {
         lua_pushlightuserdata(L, this);
@@ -99,12 +101,13 @@ void ScriptEnv::establishEnvTable()
         lua_setfield(L, -2, "__newindex");
     }
 
-    lua_pushboolean(L, 0);
-    lua_setfield(L, -2, "__metatable");
-
     lua_setmetatable(L, -2);
+}
 
-    return luaL_ref(L, LUA_REGISTRYINDEX);
+int ScriptEnv::l_forbidGlobalNewIndex(lua_State *L)
+{
+    const char *key = luaL_checkstring(L, 2);
+    return luaL_error(L, "attempt to write at global index \'%s\'", key);
 }
 
 int ScriptEnv::l_inputIndex(lua_State *L)
@@ -130,7 +133,6 @@ int ScriptEnv::l_inputIndex(lua_State *L)
 
 int ScriptEnv::l_outputIndex(lua_State *L)
 {
-
     auto *self = static_cast<ScriptEnv *>(lua_touserdata(L, lua_upvalueindex(1)));
     int n      = static_cast<int>(lua_tointeger(L, 2));
 
@@ -152,25 +154,20 @@ int ScriptEnv::l_outputIndex(lua_State *L)
 
 int ScriptEnv::l_outputNewIndex(lua_State *L)
 {
-
     auto *self = static_cast<ScriptEnv *>(lua_touserdata(L, lua_upvalueindex(1)));
     int n      = static_cast<int>(lua_tointeger(L, 2));
 
     PinId pinId;
-    if (!tryGetPinId(self->currentOutPins_, n, pinId)) {
-        lua_pushnil(L);
-        return 1;
-    }
+    if (!tryGetPinId(self->currentOutPins_, n, pinId))
+        return 0;
 
     ValueBuffer *buf = self->runContext_.getOutput(pinId);
-    if (!buf) {
-        lua_pushnil(L);
-        return 1;
-    }
+    if (!buf)
+        return 0;
 
     lua_pushvalue(L, 3);
     buf->setValueFromLuaStack();
-    return 1;
+    return 0;
 }
 
 bool ScriptEnv::tryGetPinId(const std::vector<PinId> *pins, int n, PinId &outPinId)
