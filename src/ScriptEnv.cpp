@@ -194,21 +194,40 @@ int ScriptEnv::l_outputNewIndex(lua_State *L)
 
 int ScriptEnv::l_outputCall(lua_State *L)
 {
-    auto *self = static_cast<ScriptEnv *>(lua_touserdata(L, lua_upvalueindex(1)));
+    auto *self  = static_cast<ScriptEnv *>(lua_touserdata(L, lua_upvalueindex(1)));
+    auto &pins  = *self->currentOutPins_;
+    const int numPins = static_cast<int>(pins.size());
+    const int numArgs = lua_gettop(L) - 1;
 
-    auto &pins = *self->currentOutPins_;
+    if (numArgs > 0) {
+        // set outputs to provided list
+        const int excess = numArgs - numPins;
 
-    // TODO: allow setting all outputs with a call as well
+        if (excess > 0)
+            lua_pop(L, excess);
 
-    for (auto pinId : pins) {
-        const auto *buf = self->runContext_.getOutput(pinId);
-        if (buf)
-            buf->pushValueToLuaStack();
-        else
-            lua_pushnil(L);
+        int i = std::min(numArgs, numPins);
+
+        while (i-- > 0) {
+            auto pinId = pins[i];
+            auto *buf  = self->runContext_.getOutput(pinId);
+            if (buf)
+                buf->setValueFromLuaStack(); // pops the value from the Lua stack and sets the buffer to that value
+        }
+
+        return 0;
+    } else {
+        // return all outputs
+        for (auto pinId : pins) {
+            const auto *buf = self->runContext_.getOutput(pinId);
+            if (buf)
+                buf->pushValueToLuaStack();
+            else
+                lua_pushnil(L);
+        }
+
+        return numPins;
     }
-
-    return static_cast<int>(pins.size());
 }
 
 bool ScriptEnv::tryGetPinId(const std::vector<PinId> *pins, int n, PinId &outPinId)
