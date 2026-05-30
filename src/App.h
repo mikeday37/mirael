@@ -61,7 +61,7 @@ public:
     static App &get() { return *appInstance_; }
     static App *fromWindow(GLFWwindow *window) { return static_cast<App *>(glfwGetWindowUserPointer(window)); }
 
-    void attemptReloadLastProject();
+    bool tryReloadLastProject();
     Project &getProject() { return projectExplorer_.getProject(); }
     Library &getLibrary() { return library_; }
     void exit();

@@ -28,13 +28,15 @@ public:
     static const char *windowName() { return "Project Explorer"; }
     void show();
 
-    void load(std::filesystem::path filepath);
+    bool tryLoad(std::filesystem::path filepath);
 
     void attemptSetGraphFocus(GraphId graphId);
 
+    void clear();      // new, empty project
+    void newProject(); // new project with an empty graph, set to not modified
+
 private:
     std::unique_ptr<Project> project_;
-    void clear();
 
     // ui entry points to serialization
     void onUserNew();

@@ -27,6 +27,7 @@ public:
 
     void showGraphs();
     bool isModified() const { return isModifiedFlag_; }
+    void setNotModified() { isModifiedFlag_ = false; }
 
     static Project &get();
 

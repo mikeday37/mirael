@@ -79,7 +79,8 @@ void App::preInitImGui()
     ImGui::AddSettingsHandler(&settingsHandler);
     ImGui::LoadIniSettingsFromDisk(ImGui::GetIO().IniFilename);
 
-    attemptReloadLastProject();
+    if (!tryReloadLastProject())
+        projectExplorer_.newProject();
 
     auto &io = ImGui::GetIO();
 
@@ -230,17 +231,17 @@ void App::cleanup()
     // the vulkan objects we created are all raii, so they take care of themselves.
 }
 
-void App::attemptReloadLastProject()
+bool App::tryReloadLastProject()
 {
     if (!mainWindowSettings_.lastProjectPath)
-        return;
+        return false;
 
     const auto &filepath = *mainWindowSettings_.lastProjectPath;
 
     if (filepath.empty() || !std::filesystem::exists(filepath))
-        return;
+        return false;
 
-    projectExplorer_.load(filepath);
+    return projectExplorer_.tryLoad(filepath);
 }
 
 void App::exit() { closeRequested_ = true; }
@@ -408,10 +409,10 @@ ImGuiSettingsHandler App::getImGuiSettingsHandler()
 
 void App::imGuiSettings_WriteAll(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *handler, ImGuiTextBuffer *out_buf)
 {
-    App &app                                = *static_cast<App *>(handler->UserData);
-    app.mainWindowSettings_.lastProjectPath = app.getProject().getLastFilepath();
+    App &app                                   = *static_cast<App *>(handler->UserData);
+    app.mainWindowSettings_.lastProjectPath    = app.getProject().getLastFilepath();
     app.mainWindowSettings_.lastFocusedGraphId = app.getProject().getLastFocusedGraphId();
-    const auto &settings                    = app.mainWindowSettings_;
+    const auto &settings                       = app.mainWindowSettings_;
 
     out_buf->appendf("[%s][MainWindow]\n", handler->TypeName);
     if (settings.x && settings.y)
@@ -470,7 +471,7 @@ void App::imGuiSettings_ReadLine(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *h
     } else {
         std::string path;
         path.resize(strlen(line) + 1);
-        if (sscanf_s(line, "LastProjectPath=%s", path.data(), (unsigned)path.size()) == 1) {
+        if (sscanf_s(line, "LastProjectPath=%[^\n]", path.data(), (unsigned)path.size()) == 1) {
             mws.lastProjectPath = path;
         }
     }

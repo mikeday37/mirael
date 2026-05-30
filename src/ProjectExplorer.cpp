@@ -137,10 +137,13 @@ void ProjectExplorer::show()
     ImGui::End();
 }
 
-void ProjectExplorer::load(std::filesystem::path filepath)
+bool ProjectExplorer::tryLoad(std::filesystem::path filepath)
 {
-    if (!filepath.empty() && fs::exists(filepath))
+    if (!filepath.empty() && fs::exists(filepath)) {
         project_ = Project::load(filepath);
+        return true;
+    } else
+        return false;
 }
 
 void ProjectExplorer::attemptSetGraphFocus(GraphId graphId)
@@ -151,13 +154,20 @@ void ProjectExplorer::attemptSetGraphFocus(GraphId graphId)
 
 void ProjectExplorer::clear() { project_ = std::make_unique<Project>(); }
 
+void ProjectExplorer::newProject()
+{
+    clear();
+    project_->addNewGraph();
+    project_->setNotModified();
+}
+
 void ProjectExplorer::onUserNew()
 {
     if (project_->isModified()) {
         App::get().setDestructiveAction("Discard Changes?", "Discard ALL unsaved changes?  This operation cannot be undone.",
-                                        [this]() { clear(); });
+                                        [this]() { newProject(); });
     } else
-        clear();
+        newProject();
 }
 
 void ProjectExplorer::onUserOpen()
