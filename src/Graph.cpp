@@ -4,6 +4,7 @@
 #include <ranges>
 
 #include "ine/imgui_node_editor.h"
+#include "misc/cpp/imgui_stdlib.h"
 
 #include "App.h"
 #include "data.h"
@@ -35,7 +36,10 @@ void Graph::serialize(nlohmann::json &j) const
     j["zoom"] = canvasInfo_.orientation.zoom;
 
     j["ratemode"] = to_string(runRate_.rateMode);
-    j["fps"] = runRate_.desiredFramesPerSecond;
+    j["fps"]      = runRate_.desiredFramesPerSecond;
+
+    if (!luaEnvInitScript_.empty())
+        j["initlua"] = luaEnvInitScript_;
 
     j["nodes"] = json::object();
     for (const auto &[nodeId, node] : nodes_) {
@@ -75,6 +79,12 @@ std::unique_ptr<Graph> Graph::deserialize(GraphId id, std::string_view uid, cons
 
     if (j.contains("fps")) {
         graph->runRate_.desiredFramesPerSecond = j["fps"].get<float>();
+    }
+
+    if (j.contains("initlua")) {
+        auto s                   = j["initlua"].get<std::string>();
+        graph->luaEnvInitScript_ = s;
+        graph->sendInitScript();
     }
 
     const auto &nodesObj = j.at("nodes");
@@ -322,8 +332,7 @@ void Graph::showProperties()
             node->onShowProperties();
             ImGui::Separator();
         }
-    }
-    else if (ImGui::CollapsingHeader("Graph", ImGuiTreeNodeFlags_DefaultOpen)) {
+    } else if (ImGui::CollapsingHeader("Graph", ImGuiTreeNodeFlags_DefaultOpen)) {
 
         RunRateMode priorMode                = runRate_.rateMode;
         static constexpr RunRateMode modes[] = {RunRateMode::Disabled, RunRateMode::SetRate,
@@ -352,6 +361,17 @@ void Graph::showProperties()
         }
         ImGui::SameLine();
         ImGuiEx::ToolTipHint("Only used if Run Rate Mode = Set Rate.");
+
+        ImGui::SeparatorText("Lua Environment");
+        if (ImGui::Button("Reset"))
+            sendInitScript();
+        if (auto r = runner_.tryAcceptInitScriptResult())
+            initScriptResult_ = *r;
+        if (!initScriptResult_.empty()) {
+            ImGui::SameLine();
+            ImGui::Text("Init Result: %s", initScriptResult_.c_str());
+        }
+        ImGui::InputTextMultiline("Init Script", &luaEnvInitScript_, ImVec2(0, 0), ImGuiInputTextFlags_AllowTabInput);
     }
 }
 
@@ -405,7 +425,7 @@ void Graph::onPinRemoved(NodeId nodeId, PinId pinId)
         removeLink(*linkSet.begin());
 
     // remove the pin
-    auto it = pins_.find(pinId);
+    auto it        = pins_.find(pinId);
     bool wasOutput = it->second.direction == PinDirection::Output;
     assert(it->second.nodeId == nodeId); // removes should always correspond to the correct node
     pins_.erase(it);
@@ -478,10 +498,17 @@ void Graph::initRunner()
     runner_.run(runRate_);
 }
 
+void Graph::sendInitScript()
+{
+    establishDelta();
+    pendingDelta_->luaEnvInitScript = luaEnvInitScript_;
+    planDirty_                      = true;
+}
+
 void Graph::establishDelta()
 {
     if (!pendingDelta_) {
-        pendingDelta_ = std::make_unique<ResourceDelta>();
+        pendingDelta_          = std::make_unique<ResourceDelta>();
         pendingDelta_->version = nextPlanVersion_++;
     }
 }
@@ -537,9 +564,10 @@ void Graph::updateExecutionPlan()
     // TODO: if cycle detected, flag newly added links as potentially cyclic
     // TODO: if no cycle detected, clear all such flags
 
-    if (cycleDetected_) return;
+    if (cycleDetected_)
+        return;
 
-    auto plan = std::make_unique<ExecutionPlan>();
+    auto plan     = std::make_unique<ExecutionPlan>();
     plan->version = pendingDelta_ ? pendingDelta_->version : nextPlanVersion_++;
 
     if (pendingDelta_)

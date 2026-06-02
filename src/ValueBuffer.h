@@ -221,6 +221,12 @@ public:
     bool isThread() const noexcept { return std::holds_alternative<LuaThread>(value_); }
     bool isTable() const noexcept { return std::holds_alternative<LuaTable>(value_); }
 
+    void onNewLuaState(lua_State *luaState)
+    {
+        L = luaState;
+        assert(!isLuaRef()); // the buffer should have been cleared before the prior state was destroyed
+    }
+
 private:
     struct LuaRefBase {
         int ref;

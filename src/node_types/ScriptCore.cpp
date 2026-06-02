@@ -55,9 +55,9 @@ void ScriptCore::runScript(const RunContext &context)
         return;
 
     lua_rawgeti(L, LUA_REGISTRYINDEX, *chunkRef_);
-    context.env->pushChunkEnv();
+    context.env->pushEnvTable();
     lua_setfenv(L, -2);
-    auto ret = lua_pcall(L, 0, LUA_MULTRET, 0);
+    auto ret = lua_pcall(L, 0, 0, 0);
 
     if (ret != LUA_OK) {
         bool willReport = status_.scriptStatus != ScriptStatus::CompileError;
@@ -91,7 +91,12 @@ void ScriptCore::onFrame(const RunContext &context)
 {
     L = context.L;
 
-    if (tryAcceptLatestConfig() && config_.scriptVersion > status_.receivedScriptVersion) {
+    bool configUpdated = tryAcceptLatestConfig() && config_.scriptVersion > status_.receivedScriptVersion;
+    if (configUpdated || needHandleLuaStateReset_) {
+        if (needHandleLuaStateReset_ && !configUpdated) {
+            config_.script = receivedScript_; // this is an awkward kludge.  see TD1 in TechDebt.md
+        }
+        needHandleLuaStateReset_ = false;
         compileNewScript();
         updatePinAccess(context);
     }
@@ -100,6 +105,13 @@ void ScriptCore::onFrame(const RunContext &context)
            0); // the above should always compile a script on first frame, as the UI side should post config before create
 
     runScript(context);
+}
+
+void ScriptCore::onLuaStateReset()
+{
+    L                        = nullptr;
+    chunkRef_                = LUA_NOREF;
+    needHandleLuaStateReset_ = true;
 }
 
 } // namespace Mirael::NodeTypes::Cores

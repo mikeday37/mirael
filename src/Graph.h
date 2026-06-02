@@ -95,6 +95,10 @@ private:
     std::unique_ptr<ResourceDelta> pendingDelta_{nullptr};
     bool planDirty_     = true;
     bool cycleDetected_ = false;
+    std::string luaEnvInitScript_;
+    std::string initScriptResult_;
+
+    void sendInitScript(); // causes a reset of the runner's lua environment
 
     void establishDelta();
     std::vector<NodeId> toposort(bool &cycleDetected);

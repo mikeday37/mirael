@@ -25,6 +25,8 @@ struct ResourceDelta {
     std::unordered_map<NodeId, std::unique_ptr<NodeCore>> addedCores;
     std::vector<PinId> deletedOutputs;
     std::vector<PinId> addedOutputs;
+    std::optional<std::string>
+        luaEnvInitScript; // if present, all output buffers will be cleared and the lua-state recreated with this init script
 };
 
 struct ExecutionPlan {
@@ -75,6 +77,7 @@ public:
     void onNewUIFrame();
     void queueDelta(std::unique_ptr<ResourceDelta> delta) { deltaQueue_.enqueue(std::move(delta)); }
     void postPlan(std::unique_ptr<ExecutionPlan> newPlan) { pendingPlan_.postNew(std::move(newPlan)); }
+    std::unique_ptr<std::string> tryAcceptInitScriptResult() { return initScriptResult_.tryAcceptLatest(); }
 
 private:
     // Graph API communications channels/buffer
@@ -82,6 +85,7 @@ private:
     std::unique_ptr<ResourceDelta> pendingFutureDelta_{}; // used to store up to 1 dequeued delta for a future plan version
     Mailbox<ExecutionPlan> pendingPlan_{};
     std::unique_ptr<ExecutionPlan> currentPlan_{};
+    Mailbox<std::string> initScriptResult_{};
 
     // Receiving Graph Communications
     bool try_dequeueDelta(std::unique_ptr<ResourceDelta> &out) { return deltaQueue_.try_dequeue(out); }
@@ -104,6 +108,9 @@ private:
 
     void applyDelta(ResourceDelta &delta);
     void prepareRunContext();
+
+    void clearOutputBuffers();
+    void raiseLuaStateReset();
 
     // our thread
     std::unordered_map<NodeId, std::unique_ptr<NodeCore>> cores_;

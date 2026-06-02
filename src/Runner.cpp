@@ -1,5 +1,7 @@
 #include "pch.h"
 
+#include <memory>
+
 #include "Runner.h"
 
 namespace Mirael
@@ -110,6 +112,13 @@ void Runner::applyDelta(ResourceDelta &delta)
     for (auto deletedOutputPinId : delta.deletedOutputs)
         outputPinBuffers_.erase(deletedOutputPinId);
 
+    if (delta.luaEnvInitScript) {
+        clearOutputBuffers();
+        scriptEnv_->resetWithInitScript(*delta.luaEnvInitScript);
+        initScriptResult_.postNew(std::make_unique<std::string>(scriptEnv_->getInitScriptResult()));
+        raiseLuaStateReset();
+    }
+
     for (auto addedOutputPinId : delta.addedOutputs) {
         auto [it, inserted] = outputPinBuffers_.try_emplace(addedOutputPinId, std::make_unique<ValueBuffer>(scriptEnv_->L));
         assert(inserted);
@@ -145,6 +154,21 @@ void Runner::prepareRunContext()
 
     for (auto &[outputPinId, valueBuffer] : outputPinBuffers_)
         runContext_.outputs.try_emplace(outputPinId, valueBuffer.get());
+}
+
+void Runner::clearOutputBuffers()
+{
+    for (auto &[outputPinId, valueBuffer] : outputPinBuffers_)
+        valueBuffer->clear();
+}
+
+void Runner::raiseLuaStateReset()
+{
+    for (auto &[outputPinId, valueBuffer] : outputPinBuffers_)
+        valueBuffer->onNewLuaState(scriptEnv_->L); // doing this here is another consequence of TD1 (see TechDebt.md)
+
+    for (auto &[nodeId, core] : cores_)
+        core->onLuaStateReset();
 }
 
 } // namespace Mirael

@@ -33,7 +33,10 @@ public:
     };
 
     void registerPins(PinMapping pinMapping);
-    void pushChunkEnv();
+    void pushEnvTable();
+
+    void resetWithInitScript(const std::string &initScript);
+    std::string getInitScriptResult() { return initScriptResult_; } // rarely called, copy is fine
 
 private:
     NodeCore::RunContext &runContext_;
@@ -43,14 +46,17 @@ private:
     std::unique_ptr<lua_State, LuaStateDeleter> L_{nullptr}; // lives for the life of the runner
     lua_State *L = nullptr;                                  // handy alias for L_.get();
 
-    void establishLuaState();
+    void establishLuaState(const char *initScript = nullptr);
 
     std::unordered_map<NodeId, PinMapping> pinMappings_;
 
     const std::vector<PinId> *currentInPins_  = nullptr;
     const std::vector<PinId> *currentOutPins_ = nullptr;
 
-    int chunkEnvRef_ = LUA_NOREF;
+    int envTableRef_ = LUA_NOREF;
+
+    std::string initScriptResult_;
+    void attemptInitScript(const char *initScript);
 
     void establishRootMiraelKeywords();
     void establishEnvTable();

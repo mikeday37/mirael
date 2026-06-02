@@ -48,6 +48,8 @@ protected:
 
     virtual void onFrame(const RunContext &context) = 0;
 
+    virtual void onLuaStateReset() {}; // any lua refs kept by the core must be discarded (not released) when this is called
+
     friend Runner;
     friend ScriptEnv;
 };

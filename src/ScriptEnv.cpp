@@ -9,8 +9,6 @@ ScriptEnv::ScriptEnv(NodeCore::RunContext &runContext) : runContext_(runContext)
 {
     runContext.env = this;
     establishLuaState();
-    establishRootMiraelKeywords();
-    establishEnvTable();
 }
 
 void ScriptEnv::registerPins(PinMapping pinMapping)
@@ -19,13 +17,21 @@ void ScriptEnv::registerPins(PinMapping pinMapping)
     setCurrentNode(runContext_.nodeId); // this is necessary for the case where a core calls registerPins() within onFrame
 }
 
-void ScriptEnv::pushChunkEnv()
+void ScriptEnv::pushEnvTable()
 {
-    assert(chunkEnvRef_ != LUA_NOREF); // TODO: switching to std::optional<int> would make this assert cleaner
-    lua_rawgeti(L, LUA_REGISTRYINDEX, chunkEnvRef_);
+    assert(envTableRef_ != LUA_NOREF); // TODO: switching to std::optional<int> would make this assert cleaner
+    lua_rawgeti(L, LUA_REGISTRYINDEX, envTableRef_);
 }
 
-void ScriptEnv::establishLuaState()
+void ScriptEnv::resetWithInitScript(const std::string &initScript)
+{
+    L_.reset();
+    L            = nullptr;
+    envTableRef_ = LUA_NOREF;
+    establishLuaState(initScript.c_str());
+}
+
+void ScriptEnv::establishLuaState(const char *initScript)
 {
     if (L_)
         return;
@@ -41,6 +47,44 @@ void ScriptEnv::establishLuaState()
     runContext_.L = L;
 
     luaL_openlibs(L);
+
+    establishRootMiraelKeywords();
+
+    attemptInitScript(initScript); // it is valid for init scripts to modfiy globals, or make aliases to mirael keywords
+
+    establishEnvTable(); // globals are locked here
+}
+
+void ScriptEnv::attemptInitScript(const char *initScript)
+{
+    if (!initScript) {
+        initScriptResult_ = "No script.";
+        return;
+    }
+
+    auto len = std::strlen(initScript);
+    if (!len) {
+        initScriptResult_ = "Empty script.";
+        return;
+    }
+
+    int ret = luaL_loadbuffer(L, initScript, len, "initScript");
+
+    if (ret != LUA_OK) {
+        initScriptResult_ = std::format("Compilation Error: {}", lua_tostring(L, -1));
+        lua_pop(L, 1);
+        return;
+    }
+
+    ret = lua_pcall(L, 0, 0, 0);
+
+    if (ret != LUA_OK) {
+        initScriptResult_ = std::format("Runtime Error: {}", lua_tostring(L, -1));
+        lua_pop(L, 1);
+        return;
+    }
+
+    initScriptResult_ = "Success."; // NOTE: this text-only feedback is a consequence of TD1 (see TechDebt.md)
 }
 
 void ScriptEnv::establishRootMiraelKeywords()
@@ -60,7 +104,7 @@ void ScriptEnv::establishRootMiraelKeywords()
 
 void ScriptEnv::establishEnvTable()
 {
-    assert(chunkEnvRef_ == LUA_NOREF);
+    assert(envTableRef_ == LUA_NOREF);
 
     lua_newtable(L); // the env table itself
     lua_newtable(L); // env's metatable
@@ -73,11 +117,11 @@ void ScriptEnv::establishEnvTable()
 
     lua_setmetatable(L, -2);
 
-    chunkEnvRef_ = luaL_ref(L, LUA_REGISTRYINDEX);
+    envTableRef_ = luaL_ref(L, LUA_REGISTRYINDEX);
 
     lua_pushvalue(L, LUA_GLOBALSINDEX);
     lua_pushstring(L, "_G");
-    lua_rawgeti(L, LUA_REGISTRYINDEX, chunkEnvRef_);
+    lua_rawgeti(L, LUA_REGISTRYINDEX, envTableRef_);
     lua_rawset(L, -3); // _G now points to env, making it effictively a read-only version of its former self
     lua_pop(L, 1);
 
@@ -194,8 +238,8 @@ int ScriptEnv::l_outputNewIndex(lua_State *L)
 
 int ScriptEnv::l_outputCall(lua_State *L)
 {
-    auto *self  = static_cast<ScriptEnv *>(lua_touserdata(L, lua_upvalueindex(1)));
-    auto &pins  = *self->currentOutPins_;
+    auto *self        = static_cast<ScriptEnv *>(lua_touserdata(L, lua_upvalueindex(1)));
+    auto &pins        = *self->currentOutPins_;
     const int numPins = static_cast<int>(pins.size());
     const int numArgs = lua_gettop(L) - 1;
 

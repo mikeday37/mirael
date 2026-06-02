@@ -51,6 +51,7 @@ private:
     lua_State *L = nullptr; // handy alias for context.L
     std::string chunkName_{"(none)"};
     std::optional<int> chunkRef_{};
+    bool needHandleLuaStateReset_ = false;
 
     void compileNewScript();
     void updatePinAccess(const RunContext &context);
@@ -58,6 +59,7 @@ private:
 
 protected:
     void onFrame(const RunContext &context) override;
+    void onLuaStateReset() override;
 };
 
 } // namespace Mirael::NodeTypes::Cores
