@@ -11,16 +11,19 @@ the compiler error, and the Core is otherwise unaffacted - it will continue
 running the latest successfully compiled script, if any, if it didn't 
 autoDisable itself.
 
-If a compiled script has a runtime error, the core sets itself to autoDisabled,
+If a compiled script has a runtime error, the core can set itself to autoDisabled,
 but a CoreStatus update is posted only if the script with the error is the latest,
 successfully compiled script.  Such an update is NOT posted if the running script
 has been replaced with a script that doesn't compile.
 
 A Core that is autoDisabled will not attempt to rerun the same script.
 
+TODO: update this doc re: decision that autoDisabling is itself disabled
+by default but individual nodes can opt-in to help catch intermittent errors.
+
 When a Core receives a new script that compiles, autoDisabled is reset and it
 will attempt to run the new script.  If the new script fails, the runtime error
-handling outlined above will immediately set it back to autoDisabled.
+handling outlined above may immediately set it back to autoDisabled.
 
 The enabled flag is a separate master switch.  No attempt is made to run scripts if
 enabled is false, but it will still attempt to compile new scripts.  They just
