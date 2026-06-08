@@ -30,7 +30,11 @@ public:
     }
 
     // consumer method
-    std::pair<const T &, bool> getLatestReadSlot() noexcept
+    struct FetchResult {
+        const T &slot;
+        bool isNew;
+    };
+    [[nodiscard]] FetchResult fetchLatestReadSlot() noexcept
     {
         state_t newState, old = state_.load(std::memory_order_relaxed);
         do {
@@ -47,7 +51,7 @@ public:
     }
 
 private:
-    static constexpr size_t align_sz = std::hardware_destructive_interference_size;
+    static constexpr size_t align_sz = 64; // std::hardware_destructive_interference_size; // but we're avoiding include <new>
 
     alignas(align_sz) std::array<T, 3> slots_;
 

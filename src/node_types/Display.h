@@ -2,6 +2,7 @@
 
 #include "Mailbox.h"
 #include "Node.h"
+#include "TripleBuffer.h"
 
 namespace Mirael::NodeTypes
 {
@@ -16,7 +17,7 @@ protected:
     void onShow() override;
 
     struct Channel {
-        Mailbox<std::string> pendingValue{};
+        TripleBuffer<std::string> stringBuffer{};
     };
 
     class Core : public NodeCore
@@ -40,8 +41,9 @@ private:
 
     void acceptLatestValue()
     {
-        if (auto taken = channel_->pendingValue.tryAcceptLatest())
-            value_ = std::move(*taken);
+        auto result = channel_->stringBuffer.fetchLatestReadSlot();
+        if (result.isNew)
+            value_ = result.slot;
     }
 };
 

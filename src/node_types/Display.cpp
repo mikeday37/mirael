@@ -26,8 +26,11 @@ void Display::onShow()
 void Display::Core::onFrame(const RunContext &context)
 {
     if (auto buf = context.getFirstInput(inPinId_))
-        channel_->pendingValue.postNew(std::make_unique<std::string>(buf->toString()));
-    // TODO: this is allocating per frame - switch to something like an expandable ring buffer or triple buffer
+    {
+        auto &sbuf = channel_->stringBuffer;
+        sbuf.getWriteSlot() = buf->toString(); // TODO: change this to write into an existing string to avoid allocations per frame
+        sbuf.commitWrite();
+    }
 }
 
 } // namespace Mirael::NodeTypes
