@@ -24,18 +24,23 @@ The Display node will treat that value as an image if:
 
 ### Vulkan Details
 
-The Display node will manage a triple buffer.  Each image in the buffer will be a Host-Visible Image created on the UI thread via
+The Display Node/Core pair use a triple buffer.  Each image in the buffer will be a Host-Visible Image created on the UI thread via
 VulkanMemoryAllocator.  Those images will be used as textures with the following properties:
 - `VK_FORMAT_R8G8B8A8_UNORM`
 - `VK_IMAGE_TILING_LINEAR` (*)
 - `VK_IMAGE_LAYOUT_GENERAL`
 
-Triple buffering will allow non-blocking transfer of images between the UI and Runner threads for maximum speed.
+The Display Core will use std::memcpy to fill the back buffer, while the latest front buffer will be displayed via ImGui::Image().
+We will track the triple buffer state as 3 indices plus a new data flag, bit-packed into a single atomic integer, [as described by Remis]
+(https://github.com/remis-thoughts/blog/blob/a598eaa174482da014dec91a275b3b7c6b44ccd8/triple-buffering/src/main/md/triple-buffering.md),
+as this approach is lock-free and still guarantees that the UI will only display the latest frame, even if Runner is much slower than the
+UI.  We don't care if the UI skips frames from a faster Runner - only that both run unimpeded by the other, and the UI always shows the
+latest.
 
 (*) The Vulkan spec does not guarantee that Linear Tiling will always work for image sampling, so we will query for the capability at
 startup, and fail with an appropriate error if not supported.  Fallback to another approach may be developed when we start porting to
-other platforms.  This prototype currently targets only modern, high-end desktop Windows PCs, which nearly universally support the
-properties listed above.
+other platforms.  This prototype currently targets only modern, high-end desktop Windows PCs, which frequently support the properties
+listed above.
 
 ### Creating Images in Script Nodes
 
@@ -46,18 +51,18 @@ will automatically create an image lua table correctly, such as via this example
 local myimage = newimage(320, 200) -- oldskool DOS vibes :D
 ```
 
-### Synchronization and Limitations
+### Ownership and Limitations
 
-All Vulkan calls will be handled on the UI thread.  The Display Core will simply ask for an available image of the right dimensions.
-If no such is available, a request for a change of image dimensions will be posted, but the core will simply move on.  It won't wait,
-and what it would have drawn with the new dimensions for that frame will be lost.
+All Vulkan calls will be handled on the UI thread - thus, the UI owns all the Vulkan objects.  The Display Core will simply ask for an
+available image of the right dimensions.  If no such is available, a request for a change of image dimensions will be posted, but the
+core will simply move on.  It won't wait, and what it would have drawn with the new dimensions for that frame will be lost.
 
 This means that there will be missed initial frames within individual Display Nodes on startup and whenever image dimensions change.
-In fact, there is no gaurantee that images of continuously changing image dimensions will ever be displayed.  This is an acceptable
+In fact, there is no gaurantee that images of continuously changing dimensions will ever be displayed.  This is an acceptable
 limitation for the first pass, as we expect image dimensions to change infrequently due to user input, not per frame (as with graph
 topology changes).
 
-It also means that the triple buffer managed by the Display node does not even exist until the Core posts a need for an image of
+This also means that the triple buffer managed by the Display node does not even exist until the Core posts a need for an image of
 particular dimensions.  Multiple UI frames may pass before the Runner comes around again to give the Core the opportunity to fill
 such a new image, during which time the UI will have nothing to display.  As such, when dimensions change, the UI may "flicker"
 and display nothing for a few frames.  Again, this is considered an acceptable first pass design.
