@@ -25,6 +25,7 @@ find_package(glm 1.0 CONFIG REQUIRED)
 find_package(nlohmann_json 3.12 CONFIG REQUIRED)
 find_package(stduuid CONFIG REQUIRED)
 find_package(Vulkan 1.4 REQUIRED)
+find_package(VulkanMemoryAllocator 3.3 CONFIG REQUIRED)
 
 
 #
@@ -177,6 +178,8 @@ file(GLOB MIRAEL_EMBEDDED_RESOURCES
 	"${MIRAEL_RES_DIR}/win32/mirael.rc" # TODO: portability
 )
 
+set_source_files_properties("${MIRAEL_SRC_DIR}/vma.cpp" PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+
 add_executable (Mirael
 	${MIRAEL_SOURCES}
 	${IMGUI_SOURCES}
@@ -193,6 +196,7 @@ target_link_libraries(Mirael PRIVATE
 	nlohmann_json::nlohmann_json
 	stduuid
 	Vulkan::Vulkan
+	GPUOpen::VulkanMemoryAllocator
 	${NFDE_LIB_DEPENDENCIES}
 	dwmapi.lib # TODO: portability
 )

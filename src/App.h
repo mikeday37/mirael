@@ -10,6 +10,8 @@
 #endif
 #include <vulkan/vulkan_raii.hpp>
 
+#include <vk_mem_alloc.h>
+
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
@@ -50,6 +52,7 @@ private:
     void preInitImGui();
     void initWindow();
     void initVulkan();
+    void initVma();
     void finishInitImGui();
     void mainLoop();
     void cleanup();
@@ -212,6 +215,8 @@ private:
     std::vector<vk::raii::Semaphore> renderFinishedSemaphores_;
     std::vector<vk::raii::Fence> inFlightFences_;
     uint32_t frameIndex_ = 0;
+
+    VmaAllocator vmaAllocator_ = VK_NULL_HANDLE;
 
     //
     // Vulkan setup, mangement, rendering

@@ -59,6 +59,7 @@ void App::run()
     preInitImGui();
     initWindow();
     initVulkan();
+    initVma();
     finishInitImGui();
     NfdShim::Init();
     mainLoop();
@@ -165,6 +166,32 @@ void App::initVulkan()
     createSyncObjects();
 }
 
+void App::initVma()
+{
+    assert(!vmaAllocator_);
+
+    VmaVulkanFunctions vulkanFunctions{};
+    vulkanFunctions.vkGetInstanceProcAddr = instance_.getDispatcher()->vkGetInstanceProcAddr;
+    vulkanFunctions.vkGetDeviceProcAddr = device_.getDispatcher()->vkGetDeviceProcAddr;
+
+    VkPhysicalDeviceProperties props{};
+    vkGetPhysicalDeviceProperties(*physicalDevice_, &props);
+
+    VmaAllocatorCreateInfo allocatorCreateInfo{};
+    allocatorCreateInfo.flags = VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
+    allocatorCreateInfo.vulkanApiVersion = props.apiVersion;
+    allocatorCreateInfo.physicalDevice = *physicalDevice_;
+    allocatorCreateInfo.device = *device_;
+    allocatorCreateInfo.instance = *instance_;
+    allocatorCreateInfo.pVulkanFunctions = &vulkanFunctions;
+
+    auto result = vmaCreateAllocator(&allocatorCreateInfo, &vmaAllocator_);
+    if (result != VK_SUCCESS) {
+        throw std::runtime_error(std::format("vmaCreateAllocator() failed with error code: {}", vk::to_string(vk::Result(result))));
+    }
+    assert(vmaAllocator_);
+}
+
 void App::finishInitImGui()
 {
     ImGui_ImplGlfw_InitForVulkan(window_, true);
@@ -226,9 +253,13 @@ void App::cleanup()
     ImGui::DestroyContext();
 
     glfwDestroyWindow(window_);
+    window_ = nullptr;
     glfwTerminate();
 
-    // the vulkan objects we created are all raii, so they take care of themselves.
+    vmaDestroyAllocator(vmaAllocator_);
+    vmaAllocator_ = VK_NULL_HANDLE;
+
+    // the other vulkan objects we created are all raii, so they take care of themselves.
 }
 
 bool App::tryReloadLastProject()
