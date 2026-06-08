@@ -7,7 +7,8 @@ namespace Mirael
 {
 
 /// <summary>
-/// Implements a lock-free, one-way, single-value, single-producer, single-consumer cross-thread communication channel.
+/// Implements a lossy, lock-free, one-way, single-value, single-producer, single-consumer cross-thread communication channel.
+/// New values overwrites (and frees) any previous value that hasn't yet been consumed.
 /// </summary>
 /// <typeparam name="T">The type of object to send across the channel.</typeparam>
 template <typename T> class Mailbox
