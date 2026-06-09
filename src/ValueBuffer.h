@@ -183,7 +183,8 @@ public:
             return std::get<bool>(value_) ? "true" : "false";
 
         std::visit(overloaded{
-            [this](double d) { lua_pushnumber(L, d); }, [this](void *p) { lua_pushlightuserdata(L, p); },
+            [this](double d) { lua_pushnumber(L, d); },       //
+            [this](void *p) { lua_pushlightuserdata(L, p); }, //
 
             [this]<typename T>(T &base)
                 requires std::derived_from<T, LuaRefBase>
@@ -261,10 +262,6 @@ private:
     using LuaFullUserData = LuaRef<LUA_TUSERDATA>;
     using LuaOpaqueRef    = LuaRef<-1>;
 
-    // Userdata is intentionally omitted for now.  In the future we will support several different flavors of userdata,
-    // each with its own LuaRefBase-derived variant alternative and metatable.  For example, Vulkan Host-Visible Buffers
-    // for manipulating textures or setting up compute shader inputs from Lua scripts when desired.
-
     using value_t = std::variant<std::monostate,  // lua nil
                                  bool,            // lua bool
                                  double,          // lua number
@@ -274,7 +271,7 @@ private:
                                  LuaThread,       //
                                  LuaTable,        //
                                  LuaFullUserData, //
-                                 LuaOpaqueRef     // we're assuming anything else is a GC object, like FFI cdata
+                                 LuaOpaqueRef     // FFI cdata, etc.
                                  >;
 
     static constexpr int LastTrivialTypeIndex = 3;
