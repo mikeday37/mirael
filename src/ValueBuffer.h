@@ -83,6 +83,12 @@ public:
 
         switch (t) {
 
+        case LUA_TNONE: // none is handled like nil but returns false
+            lua_pop(L, 1);
+            clear();
+            assert(false); // currently we don't expect to ever actually encounter this
+            return false;
+
         // trivial types require an explicit pop
         case LUA_TNIL:
             lua_pop(L, 1);
@@ -100,6 +106,12 @@ public:
             internalSafeSetValue(d);
             return true;
         }
+        case LUA_TLIGHTUSERDATA: {
+            void *p = lua_touserdata(L, -1);
+            lua_pop(L, 1);
+            internalSafeSetValue(p);
+            return true;
+        }
 
         // ref types automatically pop as part of the luaL_ref() call
         case LUA_TSTRING:
@@ -114,11 +126,12 @@ public:
         case LUA_TTHREAD:
             internalSafeSetValue(LuaThread{luaL_ref(L, LUA_REGISTRYINDEX)});
             return true;
-
-        default: // TODO: we should have some sort of non-fatal indicator of this error, until the remaining types are supported
-            lua_pop(L, 1);
-            clear();
-            return false;
+        case LUA_TUSERDATA:
+            internalSafeSetValue(LuaFullUserData{luaL_ref(L, LUA_REGISTRYINDEX)});
+            return true;
+        default:
+            internalSafeSetValue(LuaOpaqueRef{luaL_ref(L, LUA_REGISTRYINDEX)});
+            return true;
         }
     }
 
@@ -170,7 +183,7 @@ public:
             return std::get<bool>(value_) ? "true" : "false";
 
         std::visit(overloaded{
-            [this](double d) { lua_pushnumber(L, d); },
+            [this](double d) { lua_pushnumber(L, d); }, [this](void *p) { lua_pushlightuserdata(L, p); },
 
             [this]<typename T>(T &base)
                 requires std::derived_from<T, LuaRefBase>
@@ -199,6 +212,7 @@ public:
             [this](std::monostate) { lua_pushnil(L); },
             [this](bool b) { lua_pushboolean(L, b ? 1 : 0); },
             [this](double d) { lua_pushnumber(L, d); },
+            [this](void *p) { lua_pushlightuserdata(L, p); },
 
             [this]<typename T>(T &base)
                 requires std::derived_from<T, LuaRefBase>
@@ -216,10 +230,13 @@ public:
     bool isNil() const noexcept { return std::holds_alternative<std::monostate>(value_); }
     bool isBool() const noexcept { return std::holds_alternative<bool>(value_); }
     bool isDouble() const noexcept { return std::holds_alternative<double>(value_); }
+    bool isLightUserData() const noexcept { return std::holds_alternative<void *>(value_); }
     bool isString() const noexcept { return std::holds_alternative<LuaString>(value_); }
     bool isFunction() const noexcept { return std::holds_alternative<LuaFunction>(value_); }
     bool isThread() const noexcept { return std::holds_alternative<LuaThread>(value_); }
     bool isTable() const noexcept { return std::holds_alternative<LuaTable>(value_); }
+    bool isFullUserData() const noexcept { return std::holds_alternative<LuaFullUserData>(value_); }
+    bool isOpaqueRef() const noexcept { return std::holds_alternative<LuaOpaqueRef>(value_); }
 
     void onNewLuaState(lua_State *luaState)
     {
@@ -237,26 +254,31 @@ private:
         using LuaRefBase::LuaRefBase;
     };
 
-    using LuaString   = LuaRef<LUA_TSTRING>;
-    using LuaFunction = LuaRef<LUA_TFUNCTION>;
-    using LuaThread   = LuaRef<LUA_TTHREAD>;
-    using LuaTable    = LuaRef<LUA_TTABLE>;
+    using LuaString       = LuaRef<LUA_TSTRING>;
+    using LuaFunction     = LuaRef<LUA_TFUNCTION>;
+    using LuaThread       = LuaRef<LUA_TTHREAD>;
+    using LuaTable        = LuaRef<LUA_TTABLE>;
+    using LuaFullUserData = LuaRef<LUA_TUSERDATA>;
+    using LuaOpaqueRef    = LuaRef<-1>;
 
     // Userdata is intentionally omitted for now.  In the future we will support several different flavors of userdata,
     // each with its own LuaRefBase-derived variant alternative and metatable.  For example, Vulkan Host-Visible Buffers
     // for manipulating textures or setting up compute shader inputs from Lua scripts when desired.
 
-    using value_t = std::variant<std::monostate, // lua nil
-                                 bool,           // lua bool
-                                 double,         // lua number
-                                 LuaString,      //
-                                 LuaFunction,    //
-                                 LuaThread,      //
-                                 LuaTable        //
+    using value_t = std::variant<std::monostate,  // lua nil
+                                 bool,            // lua bool
+                                 double,          // lua number
+                                 void *,          // lua light userdata
+                                 LuaString,       //
+                                 LuaFunction,     //
+                                 LuaThread,       //
+                                 LuaTable,        //
+                                 LuaFullUserData, //
+                                 LuaOpaqueRef     // we're assuming anything else is a GC object, like FFI cdata
                                  >;
 
-    static constexpr int LastTrivialTypeIndex = 2;
-    static_assert(std::is_same_v<std::variant_alternative_t<LastTrivialTypeIndex, value_t>, double>,
+    static constexpr int LastTrivialTypeIndex = 3;
+    static_assert(std::is_same_v<std::variant_alternative_t<LastTrivialTypeIndex, value_t>, void *>,
                   "LastTrivialTypeIndex must be in sync with value_t.");
     static_assert(std::is_trivially_copyable_v<value_t>, "ValueBuffer::value_t must be trivially copyable.");
 
