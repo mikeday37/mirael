@@ -92,9 +92,10 @@ public:
     std::string getNewUuidAsString() const;
 
     struct Metrics {
-        uint64_t mainLoopIteration, swapChainBuildCount, platformWindowCreateCount, platformWindowDestroyCount, windowRefreshCount;
+        uint64_t mainLoopIteration, swapChainBuildCount, platformWindowCreateCount, platformWindowDestroyCount, windowRefreshCount,
+            frameWaitCount;
     };
-    Metrics metrics_{};
+    Metrics metrics_{}; // zero inits all counters
     void showDiagnosticRows();
 
     struct ChangeTrackingSettings {
@@ -120,6 +121,7 @@ public:
 
     void acceptNewImageBuffer(const std::shared_ptr<NodeTypes::Display::ImageBuffer> &ptr);
     void initializeDisplayImage(const NodeTypes::Display::ImageBuffer &buffer, NodeTypes::Display::Image &image);
+    uint64_t getFrameWaitCount() const noexcept { return metrics_.frameWaitCount; }
 
 private:
     static inline App *appInstance_ = nullptr;
@@ -184,6 +186,7 @@ private:
         void (*Platform_DestroyWindow)(ImGuiViewport *vp) = nullptr;
     };
     BaseImGuiPlatformHandlers baseImGuiPlatformHandlers_{};
+    bool isShuttingDown_ = false;
 
     //
     // GLFW setup, management and hooks

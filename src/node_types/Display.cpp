@@ -73,6 +73,7 @@ void Display::displayLatestImage()
 
     // draw the latest image
     // TODO: avoid drawing initial image the core hasn't written to
+    currentImageBuffer_->lastDisplayFrameWaitCount = App::get().getFrameWaitCount();
     auto result = currentImageBuffer_->images.fetchLatestReadSlot();
     ImVec2 size{static_cast<float>(currentImageBuffer_->dim.width), static_cast<float>(currentImageBuffer_->dim.height)};
     auto *dl = ImGui::GetWindowDrawList();
@@ -128,7 +129,12 @@ void Display::Core::onFrame(const RunContext &context)
         bool ready  = buffer && buffer->dim == info.dim;
         if (ready) {
             auto &slot = buffer->images.getWriteSlot();
-            std::memcpy(slot.mapped, info.pixelData, static_cast<size_t>(4 * info.dim.width * info.dim.height));
+            auto *dest = static_cast<uint8_t *>(slot.mapped); // uses rowPitch
+            auto *src = static_cast<const uint8_t *>(info.pixelData); // linear, packed
+            const uint32_t srcPitch = info.dim.width * 4;
+            const auto *end = dest + info.dim.height * slot.rowPitch;
+            for (; dest < end; dest += slot.rowPitch, src += srcPitch)
+                std::memcpy(dest, src, srcPitch);
             // the above assumes no row padding, which the UI is currently expected to ensure
             buffer->images.commitWrite();
         } else {
@@ -183,7 +189,7 @@ Display::Core::ValueInfo Display::Core::getValueInfo(const ValueBuffer *vbuf)
     lua_pop(L, 5);
     assert(lua_gettop(L) == entryTop);
 
-    if (pbuf && w > 0 && h > 0) {
+    if (pbuf && w > 0 && h > 0 && w <= 2000 && h <= 2000) { // TODO: handle these maximums better - for now this is a sanity limit
         info.dim.width  = static_cast<Dimensions::dim_t>(w);
         info.dim.height = static_cast<Dimensions::dim_t>(h);
         info.kind       = DataKind::Image;

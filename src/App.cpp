@@ -244,6 +244,8 @@ void App::mainLoop()
 
 void App::cleanup()
 {
+    isShuttingDown_ = true;
+
     Project::get().shutdown();
 
     device_.waitIdle();
@@ -353,6 +355,9 @@ void App::acceptNewImageBuffer(const std::shared_ptr<NodeTypes::Display::ImageBu
 
 void App::initializeDisplayImage(const NodeTypes::Display::ImageBuffer &buffer, NodeTypes::Display::Image &image)
 {
+    // TODO: add tracking metrics
+    // TODO: do not attempt to exceed max descriptor count - need graceful handling before overflow
+
     VkImageCreateInfo imageCreateInfo{
         .sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
         .imageType     = VK_IMAGE_TYPE_2D,
@@ -374,7 +379,12 @@ void App::initializeDisplayImage(const NodeTypes::Display::ImageBuffer &buffer, 
     VmaAllocationInfo allocResult{};
     vmaCreateImage(vmaAllocator_, &imageCreateInfo, &allocInfo, &image.image, &image.allocation, &allocResult);
 
-    // TODO: check result
+    // TODO: check result - in fact, do this across the board as soon as we're past initial rapid prototyping stage
+
+    VkImageSubresource subresource{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .mipLevel = 0, .arrayLayer = 0};
+    VkSubresourceLayout subresourceLayout{};
+    vkGetImageSubresourceLayout(*device_, image.image, &subresource, &subresourceLayout);
+    image.rowPitch = static_cast<uint32_t>(subresourceLayout.rowPitch);
 
     image.mapped = allocResult.pMappedData;
 
@@ -1159,6 +1169,9 @@ void App::drawFrame()
     if (fenceResult != vk::Result::eSuccess) {
         throw std::runtime_error("Failed to wait for fence.");
     }
+    ++metrics_.frameWaitCount;
+
+    cleanupImageBufferGraveyard();
 
     auto [result, imageIndex] = swapchain_.acquireNextImage(UINT64_MAX, *presentCompleteSemaphores_[frameIndex_], nullptr);
     switch (result) {
@@ -1218,7 +1231,19 @@ void App::drawFrame()
 
 void App::cleanupImageBufferGraveyard()
 {
-    std::erase_if(imageBufferGraveyard_, [](const auto &ptr) { return !ptr->live.load(std::memory_order_acquire); });
+    // two things must be true before it is safe to release an ImageBuffer:
+    // 1. the core it was sent to will never use it again
+    // 2. none of the images in the buffer are in use by the Vulkan pipeline.
+    //
+    // condition 1 is met if live is set false (which happens on either thread only when the BufferCarrier that transports the
+    // ImageBuffer is destroyed). condition 2 is met in either of two cases:
+    //   A. we are shutting down (because we wait for the GPU to idle before calling cleanupImageBufferGraveyard() for the last time)
+    //   B. or, we've waited for more frames than MAX_FRAMES_IN_FLIGHT since the last time an image from the buffer was displayed
+
+    std::erase_if(imageBufferGraveyard_, [this](const auto &ptr) {
+        return !ptr->live.load(std::memory_order_acquire) &&
+               (isShuttingDown_ || ((metrics_.frameWaitCount - ptr->lastDisplayFrameWaitCount) > MAX_FRAMES_IN_FLIGHT));
+    });
 }
 
 void App::transitionNewImageBuffers(vk::raii::CommandBuffer &commandBuffer)

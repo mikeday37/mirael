@@ -2,6 +2,7 @@
 /out/
 /user/
 /vcpkg_installed/
+/enc_temp_folder/
 *.aps
 *.idb
 *.pdb
