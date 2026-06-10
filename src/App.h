@@ -118,7 +118,7 @@ public:
     };
     Style &getStyle() { return style_; }
 
-    void shareDisplayImageWithGraveyard(const std::shared_ptr<NodeTypes::Display::ImageBuffer> &ptr);
+    void acceptNewImageBuffer(const std::shared_ptr<NodeTypes::Display::ImageBuffer> &ptr);
     void initializeDisplayImage(const NodeTypes::Display::ImageBuffer &buffer, NodeTypes::Display::Image &image);
 
 private:
@@ -265,8 +265,10 @@ private:
     //
     // Display node support
     //
-    std::vector<std::shared_ptr<NodeTypes::Display::ImageBuffer>> imageBufferGraveyard_{}, imageBufferGraveyardKeeps_{};
+    std::vector<std::shared_ptr<NodeTypes::Display::ImageBuffer>> imageBufferGraveyard_{}, imageBuffersNeedingTransition_{};
     void cleanupImageBufferGraveyard();
+    void transitionNewImageBuffers(vk::raii::CommandBuffer &commandBuffer);
+    void transitionNewDisplayImage(vk::raii::CommandBuffer &commandBuffer, VkImage &image);
 };
 
 } // namespace Mirael

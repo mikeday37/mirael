@@ -92,7 +92,7 @@ void Display::createShareAndPostImageBuffer()
     auto carrier    = std::make_unique<BufferCarrier>();
     carrier->buffer = currentImageBuffer_.get();                    // carrier destruction will mark buffer dead
     channel_->pendingBufferCarrier.postNew(std::move(carrier));     // buffer made available to core via carrier
-    App::get().shareDisplayImageWithGraveyard(currentImageBuffer_); // buffer can now outlive node
+    App::get().acceptNewImageBuffer(currentImageBuffer_); // buffer can now outlive node
 
     // the above sequence ensures that the ImageBuffer is destroyed by the UI, but not before Core is either done with it
     // or never receives it (in the case where Carrier was destroyed by being overwritten in the mailbox).  This is essential, because
@@ -114,6 +114,7 @@ void Display::Core::onFrame(const RunContext &context)
         break;
 
     case String: {
+        assert(vbuf); // info.Kind should not be String unless vbuf is not null
         auto &sbuf          = channel_->stringBuffer;
         sbuf.getWriteSlot() = vbuf->toString(); // TODO: change this to write into the existing string to avoid allocations per frame
         sbuf.commitWrite();

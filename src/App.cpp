@@ -345,9 +345,10 @@ void App::showDiagnosticRows()
     ImGui::Text("%u", metrics_.platformWindowDestroyCount);
 }
 
-void App::shareDisplayImageWithGraveyard(const std::shared_ptr<NodeTypes::Display::ImageBuffer> &ptr)
+void App::acceptNewImageBuffer(const std::shared_ptr<NodeTypes::Display::ImageBuffer> &ptr)
 {
     imageBufferGraveyard_.emplace_back(ptr);
+    imageBuffersNeedingTransition_.emplace_back(ptr);
 }
 
 void App::initializeDisplayImage(const NodeTypes::Display::ImageBuffer &buffer, NodeTypes::Display::Image &image)
@@ -387,7 +388,7 @@ void App::initializeDisplayImage(const NodeTypes::Display::ImageBuffer &buffer, 
 
     image.descriptor = ImGui_ImplVulkan_AddTexture(*image.view, VK_IMAGE_LAYOUT_GENERAL);
 
-    image.cleanup = [&](){
+    image.cleanup = [&]() {
         ImGui_ImplVulkan_RemoveTexture(image.descriptor);
         vmaDestroyImage(vmaAllocator_, image.image, image.allocation);
     };
@@ -1115,6 +1116,9 @@ void App::recordCommandBuffer(uint32_t imageIndex)
                                                   .layerCount           = 1,
                                                   .colorAttachmentCount = 1,
                                                   .pColorAttachments    = &attachmentInfo};
+
+    transitionNewImageBuffers(commandBuffer);
+
     commandBuffer.beginRendering(renderingInfo);
 
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *graphicsPipeline_);
@@ -1215,6 +1219,34 @@ void App::drawFrame()
 void App::cleanupImageBufferGraveyard()
 {
     std::erase_if(imageBufferGraveyard_, [](const auto &ptr) { return !ptr->live.load(std::memory_order_acquire); });
+}
+
+void App::transitionNewImageBuffers(vk::raii::CommandBuffer &commandBuffer)
+{
+    for (auto &ptr : imageBuffersNeedingTransition_)
+        for (auto &image : ptr->images.initialGetAll())
+            transitionNewDisplayImage(commandBuffer, image.image);
+
+    imageBuffersNeedingTransition_.clear();
+}
+
+void App::transitionNewDisplayImage(vk::raii::CommandBuffer &commandBuffer, VkImage &image)
+{
+    vk::ImageMemoryBarrier2 barrier = {
+        .srcStageMask        = vk::PipelineStageFlagBits2::eHost,
+        .srcAccessMask       = vk::AccessFlagBits2::eHostWrite,
+        .dstStageMask        = vk::PipelineStageFlagBits2::eAllGraphics,
+        .dstAccessMask       = vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite, // TODO: is write necessary?
+        .oldLayout           = vk::ImageLayout::ePreinitialized,
+        .newLayout           = vk::ImageLayout::eGeneral,
+        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .image               = image,
+        .subresourceRange    = {
+               .aspectMask = vk::ImageAspectFlagBits::eColor, .baseMipLevel = 0, .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1}};
+
+    vk::DependencyInfo dependencyInfo = {.dependencyFlags = {}, .imageMemoryBarrierCount = 1, .pImageMemoryBarriers = &barrier};
+    commandBuffer.pipelineBarrier2(dependencyInfo);
 }
 
 } // namespace Mirael
