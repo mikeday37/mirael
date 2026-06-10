@@ -143,6 +143,17 @@ void Project::save(const std::filesystem::path &filepath)
     return project;
 }
 
+void Project::shutdown()
+{
+    std::vector<GraphId> ids;
+    for (auto &[id, graph] : graphMap_) {
+        graph->stopRunner();
+        ids.push_back(id);
+    }
+    for (auto id : ids)
+        removeGraph(id);
+}
+
 void Project::storeFilepath(std::filesystem::path filepath)
 {
     lastFilepath_ = filepath;

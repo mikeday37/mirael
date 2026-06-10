@@ -66,3 +66,19 @@ This also means that the triple buffer managed by the Display node does not even
 particular dimensions.  Multiple UI frames may pass before the Runner comes around again to give the Core the opportunity to fill
 such a new image, during which time the UI will have nothing to display.  As such, when dimensions change, the UI may "flicker"
 and display nothing for a few frames.  Again, this is considered an acceptable first pass design.
+
+### Image Lifetime
+
+Each Display Node needs to create a TripleBuffer of Images (on the UI thread), share it in a non-blocking way with its Core (on the Runner
+thread), and ensure that when its no longer needed, it is destroyed only on the UI thread.  I'm going to reuse `Mailbox<T>` to share it
+lossily so that only the latest is actually used.  But Cores can outlive Nodes, so the Node itself can't be responsible for destroying
+the TripleBuffer (hereafter called simply 'buffer').  Instead, the Node will create a shared_ptr to the buffer, add that ptr to a graveyard
+vector that's owned by the App itself, and then create an ImageCarrier to post via Mailbox to the Node.  The ImageCarrier ('carrier') will
+have a non-owning ptr to the buffer, and the buffer will have an atomic 'live' flag which starts at true.  When the carrier is destroyed, the
+live flag will be set to false.  The App's graveyard will only release the shared_ptr on buffers which are not live, which guarantees
+that they outlive any use by the Core, since the core will keep its carrier for the lifetime of its use of the buffer.  This also ensures
+that if a sent buffer is overwritten on post (due to fast UI and slow Runner), the buffer will still be marked dead even though the Core
+never received it.
+
+TODO: clean up and clarify the above.
+

@@ -34,6 +34,7 @@ public:
     void setLastFocusedGraphId(GraphId id) { lastFocusedGraphId_ = id; }
     Graph *getLastFocusedGraph() { return graphMap_.contains(lastFocusedGraphId_) ? &getGraph(lastFocusedGraphId_) : nullptr; }
     std::optional<GraphId> getLastFocusedGraphId() const;
+    GraphId getRawLastFocusedGraphId() const { return lastFocusedGraphId_; }
     void createNodeInLastFocusedGraphIfVisible(const char *nodeTypeName);
 
     // graph management
@@ -49,6 +50,9 @@ public:
     [[nodiscard]] static std::unique_ptr<Project> load(const std::filesystem::path &filepath);
     std::optional<std::filesystem::path> getLastFilepath() const { return lastFilepath_; }
     std::string getFileName() const { return fileName_; }
+
+    // shutdown
+    void shutdown();
 
 private:
     // main data

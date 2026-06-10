@@ -82,6 +82,7 @@ public:
     static bool try_parse(std::string_view s, RunRateMode &mode);
 
     void initRunner();
+    void stopRunner() { runner_.stop(); }
 
 private:
     GraphId id_;

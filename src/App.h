@@ -25,6 +25,7 @@
 #include "imgui_internal.h"
 
 #include "Diagnostics.h"
+#include "Display.h"
 #include "Library.h"
 #include "NodeTypeRegistry.h"
 #include "Project.h"
@@ -44,6 +45,12 @@ public:
     // entry point
     //
     void run();
+
+    //
+    // app-level constants
+    //
+    // TODO: this may be exceeded by the Display Node if there are many instances of it - need a better approach
+    static constexpr uint32_t MaxDescriptorCount = 1024;
 
 private:
     //
@@ -110,6 +117,9 @@ public:
         Colors colors{};
     };
     Style &getStyle() { return style_; }
+
+    void shareDisplayImageWithGraveyard(const std::shared_ptr<NodeTypes::Display::ImageBuffer> &ptr);
+    void initializeDisplayImage(const NodeTypes::Display::ImageBuffer &buffer, NodeTypes::Display::Image &image);
 
 private:
     static inline App *appInstance_ = nullptr;
@@ -251,6 +261,12 @@ private:
 
     void recordCommandBuffer(uint32_t imageIndex);
     void drawFrame();
+
+    //
+    // Display node support
+    //
+    std::vector<std::shared_ptr<NodeTypes::Display::ImageBuffer>> imageBufferGraveyard_{}, imageBufferGraveyardKeeps_{};
+    void cleanupImageBufferGraveyard();
 };
 
 } // namespace Mirael

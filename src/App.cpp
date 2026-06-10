@@ -172,17 +172,17 @@ void App::initVma()
 
     VmaVulkanFunctions vulkanFunctions{};
     vulkanFunctions.vkGetInstanceProcAddr = instance_.getDispatcher()->vkGetInstanceProcAddr;
-    vulkanFunctions.vkGetDeviceProcAddr = device_.getDispatcher()->vkGetDeviceProcAddr;
+    vulkanFunctions.vkGetDeviceProcAddr   = device_.getDispatcher()->vkGetDeviceProcAddr;
 
     VkPhysicalDeviceProperties props{};
     vkGetPhysicalDeviceProperties(*physicalDevice_, &props);
 
     VmaAllocatorCreateInfo allocatorCreateInfo{};
-    allocatorCreateInfo.flags = VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
+    allocatorCreateInfo.flags            = VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
     allocatorCreateInfo.vulkanApiVersion = props.apiVersion;
-    allocatorCreateInfo.physicalDevice = *physicalDevice_;
-    allocatorCreateInfo.device = *device_;
-    allocatorCreateInfo.instance = *instance_;
+    allocatorCreateInfo.physicalDevice   = *physicalDevice_;
+    allocatorCreateInfo.device           = *device_;
+    allocatorCreateInfo.instance         = *instance_;
     allocatorCreateInfo.pVulkanFunctions = &vulkanFunctions;
 
     auto result = vmaCreateAllocator(&allocatorCreateInfo, &vmaAllocator_);
@@ -202,7 +202,7 @@ void App::finishInitImGui()
     initInfo.Device              = *device_;
     initInfo.QueueFamily         = graphicsQueueIndex_;
     initInfo.Queue               = *graphicsQueue_;
-    initInfo.DescriptorPoolSize  = IMGUI_IMPL_VULKAN_MINIMUM_IMAGE_SAMPLER_POOL_SIZE;
+    initInfo.DescriptorPoolSize  = App::MaxDescriptorCount;
     initInfo.MinImageCount       = minImageCount_;
     initInfo.ImageCount          = static_cast<uint32_t>(swapchainImages_.size());
     initInfo.UseDynamicRendering = true;
@@ -244,9 +244,14 @@ void App::mainLoop()
 
 void App::cleanup()
 {
-    NfdShim::Quit();
+    Project::get().shutdown();
 
     device_.waitIdle();
+
+    cleanupImageBufferGraveyard();
+    assert(imageBufferGraveyard_.empty());
+
+    NfdShim::Quit();
 
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -338,6 +343,54 @@ void App::showDiagnosticRows()
 
     ImGuiEx::RowLabel("Platform Windows Destroyed");
     ImGui::Text("%u", metrics_.platformWindowDestroyCount);
+}
+
+void App::shareDisplayImageWithGraveyard(const std::shared_ptr<NodeTypes::Display::ImageBuffer> &ptr)
+{
+    imageBufferGraveyard_.emplace_back(ptr);
+}
+
+void App::initializeDisplayImage(const NodeTypes::Display::ImageBuffer &buffer, NodeTypes::Display::Image &image)
+{
+    VkImageCreateInfo imageCreateInfo{
+        .sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+        .imageType     = VK_IMAGE_TYPE_2D,
+        .format        = VK_FORMAT_R8G8B8A8_UNORM,
+        .extent        = {buffer.dim.width, buffer.dim.height, 1},
+        .mipLevels     = 1,
+        .arrayLayers   = 1,
+        .samples       = VK_SAMPLE_COUNT_1_BIT,
+        .tiling        = VK_IMAGE_TILING_LINEAR,
+        .usage         = VK_IMAGE_USAGE_SAMPLED_BIT,
+        .sharingMode   = VK_SHARING_MODE_EXCLUSIVE,
+        .initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED,
+    };
+
+    VmaAllocationCreateInfo allocInfo{.flags =
+                                          VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT,
+                                      .usage = VMA_MEMORY_USAGE_AUTO};
+
+    VmaAllocationInfo allocResult{};
+    vmaCreateImage(vmaAllocator_, &imageCreateInfo, &allocInfo, &image.image, &image.allocation, &allocResult);
+
+    // TODO: check result
+
+    image.mapped = allocResult.pMappedData;
+
+    vk::ImageViewCreateInfo viewInfo{
+        .image            = image.image,
+        .viewType         = vk::ImageViewType::e2D,
+        .format           = vk::Format::eR8G8B8A8Unorm,
+        .subresourceRange = {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1},
+    };
+    image.view = device_.createImageView(viewInfo);
+
+    image.descriptor = ImGui_ImplVulkan_AddTexture(*image.view, VK_IMAGE_LAYOUT_GENERAL);
+
+    image.cleanup = [&](){
+        ImGui_ImplVulkan_RemoveTexture(image.descriptor);
+        vmaDestroyImage(vmaAllocator_, image.image, image.allocation);
+    };
 }
 
 void App::showImGui()
@@ -442,7 +495,7 @@ void App::imGuiSettings_WriteAll(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *h
 {
     App &app                                   = *static_cast<App *>(handler->UserData);
     app.mainWindowSettings_.lastProjectPath    = app.getProject().getLastFilepath();
-    app.mainWindowSettings_.lastFocusedGraphId = app.getProject().getLastFocusedGraphId();
+    app.mainWindowSettings_.lastFocusedGraphId = app.getProject().getRawLastFocusedGraphId();
     const auto &settings                       = app.mainWindowSettings_;
 
     out_buf->appendf("[%s][MainWindow]\n", handler->TypeName);
@@ -1157,6 +1210,11 @@ void App::drawFrame()
     }
 
     frameIndex_ = (frameIndex_ + 1) % MAX_FRAMES_IN_FLIGHT;
+}
+
+void App::cleanupImageBufferGraveyard()
+{
+    std::erase_if(imageBufferGraveyard_, [](const auto &ptr) { return !ptr->live.load(std::memory_order_acquire); });
 }
 
 } // namespace Mirael

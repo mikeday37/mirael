@@ -15,6 +15,7 @@ template <typename T> class TripleBuffer
 {
 public:
     // producer methods
+    auto &initialGetAll() noexcept { return slots_; } // used strictly for initialization // TODO: not RAII - replace with factory-ctor
     T &getWriteSlot() noexcept { return slots_[writeIndex_]; }
     void commitWrite() noexcept
     {
