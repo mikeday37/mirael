@@ -316,7 +316,7 @@ void Script::onShowProperties()
         }
     }
 
-    if (ImGui::InputTextMultiline("Script", &script_, ImVec2(0, 0), ImGuiInputTextFlags_AllowTabInput)) {
+    if (ImGui::InputTextMultiline("###script", &script_, ImGui::GetContentRegionAvail(), ImGuiInputTextFlags_AllowTabInput)) {
         otherChange = true;
         if (ScriptCompilationMode::Live == compileMode_) {
             ++scriptVersion_;

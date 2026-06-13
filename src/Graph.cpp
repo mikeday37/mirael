@@ -330,7 +330,6 @@ void Graph::showProperties()
         auto typeName = node->typeName_;
         if (ImGui::CollapsingHeader("Node", ImGuiTreeNodeFlags_DefaultOpen)) {
             node->onShowProperties();
-            ImGui::Separator();
         }
     } else if (ImGui::CollapsingHeader("Graph", ImGuiTreeNodeFlags_DefaultOpen)) {
 
@@ -371,7 +370,7 @@ void Graph::showProperties()
             ImGui::SameLine();
             ImGui::Text("Init Result: %s", initScriptResult_.c_str());
         }
-        ImGui::InputTextMultiline("Init Script", &luaEnvInitScript_, ImVec2(0, 0), ImGuiInputTextFlags_AllowTabInput);
+        ImGui::InputTextMultiline("###init-script", &luaEnvInitScript_, ImGui::GetContentRegionAvail(), ImGuiInputTextFlags_AllowTabInput);
     }
 }
 
