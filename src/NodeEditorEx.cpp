@@ -9,12 +9,36 @@
 
 namespace ne = ax::NodeEditor;
 
-namespace Mirael::NodeEditorEx::StandardNodeHelper
+namespace Mirael::NodeEditorEx
+{
+
+void DrawPinIcon(bool alignToFramePadding)
+{
+    const auto &appStyle = App::get().getStyle();
+
+    ImVec2 pos1 = ImGui::GetCursorPos();
+    if (alignToFramePadding) {
+        ImVec2 prePos = pos1;
+        prePos.y += ImGui::GetStyle().FramePadding.y;
+        ImGui::SetCursorPos(prePos);
+    }
+
+    ax::Widgets::Icon({appStyle.values.pinIconSize, appStyle.values.pinIconSize}, ax::Drawing::IconType::Circle, false,
+                      appStyle.colors.pinIconColor);
+
+    if (alignToFramePadding) {
+        ImVec2 pos2    = ImGui::GetCursorPos();
+        ImVec2 postPos = {pos2.x, pos1.y};
+        ImGui::SetCursorPos(postPos);
+    }
+}
+
+namespace StandardNodeHelper
 {
 
 void Builder::begin()
 {
-    const auto &style = ImGui::GetStyle();
+    const auto &style   = ImGui::GetStyle();
     pinDecorationWidth_ = App::get().getStyle().values.pinIconSize + style.ItemSpacing.x;
 
     ne::BeginNode(node_.getId());
@@ -95,23 +119,18 @@ void Builder::end()
     drawList->AddLine(ImVec2(ul.x, lr.y - 0.5f), ImVec2(lr.x - 1, lr.y - 0.5f), ImColor(255, 255, 255, 96 * alpha / (3 * 255)), 1.0f);
 }
 
-void Builder::drawIcon()
+float Builder::getMiddleSpacing(bool hasInputs, float maxInputWidth, float extraMiddleWidth, float maxOutputWidth) const
 {
-    const auto &style = App::get().getStyle();
-    ax::Widgets::Icon({style.values.pinIconSize, style.values.pinIconSize}, ax::Drawing::IconType::Circle, false,
-                      style.colors.pinIconColor);
-}
-
-float Builder::getMiddleSpacing(bool hasInputs, float maxInputWidth, float extraMiddleWidth, float maxOutputWidth)
-{
-    const auto &appStyle = App::get().getStyle();
+    const auto &appStyle      = App::get().getStyle();
     float expectedMiddleWidth = (hasInputs ? appStyle.values.pinColumnSpacing : 0) + extraMiddleWidth;
-    float expectedTotalWidth = maxInputWidth + expectedMiddleWidth + maxOutputWidth + (hasInputs ? 2.0f : 1.0f) * pinDecorationWidth_;
-    float headerExcessWidth = headerContentWidth_ + appStyle.values.nodeHeaderIndent - expectedTotalWidth;
+    float expectedTotalWidth  = maxInputWidth + expectedMiddleWidth + maxOutputWidth + (hasInputs ? 2.0f : 1.0f) * pinDecorationWidth_;
+    float headerExcessWidth   = headerContentWidth_ + appStyle.values.nodeHeaderIndent - expectedTotalWidth;
     if (headerExcessWidth > 0)
         return expectedMiddleWidth + headerExcessWidth;
     else
         return expectedMiddleWidth;
 }
 
-} // namespace Mirael::NodeEditorEx::StandardNodeHelper
+} // namespace StandardNodeHelper
+
+} // namespace Mirael::NodeEditorEx

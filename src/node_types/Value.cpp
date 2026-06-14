@@ -5,6 +5,7 @@
 
 #include "data.h"
 #include "Value.h"
+#include "NodeEditorEx.h"
 
 namespace ne = ax::NodeEditor;
 
@@ -23,16 +24,17 @@ void Value::onShow()
 {
     ne::BeginNode(getId());
     ImGui::PushID(getIdAsPointer());
+    ImGui::AlignTextToFramePadding();
     ImGui::Text("Value:");
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(24.0f * ImGui::CalcTextSize("0").x);
-    if (ImGui::InputText("###value", &value_)) {
+    ImGui::SetNextItemWidth(ImGui::CalcTextSize(value_.c_str()).x + 2 * ImGui::CalcTextSize("0").x);
+    if (ImGui::InputText("###value", &value_, ImGuiInputTextFlags_NoHorizontalScroll)) {
         raiseModified(ChangeImpact::NodeConfig);
         postValue();
     }
     ImGui::SameLine();
     ne::BeginPin(outPinId_, ne::PinKind::Output);
-    ImGui::Text("out ->");
+    NodeEditorEx::DrawPinIcon(true);
     ne::EndPin();
     ImGui::PopID();
     ne::EndNode();

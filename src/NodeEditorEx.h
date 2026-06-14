@@ -10,6 +10,8 @@
 namespace Mirael::NodeEditorEx
 {
 
+void DrawPinIcon(bool alignToFramePadding = false);
+
 namespace StandardNodeHelper
 {
 
@@ -31,9 +33,9 @@ public:
 
     void end();
 
-    void drawIcon();
+    void drawIcon() { ::Mirael::NodeEditorEx::DrawPinIcon(); }
 
-    float getMiddleSpacing(bool hasInputs, float maxInputWidth, float extraMiddleWidth, float maxOutputWidth);
+    float getMiddleSpacing(bool hasInputs, float maxInputWidth, float extraMiddleWidth, float maxOutputWidth) const;
 
 private:
     Node &node_;
