@@ -238,6 +238,9 @@ int ScriptEnv::l_outputNewIndex(lua_State *L)
 
 int ScriptEnv::l_outputCall(lua_State *L)
 {
+    // NOTE: buf can be null in both usage paths - this is not an error.  It is a consequence of the
+    // 'eventual consistency' design approach, and occurs when pins are added before a corresponding execution plan update.
+
     auto *self        = static_cast<ScriptEnv *>(lua_touserdata(L, lua_upvalueindex(1)));
     auto &pins        = *self->currentOutPins_;
     const int numPins = static_cast<int>(pins.size());
@@ -257,7 +260,10 @@ int ScriptEnv::l_outputCall(lua_State *L)
             auto *buf  = self->runContext_.getOutput(pinId);
             if (buf)
                 buf->setValueFromLuaStack(); // pops the value from the Lua stack and sets the buffer to that value
+            else
+                lua_pop(L, 1); // if there's no buffer yet, harmlessly pop and discard the value
         }
+        assert(lua_gettop(L) == 1); // should have popped all arguments by now
 
         return 0;
     } else {
@@ -269,6 +275,7 @@ int ScriptEnv::l_outputCall(lua_State *L)
             else
                 lua_pushnil(L);
         }
+        assert(lua_gettop(L) == 1 + pins.size()); // should have pushed exactly one value per pin
 
         return numPins;
     }
