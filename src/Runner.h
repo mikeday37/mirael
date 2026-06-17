@@ -1,6 +1,8 @@
 #pragma once
 
 #include <atomic>
+#include <chrono>
+#include <condition_variable>
 #include <memory>
 #include <thread>
 #include <unordered_map>
@@ -69,14 +71,24 @@ public:
     }
     void stop()
     {
-        if (thread_)
+        if (thread_) {
             thread_->request_stop();
+            wakeFromFrameWait();
+        }
         thread_.reset();
     }
-    void adjustRunRate(RunRateSetting newSetting);
+    void adjustRunRate(RunRateSetting newSetting)
+    {
+        pendingRunRate_.postNew(std::make_unique<RunRateSetting>(newSetting));
+        wakeFromFrameWait();
+    }
     void onNewUIFrame();
     void queueDelta(std::unique_ptr<ResourceDelta> delta) { deltaQueue_.enqueue(std::move(delta)); }
-    void postPlan(std::unique_ptr<ExecutionPlan> newPlan) { pendingPlan_.postNew(std::move(newPlan)); }
+    void postPlan(std::unique_ptr<ExecutionPlan> newPlan)
+    {
+        pendingPlan_.postNew(std::move(newPlan));
+        wakeFromFrameWait();
+    }
     std::unique_ptr<std::string> tryAcceptInitScriptResult() { return initScriptResult_.tryAcceptLatest(); }
 
 private:
@@ -102,9 +114,17 @@ private:
     // main operations
     void mainLoop(std::stop_token st);
 
+    using frameClock_t = std::chrono::steady_clock;
+    bool waitForNextFrame(frameClock_t::time_point frameStart); // returns true only if the next frame is should now occur
+    void wakeFromFrameWait()
+    {
+        std::lock_guard lock(frameWaitMutex_);
+        frameWaitWakeUp_ = true;
+        frameWaitCV_.notify_one();
+    }
+
     void updatePlan();
     void executeFrame(std::stop_token st);
-    void delayFrame(std::stop_token st);
 
     void applyDelta(ResourceDelta &delta);
     void prepareRunContext();
@@ -118,7 +138,19 @@ private:
     std::unordered_map<PinId, std::vector<const ValueBuffer *>> inputsBackingVectors_;
     NodeCore::RunContext runContext_{};
     RunRateSetting runRate_ = {.rateMode = RunRateMode::Disabled, .desiredFramesPerSecond = 60.0f};
+    Mailbox<RunRateSetting> pendingRunRate_;
     std::optional<std::jthread> thread_{};
+
+    // frame wait handling
+    std::condition_variable frameWaitCV_;
+    std::mutex frameWaitMutex_;
+    bool frameWaitWakeUp_ = false; // guarded by frameWaitMutex_
+
+    void updateRunRate()
+    {
+        if (auto taken = pendingRunRate_.tryAcceptLatest())
+            runRate_ = *taken;
+    }
 
     // lua
     std::optional<ScriptEnv> scriptEnv_{};

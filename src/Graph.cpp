@@ -350,13 +350,15 @@ void Graph::showProperties()
         }
         if (runRate_.rateMode != priorMode) {
             raiseModified(ChangeImpact::GraphRunRate);
+            runner_.adjustRunRate(runRate_);
         }
 
         const float priorFrameRateSetting = runRate_.desiredFramesPerSecond;
         ImGui::InputFloat("Desired FPS", &runRate_.desiredFramesPerSecond, 0.0f, 0.0f, "%.7g");
-        runRate_.desiredFramesPerSecond = std::clamp(runRate_.desiredFramesPerSecond, 0.001f, 1e6f);
+        runRate_.desiredFramesPerSecond = std::clamp(runRate_.desiredFramesPerSecond, 0.0f, 1e6f);
         if (fabs(priorFrameRateSetting - runRate_.desiredFramesPerSecond) > 1e-9f && RunRateMode::SetRate == runRate_.rateMode) {
             raiseModified(ChangeImpact::GraphRunRate);
+            runner_.adjustRunRate(runRate_);
         }
         ImGui::SameLine();
         ImGuiEx::ToolTipHint("Only used if Run Rate Mode = Set Rate.");
@@ -370,7 +372,8 @@ void Graph::showProperties()
             ImGui::SameLine();
             ImGui::Text("Init Result: %s", initScriptResult_.c_str());
         }
-        ImGui::InputTextMultiline("###init-script", &luaEnvInitScript_, ImGui::GetContentRegionAvail(), ImGuiInputTextFlags_AllowTabInput);
+        ImGui::InputTextMultiline("###init-script", &luaEnvInitScript_, ImGui::GetContentRegionAvail(),
+                                  ImGuiInputTextFlags_AllowTabInput);
     }
 }
 

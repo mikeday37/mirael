@@ -1,5 +1,6 @@
 #include "pch.h"
 
+#include <cmath>
 #include <memory>
 
 #include "Runner.h"
@@ -21,11 +22,6 @@ Runner::~Runner()
     // the above is required before the lua state autodestructs
 }
 
-void Runner::adjustRunRate(RunRateSetting newSetting)
-{
-    // TODO: impl
-}
-
 void Runner::onNewUIFrame()
 {
     // TODO: impl - will be needed when runRate_.rateMode == UIRate
@@ -36,19 +32,74 @@ void Runner::mainLoop(std::stop_token st)
     updatePlan();
 
     while (!st.stop_requested()) {
+        // start a frame and remember when we started it
+        const auto frameStart = frameClock_t::now();
         executeFrame(st);
-        if (st.stop_requested())
-            return;
-        updatePlan();
-        if (runRate_.rateMode != RunRateMode::Unlimited) {
-            delayFrame(st);
+
+        // enter next frame wait loop
+        do {
+            // early out if stop requested
+            if (st.stop_requested())
+                return;
+
+            // always update plan and run rate after frame and during each wakeup during the wait to next frame
             updatePlan();
-        }
-        // why update the plan twice in the loop body?
-        // if we only update before the frame delay, the lag before using the latest plan will often be greater than necessary.
-        // if we only update after the delay, then the time taken to update the plan may unnecessarily extend the frame delay if
-        // it could have been handled before the delay.
+            updateRunRate();
+        } while (!waitForNextFrame(frameStart));
     }
+}
+
+bool Runner::waitForNextFrame(frameClock_t::time_point frameStart)
+{
+    std::optional<float> fps;
+
+    auto waitForeverOrWokenUp = [this]() {
+        std::unique_lock lock(frameWaitMutex_);
+        frameWaitCV_.wait(lock, [this]() { return frameWaitWakeUp_; });
+        frameWaitWakeUp_ = false;
+    };
+
+    switch (runRate_.rateMode) {
+    case RunRateMode::Unlimited:
+        return true; // no delay, immediately run next frame
+
+    case RunRateMode::Disabled: {
+        waitForeverOrWokenUp();
+        return false; // delay forever (unless or until run rate setting changes)
+    }
+
+    default:
+        assert(false); // unknown rate mode
+        fps = 60.0f;   // we'll handle it like UI Rate in the unlikely case this happens in release
+        break;
+
+    case RunRateMode::UIRate:
+        fps = 60.0f; // TODO: a future update will synchronize this more closely with the actual UI frame present timing
+        break;
+
+    case RunRateMode::SetRate:
+        fps = runRate_.desiredFramesPerSecond;
+        break;
+    }
+
+    assert(fps); // frame rate should always be set by this point
+
+    // if the framerate is degenerate (negative, too small, or not finite) wait forever or until woken (to allow setting change)
+    if (!std::isfinite(*fps) || *fps <= 1e-8f) {
+        waitForeverOrWokenUp();
+        return false;
+    }
+
+    // otherwise, we do a proper framerate wait
+    auto waitpoint = frameStart + std::chrono::duration_cast<frameClock_t::duration>(std::chrono::duration<float>(1.0f / *fps));
+    {
+        std::unique_lock lock(frameWaitMutex_);
+        frameWaitCV_.wait_until(lock, waitpoint, [this]() { return frameWaitWakeUp_; });
+        frameWaitWakeUp_ = false;
+    }
+
+    // only signal we're ready for the next frame if we actually passed the waitpoint
+    return frameClock_t::now() >= waitpoint;
 }
 
 void Runner::updatePlan()
@@ -94,12 +145,6 @@ void Runner::executeFrame(std::stop_token st)
         if (st.stop_requested())
             return;
     }
-}
-
-void Runner::delayFrame(std::stop_token st)
-{
-    // TODO: impl - for now we're just using a hard-coded delay to avoid CPU waste
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000 / 90));
 }
 
 void Runner::applyDelta(ResourceDelta &delta)
