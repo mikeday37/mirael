@@ -4,6 +4,7 @@
 
 #include "App.h"
 #include "Display.h"
+#include "NodeEditorEx.h"
 
 namespace ne = ax::NodeEditor;
 
@@ -16,7 +17,7 @@ void Display::onShow()
 {
     ne::BeginNode(getId());
     ne::BeginPin(inPinId_, ne::PinKind::Input);
-    ImGui::TextUnformatted("->");
+    NodeEditorEx::DrawPinIcon(false);
     ne::EndPin();
     ImGui::SameLine();
 
@@ -74,7 +75,7 @@ void Display::displayLatestImage()
     // draw the latest image
     // TODO: avoid drawing initial image the core hasn't written to
     currentImageBuffer_->lastDisplayFrameWaitCount = App::get().getFrameWaitCount();
-    auto result = currentImageBuffer_->images.fetchLatestReadSlot();
+    auto result                                    = currentImageBuffer_->images.fetchLatestReadSlot();
     ImVec2 size{static_cast<float>(currentImageBuffer_->dim.width), static_cast<float>(currentImageBuffer_->dim.height)};
     auto *dl = ImGui::GetWindowDrawList();
     dl->AddCallback(io.DrawCallback_SetSamplerNearest, nullptr); // TODO: may want to use linear if zoomed out
@@ -91,9 +92,9 @@ void Display::createShareAndPostImageBuffer()
         App::get().initializeDisplayImage(*currentImageBuffer_,
                                           slot); // TODO: not RAII - replace initialGetAll() with factory-ctor pattern
     auto carrier    = std::make_unique<BufferCarrier>();
-    carrier->buffer = currentImageBuffer_.get();                    // carrier destruction will mark buffer dead
-    channel_->pendingBufferCarrier.postNew(std::move(carrier));     // buffer made available to core via carrier
-    App::get().acceptNewImageBuffer(currentImageBuffer_); // buffer can now outlive node
+    carrier->buffer = currentImageBuffer_.get();                // carrier destruction will mark buffer dead
+    channel_->pendingBufferCarrier.postNew(std::move(carrier)); // buffer made available to core via carrier
+    App::get().acceptNewImageBuffer(currentImageBuffer_);       // buffer can now outlive node
 
     // the above sequence ensures that the ImageBuffer is destroyed by the UI, but not before Core is either done with it
     // or never receives it (in the case where Carrier was destroyed by being overwritten in the mailbox).  This is essential, because
@@ -128,11 +129,11 @@ void Display::Core::onFrame(const RunContext &context)
         auto buffer = currentBufferCarrier_ ? currentBufferCarrier_->buffer : nullptr;
         bool ready  = buffer && buffer->dim == info.dim;
         if (ready) {
-            auto &slot = buffer->images.getWriteSlot();
-            auto *dest = static_cast<uint8_t *>(slot.mapped); // uses rowPitch
-            auto *src = static_cast<const uint8_t *>(info.pixelData); // linear, packed
+            auto &slot              = buffer->images.getWriteSlot();
+            auto *dest              = static_cast<uint8_t *>(slot.mapped);          // uses rowPitch
+            auto *src               = static_cast<const uint8_t *>(info.pixelData); // linear, packed
             const uint32_t srcPitch = info.dim.width * 4;
-            const auto *end = dest + info.dim.height * slot.rowPitch;
+            const auto *end         = dest + info.dim.height * slot.rowPitch;
             for (; dest < end; dest += slot.rowPitch, src += srcPitch)
                 std::memcpy(dest, src, srcPitch);
             // the above assumes no row padding, which the UI is currently expected to ensure

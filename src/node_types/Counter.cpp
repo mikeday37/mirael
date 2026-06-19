@@ -3,6 +3,7 @@
 #include "ine/imgui_node_editor.h"
 
 #include "Counter.h"
+#include "NodeEditorEx.h"
 
 namespace ne = ax::NodeEditor;
 
@@ -28,7 +29,7 @@ void Counter::onShow()
     ImGui::Text("Counter: %d", getValue());
     ImGui::SameLine();
     ne::BeginPin(outPinId_, ne::PinKind::Output);
-    ImGui::Text("->");
+    NodeEditorEx::DrawPinIcon(false);
     ne::EndPin();
     ImGui::PopID();
     ne::EndNode();
@@ -62,8 +63,7 @@ void Counter::Core::onFrame(const RunContext &context)
 {
     acceptLatestConfig(); // gets latest config from the channel (if any)
 
-    // TODO: note: the below logic is likely flawed - but not worth resolving at the moment because this is a temporary/throwaway node
-    // type
+    // TODO: note: the below logic is flawed - but not worth resolving at the moment because this is a temporary/throwaway node type
     value_ += config_.step;
     const value_t range = 1 + config_.maxValue - config_.minValue;
     if (config_.clipMax && value_ > config_.maxValue) {

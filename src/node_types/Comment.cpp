@@ -26,8 +26,8 @@ void Comment::onShow()
     ImGui::AlignTextToFramePadding();
     ImGui::Text("Comment:");
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(50.0f * ImGui::CalcTextSize("W").x);
-    if (ImGui::InputText("###comment", &comment_))
+    ImGui::SetNextItemWidth(ImGui::CalcTextSize(comment_.c_str()).x + 2 * ImGui::CalcTextSize("0").x);
+    if (ImGui::InputText("###comment", &comment_, ImGuiInputTextFlags_NoHorizontalScroll))
         raiseModified(ChangeImpact::NodeConfig);
     ImGui::PopID();
     ne::EndNode();

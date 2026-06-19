@@ -4,8 +4,8 @@
 #include "misc/cpp/imgui_stdlib.h"
 
 #include "data.h"
-#include "Value.h"
 #include "NodeEditorEx.h"
+#include "Value.h"
 
 namespace ne = ax::NodeEditor;
 
