@@ -2,6 +2,8 @@
 
 Mirael is a high-performance, **live** visual dataflow system.
 
+- Watch on YouTube: [Mirael - Live Graphics Code Editing - Early Example](https://youtu.be/C6JOU6fxG5I)
+
 ## Purpose and Audience
 
 The system is intended for technical artists and graphics developers who want to experiment with realtime graphics in an environment
@@ -22,6 +24,8 @@ while the system continues running at full framerate.
 Mirael is built in C++20, using Dear ImGui with the GLFW and Vulkan backends.  LuaJIT is used for scripting.  VulkanMemoryAllocator is
 used for GPU memory allocations.  Each Graph executes in its own thread, and every Node uses only lock-free methods for cross-thread
 communication.
+
+For links, see: [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)
 
 ## Architecture and Documentation
 

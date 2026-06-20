@@ -4,6 +4,11 @@ namespace Mirael::Fonts
 namespace
 {
 
+/*
+ * 'Inter-Regular.ttf' is Copyright (c) 2016 The Inter Project Authors (https://github.com/rsms/inter)
+ * This Font Software is licensed under the SIL Open Font License, Version 1.1.  (see /res/fonts/LICENSE.txt)
+ */
+
 // File: 'Inter-Regular.ttf' (411640 bytes)
 // Exported using binary_to_compressed_c.exe -base85 "Inter-Regular.ttf" FONT_INTER_REGULAR_TTF
 static const char FONT_INTER_REGULAR_TTF_compressed_data_base85[335055+1] =
