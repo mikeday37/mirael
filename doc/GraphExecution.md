@@ -50,11 +50,12 @@ will run in the Runner's thread.  Once `createCore()` returns, everything the re
 controlled by the Runner.
 
 For interactive Nodes, the derived Node / Core pair will have to communicate.  To maximize performance, such
-communication must be non-blocking.  This is done by setting up a Channel that is held via `std::shared_ptr<>`
+communication must be lock-free.  This is done by setting up a Channel that is held via `std::shared_ptr<>`
 by both the Node and the Core.  The Channel is a custom type created within `createCore()` and suitable for
 that Node Type's needs.  It is recommended to use the following types for subchannels within the Channel type:
 
-- `std::atomic<>` for communicating latest values, where passing complete change history is not required.
+- `std::atomic<T>` for communicating latest values, where passing complete change history is not required.
+- `Mirael::Mailbox<T>` when `T` is too large/complex to be used with `std::atomic`
 - `moodycamel::ReaderWriterQueue` for communicating lossless streams of events when absolutely required.
 
 #### Execution Plan Updates, Versions, and ResourceDeltas
@@ -121,31 +122,31 @@ outgoing info will be harmlessly freed during the next Plan update if needed.
 
 ## Execution Correctness vs. Design Priorities
 
-While the above design guarantees toplogical correctness for each Frame of Graph execution, it does *not*
-gaurantee that each node will have a configuration consistent with the Plan Version when that Plan is executed.
+While the above design guarantees topological correctness for each Frame of Graph execution, it does *not*
+guarantee that each Core will have a configuration consistent with the Plan Version when that Plan is executed.
 This is considered an acceptable situation given Mirael's design priorities, which are as follows:
 
-Essential Priorites:
-- High-performance real-time UI and graphics.
-- Tweaking settings in real-time.
-- Hot reload.
-- Freedom to experiment without fearing "breaking the system".
-- Eventual consistency - if the graph hasn't been modified, then the execution of the graph
-should be consistent with its current layout and node configurations within 2 runs.
+- Essential Priorites:
+  - High-performance real-time UI and graphics.
+  - Tweaking settings in real-time.
+  - Hot reload.
+  - Freedom to experiment without fearing "breaking the system".
+  - Eventual consistency - if the graph hasn't been modified, then the execution of the graph
+should be consistent with its current layout and node configurations within 2 frames.
 
-Preferred Priorities:
-- The graph execution *should* be consistent with its current state where possible.
+- Preferred Priorities:
+  - The graph execution *should* be consistent with its current state where possible.
 
-Relatively Unimportant:
-- Absolute correctness for every frame while the graph is being modified.
+- Relatively Unimportant:
+  - Absolute correctness for every frame while the graph is being modified.
 
 Given the above, we've chosen to stick with a relatively simple and efficient communication and run model that
-gaurantees consistency when modifications are not happening, while allowing realtime modifications which may
+guarantees consistency when modifications are not happening, while allowing realtime modifications which may
 have unexpected side effects in edge cases.
 
 It is important that Node Core developers are aware of this potential inconsistency and defensively implement
 Cores accordingly.  For the currently envisioned use cases of the system, however, such considerations do not
-appear to pose a signficant problem.
+appear to pose a significant problem.
 
 ## Execution Lifecycle Summary
 

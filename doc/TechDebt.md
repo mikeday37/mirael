@@ -5,7 +5,7 @@ relevant code comments can use to point to this document.
 
 ## TD1: Graph-level Lua Init Scripts
 
-See commit: <TBD>
+See commit: e4948fbf81a2e8d388a86d06e860e4500fdbde85
 
 The design and implementation of Lua Init Scripts was rushed.  This resulted in a new channel of comms from the Runner back to the Graph
 (initScriptResult_), as well as the onLuaStateReset() virtual for NodeCore, which only ScriptCore uses.  ScriptCore uses it rather

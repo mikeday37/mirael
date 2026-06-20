@@ -58,7 +58,7 @@ available image of the right dimensions.  If no such is available, a request for
 core will simply move on.  It won't wait, and what it would have drawn with the new dimensions for that frame will be lost.
 
 This means that there will be missed initial frames within individual Display Nodes on startup and whenever image dimensions change.
-In fact, there is no gaurantee that images of continuously changing dimensions will ever be displayed.  This is an acceptable
+In fact, there is no guarantee that images of continuously changing dimensions will ever be displayed.  This is an acceptable
 limitation for the first pass, as we expect image dimensions to change infrequently due to user input, not per frame (as with graph
 topology changes).
 
