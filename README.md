@@ -94,10 +94,21 @@ mirael
 - Select a Node to view and edit its properties in the Properties window.
 - With no Node selected, you can view/edit the Graph Properties instead.
 - Use the mouse wheel to zoom in/out.
-- Scroll the Graph by dragging an empty spot with the right mouse button.
+- Pan the Graph by dragging an empty spot with the right mouse button.
 - Right click an empty spot and choose "Fit Content" to fit the entire Graph into view.
 
+### Configuring the UI
+
 All windows are dockable and multiple viewports are enabled.  Only the Project Explorer cannot be closed.
+
+By default, the Graph takes up the most space, which you generally want if you're just watching it run.
+
+However, when you're editing scripts, you will want to configure things so that the Properties window is
+much larger.  An easy way to do so is to just drag the Properties tab to the right of the main window, and
+dock it by itself on the right.  Or, drag it outside the window entirely, which can be especially handy
+if you have multiple monitors.
+
+Mirael stores UI configuration separately from Project/Graph files (via `imgui.ini`).
 
 ### Lua and Dataflow
 
