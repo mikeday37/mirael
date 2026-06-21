@@ -71,7 +71,7 @@ Ensure that the following environment variables are set up correctly for your Vu
 
 LuaJIT is sometimes flagged as a virus by antivirus software, both during the build and in the resulting executable.
 This is a known false positive, and is not uncommon with just-in-time compiler systems that generate and execute
-machine code at runtime.  Mirael links directly to the tagged v2.1 release of LuaJIT as a submodule
+machine code at runtime.  Mirael links directly to the official v2.1 branch of LuaJIT as a submodule
 (see [`.gitmodules`](.gitmodules)) - it is not malware.  You may need to add folder exclusions for the following
 directories to build and run Mirael:
 
