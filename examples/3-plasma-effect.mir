@@ -1,0 +1,367 @@
+{
+    "graphs": {
+        "1": {
+            "fps": 60.0,
+            "initlua": "--for i=1,100 do print() end\nprint('==============================')\n\nffi = require('ffi')\nffi.cdef[[\nvoid *memcpy(void *dst, void *src, size_t len);\n]]\n\nfunction newimage(w,h)\n  w,h=tonumber(w),tonumber(h)\n  assert(w and h, \"newimage: w and h must be numbers\")\n  if w>0 and h>0 and w<=2000 and h<=2000 then\n    return {_tag='image',w=w,h=h,\n      buf=ffi.new('uint32_t[?]', w*h)}\n  else\n    return nil\n  end\nend\n\nfunction copyimage(src)\n  if src._tag ~= 'image' then return nil end\n  local dst = newimage(src.w, src.h)\n  ffi.C.memcpy(dst.buf, src.buf, src.w * src.h * 4)\n  return dst\nend\n\nfunction putpixel(image,x,y,r,g,b,a)\n  x,y = math.floor(tonumber(x)),math.floor(tonumber(y))\n  r,g,b,a = tonumber(r),tonumber(g),tonumber(b),tonumber(a) or 255\n  if x >= 0 and y >= 0 and x < image.w and y < image.h then\n    image.buf[y * image.w + x] = bit.bor(\n      bit.lshift(a, 24), bit.lshift(b, 16), bit.lshift(g, 8), r\n    )\n  end\nend\n\nfunction getpixel(image,x,y)\n  x,y = math.floor(tonumber(x)),math.floor(tonumber(y))\n  if x >= 0 and y >= 0 and x < image.w and y < image.h then\n    local v = image.buf[y * image.w + x]\n\tlocal r = bit.band(v, 255)\n    local g = bit.band(bit.rshift(v, 8), 255)\n    local b = bit.band(bit.rshift(v, 16), 255)\n    local a = bit.band(bit.rshift(v, 24), 255)\n    return r,g,b,a\n  else\n    return 0,0,0,0\n  end\nend\n\nfunction box(image,x1,y1,x2,y2,r,g,b,a)\n  x1,y1,x2,y2 = tonumber(x1),tonumber(y1),tonumber(x2),tonumber(y2)\n  r,g,b,a = tonumber(r),tonumber(g),tonumber(b),tonumber(a) or 255\n  for x=x1,x2 do for y=y1,y2 do putpixel(image,x,y,r,g,b,a) end end\nend\n\nfunction frame(image,x1,y1,x2,y2,r,g,b,a)\n  x1,y1,x2,y2 = tonumber(x1),tonumber(y1),tonumber(x2),tonumber(y2)\n  r,g,b,a = tonumber(r),tonumber(g),tonumber(b),tonumber(a) or 255\n  for x=x1,x2 do\n    putpixel(image,x,y1,r,g,b,a)\n    putpixel(image,x,y2,r,g,b,a)\n  end\n  for y=y1+1,y2-1 do\n    putpixel(image,x1,y,r,g,b,a)\n    putpixel(image,x2,y,r,g,b,a)\n  end\nend\n\nfunction lerp(a,a1,a2,b1,b2) -- maps a from the range [a1,a2] to the range [b1,b2]\n  if a1==a2 then return b1 end\n  return math.floor(((a-a1)/(a2-a1))*(b2-b1)+b1)\nend\n",
+            "links": {
+                "116": {
+                    "a": 115,
+                    "b": 113
+                },
+                "12": {
+                    "a": 11,
+                    "b": 2
+                },
+                "121": {
+                    "a": 24,
+                    "b": 118
+                },
+                "124": {
+                    "a": 120,
+                    "b": 123
+                },
+                "19": {
+                    "a": 16,
+                    "b": 18
+                },
+                "20": {
+                    "a": 6,
+                    "b": 9
+                },
+                "28": {
+                    "a": 24,
+                    "b": 27
+                },
+                "29": {
+                    "a": 6,
+                    "b": 25
+                },
+                "30": {
+                    "a": 16,
+                    "b": 22
+                },
+                "61": {
+                    "a": 46,
+                    "b": 47
+                },
+                "64": {
+                    "a": 38,
+                    "b": 63
+                },
+                "65": {
+                    "a": 34,
+                    "b": 36
+                },
+                "69": {
+                    "a": 46,
+                    "b": 66
+                },
+                "73": {
+                    "a": 72,
+                    "b": 32
+                },
+                "80": {
+                    "a": 34,
+                    "b": 78
+                },
+                "83": {
+                    "a": 77,
+                    "b": 82
+                },
+                "90": {
+                    "a": 77,
+                    "b": 87
+                },
+                "94": {
+                    "a": 89,
+                    "b": 93
+                },
+                "95": {
+                    "a": 6,
+                    "b": 88
+                },
+                "98": {
+                    "a": 24,
+                    "b": 75
+                }
+            },
+            "name": "Graph 1",
+            "nodes": {
+                "1": {
+                    "pins": {
+                        "in": 2
+                    },
+                    "type": "display",
+                    "x": 1545.0,
+                    "y": -689.0
+                },
+                "114": {
+                    "config": {
+                        "value": "5"
+                    },
+                    "pins": {
+                        "out": 115
+                    },
+                    "type": "value",
+                    "x": 691.0,
+                    "y": 127.0
+                },
+                "117": {
+                    "config": {
+                        "compile": "live",
+                        "enabled": true,
+                        "errors": "visual",
+                        "inline": true,
+                        "inputs": "in",
+                        "lang": "lua",
+                        "name": "mask red to white",
+                        "outputs": "out",
+                        "script": "local image = copyimage(input[1])\nfor x=0,image.w-1 do for y=0,image.h-1 do\n  local r,g,b,a = getpixel(image,x,y)\n  putpixel(image,x,y,r,r,r,255)\nend end\noutput(image)"
+                    },
+                    "pins": {
+                        "in1": 118,
+                        "out1": 120
+                    },
+                    "type": "script",
+                    "x": 1350.0,
+                    "y": 9.0
+                },
+                "122": {
+                    "pins": {
+                        "in": 123
+                    },
+                    "type": "display",
+                    "x": 1377.0,
+                    "y": 96.0
+                },
+                "13": {
+                    "config": {
+                        "compile": "live",
+                        "enabled": true,
+                        "errors": "visual",
+                        "inline": true,
+                        "inputs": "",
+                        "lang": "lua",
+                        "name": "circly",
+                        "outputs": "out,d",
+                        "script": "local g=output()\nlocal live=true\nlocal d,s=384,4\nif not g or live then g=newimage(d,d) end\nlocal cx,cy = g.w/2, g.h/2\nfor x=0,g.w-1 do for y=0,g.h-1 do\n  local dx,dy=cx-x,cy-y\n  local d = math.sqrt(dx*dx+dy*dy)\n  local c = d*s % 256\n  putpixel(g,x,y,c,c,c)\nend end\noutput[1],output[2]=g,d"
+                    },
+                    "pins": {
+                        "out1": 16,
+                        "out2": 46
+                    },
+                    "type": "script",
+                    "x": 673.0,
+                    "y": -229.0
+                },
+                "17": {
+                    "pins": {
+                        "in": 18
+                    },
+                    "type": "display",
+                    "x": 836.0,
+                    "y": -697.0
+                },
+                "21": {
+                    "config": {
+                        "compile": "live",
+                        "enabled": true,
+                        "errors": "visual",
+                        "inline": true,
+                        "inputs": "image,pal",
+                        "lang": "lua",
+                        "name": "render with palette",
+                        "outputs": "out",
+                        "script": "local image=copyimage(input[1])\nlocal pal=input[2]\nfor x=0,image.w-1 do for y=0,image.h-1 do\n  local r,g,b,a = getpixel(image,x,y)\n  local c=bit.band(r, 255)\n  r,g,b,a = pal[c*4],pal[c*4+1],pal[c*4+2],pal[c*4+3]\n  putpixel(image,x,y,r,g,b,a)\nend end\noutput(image)"
+                    },
+                    "pins": {
+                        "in1": 22,
+                        "in2": 25,
+                        "out1": 24
+                    },
+                    "type": "script",
+                    "x": 1296.0,
+                    "y": -234.0
+                },
+                "26": {
+                    "pins": {
+                        "in": 27
+                    },
+                    "type": "display",
+                    "x": 1694.0,
+                    "y": -688.0
+                },
+                "3": {
+                    "config": {
+                        "compile": "live",
+                        "enabled": true,
+                        "errors": "visual",
+                        "inline": true,
+                        "inputs": "",
+                        "lang": "lua",
+                        "name": "make palette",
+                        "outputs": "pal",
+                        "script": "-- a palette is just a list of rgb\n-- we'll define it as a spread of control colors\n-- each is {index, r,g,b}, where 0 <= index <= 255\n\nlocal pdef = {\n{0,     0,0,0},\n{53,   0,255,255},\n{127,  255,255,0},\n{211,  255,0,255},\n{255,  0,0,0}\n}\n\nlocal pal=output[1]\nif pal==nil then pal=ffi.new('uint8_t[?]',256*4) end\n\nfor i=1,#pdef-1 do\n  local a,b = pdef[i],pdef[i+1]\n  local ai,ar,ag,ab,aa=a[1],a[2],a[3],a[4],a[5] or 255\n  local bi,br,bg,bb,ba=b[1],b[2],b[3],b[4],b[5] or 255\n  assert(bi>ai,\"successive indices must increase\")\n  assert(ai>=0,\"indices must be non-negative\")\n  assert(bi<=255,\"indices must not exceed 255\")\n  for j=ai,bi do\n    pal[j*4]=lerp(j,ai,bi,ar,br)\n    pal[j*4+1]=lerp(j,ai,bi,ag,bg)\n    pal[j*4+2]=lerp(j,ai,bi,ab,bb)\n    pal[j*4+3]=lerp(j,ai,bi,aa,ba)\n  end\nend\n\noutput[1]=pal\n"
+                    },
+                    "pins": {
+                        "out1": 6
+                    },
+                    "type": "script",
+                    "x": 1090.0,
+                    "y": -144.0
+                },
+                "31": {
+                    "config": {
+                        "compile": "live",
+                        "enabled": true,
+                        "errors": "visual",
+                        "inline": true,
+                        "inputs": "c,d,n",
+                        "lang": "lua",
+                        "name": "motion",
+                        "outputs": "points",
+                        "script": "local c,d,n=input()\n\nlocal function lissajous(n, c, d)\n    local points = {}\n    local t = c * 0.002\n\n    local cx = d * 0.5\n    local cy = d * 0.5\n    local rx = d * 0.5 - 1\n    local ry = d * 0.5 - 1\n\n    local phi  = 1.6180339887  -- golden ratio\n    local rt2  = 1.4142135623  -- √2\n    local rt3  = 1.7320508075  -- √3\n\n    for i = 1, n do\n        local fi = i * phi           -- golden ratio spread: never evenly spaced\n\n        local ax = 1 + (fi % 3)      -- continuous, irrational x frequency\n        local ay = 1 + (fi * rt2 % 5) -- irrational y frequency, different basis\n\n        local phase_x = fi * rt3     -- irrational phase offset per point\n        local phase_y = fi * phi\n\n        local speed = 0.7 + (fi % 1.3)  -- each point drifts at a unique speed\n\n        local x = cx + rx * math.sin(ax * t * speed + phase_x)\n        local y = cy + ry * math.sin(ay * t * speed + phase_y)\n\n        points[i] = { x, y }\n    end\n\n    return points\nend\n\noutput(lissajous(n,c,d/2))"
+                    },
+                    "pins": {
+                        "in1": 32,
+                        "in2": 66,
+                        "in3": 113,
+                        "out1": 34
+                    },
+                    "type": "script",
+                    "x": 899.0,
+                    "y": -70.0
+                },
+                "35": {
+                    "config": {
+                        "compile": "live",
+                        "enabled": true,
+                        "errors": "visual",
+                        "inline": true,
+                        "inputs": "points,d",
+                        "lang": "lua",
+                        "name": "show motion",
+                        "outputs": "out",
+                        "script": "local p,d=input()\nlocal image=newimage(d,d)\nlocal s=3\nfor i=1,#p do\n  local x,y=p[i][1],p[i][2]\n  for i=0,s-1 do\n    frame(image,x+i,y+i,x+d/2-i,y+d/2-i,255,255,255)\n  end\nend\noutput[1]=image"
+                    },
+                    "pins": {
+                        "in1": 36,
+                        "in2": 47,
+                        "out1": 38
+                    },
+                    "type": "script",
+                    "x": 1122.0,
+                    "y": 11.0
+                },
+                "62": {
+                    "pins": {
+                        "in": 63
+                    },
+                    "type": "display",
+                    "x": 1377.0,
+                    "y": 95.0
+                },
+                "71": {
+                    "config": {
+                        "clipMax": false,
+                        "clipMin": false,
+                        "max": 2147483647,
+                        "min": -2147483648,
+                        "step": 1,
+                        "wrap": true
+                    },
+                    "pins": {
+                        "out": 72
+                    },
+                    "type": "counter",
+                    "x": 671.0,
+                    "y": -33.0
+                },
+                "74": {
+                    "config": {
+                        "compile": "live",
+                        "enabled": true,
+                        "errors": "visual",
+                        "inline": true,
+                        "inputs": "src,p",
+                        "lang": "lua",
+                        "name": "plasma",
+                        "outputs": "out",
+                        "script": "local src,p=input()\nlocal d=src.w\n\n    local half = math.floor(d / 2)\n    local dst = newimage(half, half)\n\n    for i = 1, #p do\n        local ox = math.floor(p[i][1])\n        local oy = math.floor(p[i][2])\n\n        for y = 0, half - 1 do\n            for x = 0, half - 1 do\n                local r = getpixel(src, ox + x, oy + y)  -- only red, rest ignored\n                \n                    local dr, dg, db, da = getpixel(dst, x, y)\n                    local nr = (dr + r) % 256\n                    putpixel(dst, x, y, nr, nr, nr)\n                \n            end\n        end\n    end\n\noutput[1]=dst"
+                    },
+                    "pins": {
+                        "in1": 75,
+                        "in2": 78,
+                        "out1": 77
+                    },
+                    "type": "script",
+                    "x": 1533.0,
+                    "y": -86.0
+                },
+                "8": {
+                    "config": {
+                        "compile": "live",
+                        "enabled": true,
+                        "errors": "visual",
+                        "inline": true,
+                        "inputs": "pal",
+                        "lang": "lua",
+                        "name": "show palette",
+                        "outputs": "out",
+                        "script": "local pal,image=input()--,output()\n--local live=true\nif image==nil or live then image=newimage(100,512) end\nfor i=0,255 do\n  local r,g,b,a=pal[i*4],pal[i*4+1],pal[i*4+2],pal[i*4+3]\n  for y=0,1 do for x=0,image.w-1 do\n    putpixel(image,x,y+i*2,r,g,b,a)\n  end end\nend\noutput(image)"
+                    },
+                    "pins": {
+                        "in1": 9,
+                        "out1": 11
+                    },
+                    "type": "script",
+                    "x": 1314.0,
+                    "y": -690.0
+                },
+                "81": {
+                    "pins": {
+                        "in": 82
+                    },
+                    "type": "display",
+                    "x": 1804.0,
+                    "y": -24.0
+                },
+                "86": {
+                    "config": {
+                        "compile": "live",
+                        "enabled": true,
+                        "errors": "visual",
+                        "inline": true,
+                        "inputs": "image,pal",
+                        "lang": "lua",
+                        "name": "render with palette",
+                        "outputs": "out",
+                        "script": "local image=copyimage(input[1])\nlocal pal=input[2]\nfor x=0,image.w-1 do for y=0,image.h-1 do\n  local r,g,b,a = getpixel(image,x,y)\n  local c=bit.band(r, 255)\n  r,g,b,a = pal[c*4],pal[c*4+1],pal[c*4+2],pal[c*4+3]\n  putpixel(image,x,y,r,g,b,a)\nend end\noutput(image)"
+                    },
+                    "pins": {
+                        "in1": 87,
+                        "in2": 88,
+                        "out1": 89
+                    },
+                    "type": "script",
+                    "x": 1745.0,
+                    "y": -179.0
+                },
+                "92": {
+                    "pins": {
+                        "in": 93
+                    },
+                    "type": "display",
+                    "x": 2027.0,
+                    "y": -50.0
+                }
+            },
+            "ratemode": "setrate",
+            "uid": "acb878ad-b2eb-44d2-bca2-228b1c10b8c8",
+            "visible": true,
+            "x": 180.57467651367188,
+            "y": 555.144287109375,
+            "zoom": 0.7543928623199463
+        }
+    }
+}

@@ -1,0 +1,153 @@
+{
+    "graphs": {
+        "1": {
+            "fps": 60.0,
+            "links": {
+                "19": {
+                    "a": 4,
+                    "b": 18
+                },
+                "20": {
+                    "a": 8,
+                    "b": 16
+                },
+                "21": {
+                    "a": 12,
+                    "b": 14
+                },
+                "30": {
+                    "a": 27,
+                    "b": 2
+                },
+                "31": {
+                    "a": 27,
+                    "b": 6
+                },
+                "32": {
+                    "a": 25,
+                    "b": 3
+                },
+                "33": {
+                    "a": 25,
+                    "b": 7
+                }
+            },
+            "name": "Graph 1",
+            "nodes": {
+                "1": {
+                    "config": {
+                        "compile": "live",
+                        "enabled": true,
+                        "errors": "visual",
+                        "inline": true,
+                        "inputs": "in1,in2",
+                        "lang": "lua",
+                        "name": "sum example (calls)",
+                        "outputs": "out",
+                        "script": "-- script for a two input, one output node that simply adds the inputs:\nlocal a,b = input() -- input as a function call reads all inputs\noutput(a + b)       -- output as a function call with at least one parameter sets all outputs\n"
+                    },
+                    "pins": {
+                        "in1": 2,
+                        "in2": 3,
+                        "out1": 4
+                    },
+                    "type": "script",
+                    "x": 1143.0,
+                    "y": 281.0
+                },
+                "13": {
+                    "pins": {
+                        "in": 14
+                    },
+                    "type": "display",
+                    "x": 1392.0,
+                    "y": 632.0
+                },
+                "15": {
+                    "pins": {
+                        "in": 16
+                    },
+                    "type": "display",
+                    "x": 1441.0,
+                    "y": 427.0
+                },
+                "17": {
+                    "pins": {
+                        "in": 18
+                    },
+                    "type": "display",
+                    "x": 1441.0,
+                    "y": 376.0
+                },
+                "24": {
+                    "config": {
+                        "value": "400"
+                    },
+                    "pins": {
+                        "out": 25
+                    },
+                    "type": "value",
+                    "x": 872.0,
+                    "y": 423.0
+                },
+                "26": {
+                    "config": {
+                        "value": "9"
+                    },
+                    "pins": {
+                        "out": 27
+                    },
+                    "type": "value",
+                    "x": 883.0,
+                    "y": 369.0
+                },
+                "5": {
+                    "config": {
+                        "compile": "live",
+                        "enabled": true,
+                        "errors": "visual",
+                        "inline": true,
+                        "inputs": "in1,in2",
+                        "lang": "lua",
+                        "name": "sum example (indexing)",
+                        "outputs": "out",
+                        "script": "-- alternate implementation - use indexing rather than function calls to access one Pin at a time:\noutput[1] = input[1] + input[2]\n"
+                    },
+                    "pins": {
+                        "in1": 6,
+                        "in2": 7,
+                        "out1": 8
+                    },
+                    "type": "script",
+                    "x": 1146.0,
+                    "y": 430.0
+                },
+                "9": {
+                    "config": {
+                        "compile": "live",
+                        "enabled": true,
+                        "errors": "visual",
+                        "inline": true,
+                        "inputs": "",
+                        "lang": "lua",
+                        "name": "counter example",
+                        "outputs": "out",
+                        "script": "-- a simple script which acts as a counter:\nlocal v = output()  -- output as a function call with no parameters reads all outputs\nv = (v or 0) + 1    -- outputs are nil until written, and persist across frames\noutput(v)"
+                    },
+                    "pins": {
+                        "out1": 12
+                    },
+                    "type": "script",
+                    "x": 1142.0,
+                    "y": 600.0
+                }
+            },
+            "ratemode": "setrate",
+            "uid": "d46f422c-51e7-401b-b965-10292772bf04",
+            "visible": true,
+            "x": -77.0,
+            "y": -48.0,
+            "zoom": 1.0
+        }
+    }
+}

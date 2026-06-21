@@ -1,0 +1,170 @@
+{
+    "graphs": {
+        "1": {
+            "fps": 60.0,
+            "initlua": "--for i=1,100 do print() end\nprint('==============================')\n\nffi = require('ffi')\nffi.cdef[[\nvoid *memcpy(void *dst, void *src, size_t len);\n]]\n\nfunction newimage(w,h)\n  w,h=tonumber(w),tonumber(h)\n  assert(w and h, \"newimage: w and h must be numbers\")\n  if w>0 and h>0 and w<=2000 and h<=2000 then\n    return {_tag='image',w=w,h=h,\n      buf=ffi.new('uint32_t[?]', w*h)}\n  else\n    return nil\n  end\nend\n\nfunction copyimage(src)\n  if src._tag ~= 'image' then return nil end\n  local dst = newimage(src.w, src.h)\n  ffi.C.memcpy(dst.buf, src.buf, src.w * src.h * 4)\n  return dst\nend\n\nfunction putpixel(image,x,y,r,g,b,a)\n  x,y = tonumber(x),tonumber(y)\n  r,g,b,a = tonumber(r),tonumber(g),tonumber(b),tonumber(a) or 255\n  if x >= 0 and y >= 0 and x < image.w and y < image.h then\n    image.buf[y * image.w + x] = bit.bor(\n      bit.lshift(a, 24), bit.lshift(b, 16), bit.lshift(g, 8), r\n    )\n  end\nend\n\nfunction box(image,x1,y1,x2,y2,r,g,b,a)\n  x1,y1,x2,y2 = tonumber(x1),tonumber(y1),tonumber(x2),tonumber(y2)\n  r,g,b,a = tonumber(r),tonumber(g),tonumber(b),tonumber(a) or 255\n  for x=x1,x2 do for y=y1,y2 do putpixel(image,x,y,r,g,b,a) end end\nend\n\nfunction frame(image,x1,y1,x2,y2,r,g,b,a)\n  x1,y1,x2,y2 = tonumber(x1),tonumber(y1),tonumber(x2),tonumber(y2)\n  r,g,b,a = tonumber(r),tonumber(g),tonumber(b),tonumber(a) or 255\n  for x=x1,x2 do\n    putpixel(image,x,y1,r,g,b,a)\n    putpixel(image,x,y2,r,g,b,a)\n  end\n  for y=y1+1,y2-1 do\n    putpixel(image,x1,y,r,g,b,a)\n    putpixel(image,x2,y,r,g,b,a)\n  end\nend\n",
+            "links": {
+                "104": {
+                    "a": 99,
+                    "b": 92
+                },
+                "105": {
+                    "a": 103,
+                    "b": 93
+                },
+                "106": {
+                    "a": 58,
+                    "b": 70
+                },
+                "64": {
+                    "a": 61,
+                    "b": 56
+                },
+                "65": {
+                    "a": 63,
+                    "b": 59
+                },
+                "75": {
+                    "a": 73,
+                    "b": 74
+                },
+                "95": {
+                    "a": 94,
+                    "b": 89
+                }
+            },
+            "name": "Graph 1",
+            "nodes": {
+                "100": {
+                    "config": {
+                        "compile": "live",
+                        "enabled": true,
+                        "errors": "visual",
+                        "inline": true,
+                        "inputs": "",
+                        "lang": "lua",
+                        "name": "distance",
+                        "outputs": "out",
+                        "script": "output[1]=function(image,c)\n\tc=c+100000\n  local w,h = image.w,image.h\n  local ws,cdiv=300,150\n  local cx,cy =\n    w/2+ws*math.cos(c/cdiv),\n    h/2+ws*math.sin(c/cdiv)\n  for x=0,w-1 do\n    for y=0,h-1 do\n      local dx,dy=cx-x,cy-y\n      local d = math.sqrt(dx*dx+dy*dy)/1.5 % 255\n      putpixel(image,x,y,255-d/0.2+y*3,d-x+math.sqrt(y)*(y+x/3+c/2.2),55-d,255-d)\n    end\n  end\nend"
+                    },
+                    "pins": {
+                        "out1": 103
+                    },
+                    "type": "script",
+                    "x": 955.0,
+                    "y": -422.0
+                },
+                "55": {
+                    "config": {
+                        "compile": "live",
+                        "enabled": true,
+                        "errors": "visual",
+                        "inline": true,
+                        "inputs": "w,h,c,init",
+                        "lang": "lua",
+                        "name": "prepare background",
+                        "outputs": "out",
+                        "script": "local live = true\nlocal w,h,c,init = input()\nw,h = tonumber(w),tonumber(h),tonumber(c)\n\nlocal image = output[1]\nif not image or image.w ~= w or image.h ~= h or live then\n  image = newimage(w,h)\n  for z=1,1 do\n  init(image,c) end\n  output[1] = image\nend"
+                    },
+                    "pins": {
+                        "in1": 56,
+                        "in2": 59,
+                        "in3": 74,
+                        "in4": 89,
+                        "out1": 58
+                    },
+                    "type": "script",
+                    "x": 904.0,
+                    "y": -664.0
+                },
+                "60": {
+                    "config": {
+                        "value": "2000"
+                    },
+                    "pins": {
+                        "out": 61
+                    },
+                    "type": "value",
+                    "x": 905.0,
+                    "y": -777.0
+                },
+                "62": {
+                    "config": {
+                        "value": "400"
+                    },
+                    "pins": {
+                        "out": 63
+                    },
+                    "type": "value",
+                    "x": 904.0,
+                    "y": -723.0
+                },
+                "69": {
+                    "pins": {
+                        "in": 70
+                    },
+                    "type": "display",
+                    "x": 1183.0,
+                    "y": -771.0
+                },
+                "72": {
+                    "config": {
+                        "clipMax": false,
+                        "clipMin": false,
+                        "max": 2147483647,
+                        "min": -2147483648,
+                        "step": 1,
+                        "wrap": true
+                    },
+                    "pins": {
+                        "out": 73
+                    },
+                    "type": "counter",
+                    "x": 901.0,
+                    "y": -830.0
+                },
+                "90": {
+                    "config": {
+                        "choice": 2,
+                        "dynamic": false,
+                        "enabled": true,
+                        "n": 2
+                    },
+                    "pins": {
+                        "in1": 92,
+                        "in2": 93,
+                        "out": 94
+                    },
+                    "type": "switch",
+                    "x": 892.0,
+                    "y": -328.0
+                },
+                "96": {
+                    "config": {
+                        "compile": "live",
+                        "enabled": true,
+                        "errors": "visual",
+                        "inline": true,
+                        "inputs": "",
+                        "lang": "lua",
+                        "name": "moire pattern",
+                        "outputs": "out",
+                        "script": "output[1]=function(image,c)\n  local w,h = image.w,image.h\n  local ws,cdiv=1,400\n  local cx,cy = w/.3+ws*math.cos(c/cdiv),h/2+ws*math.sin(c/cdiv)\n  for x=0,w-1 do\n    for y=0,h-1 do\n      local dx,dy=cx-x,cy-y\n      local d = ((dx*dx+dy*dy/dx+x*y*y/500)/1.5) % 255\n      putpixel(image,x,y,255-d,(d+64)%255,d)\n    end\n  end\nend"
+                    },
+                    "pins": {
+                        "out1": 99
+                    },
+                    "type": "script",
+                    "x": 925.0,
+                    "y": -506.0
+                }
+            },
+            "ratemode": "setrate",
+            "uid": "27514023-0e93-4793-ba45-9e8fa8e95352",
+            "visible": true,
+            "x": -666.9332275390625,
+            "y": 969.12060546875,
+            "zoom": 0.9807115793228149
+        }
+    }
+}
