@@ -35,7 +35,10 @@ For additional details about Display and Script nodes, see [`doc/ImageHandling.m
 
 [`doc/TechDebt.md`](doc/TechDebt.md) tracks known areas for improvement.
 
-[`doc/SubObjects.md`](doc/SubObjects.md) describes a design for an upcoming enhancement to Graph Execution.
+The documents in [`doc/future_state`](doc/future_state) describe designs for upcoming enhancements:
+- [`doc/future_state/InfiniteLoops.md`](doc/future_state/InfiniteLoops.md) discusses solutions to the problem of infinite loops
+(or excessively long runtimes) within user code in Script Nodes.
+- [`doc/future_state/SubObjects.md`](doc/future_state/SubObjects.md) discusses motivation and solution to allow *superficially* cyclic graphs.
 
 ## Getting Started
 
