@@ -26,6 +26,7 @@
 
 #include "Diagnostics.h"
 #include "Display.h"
+#include "GraphSnippet.h"
 #include "Library.h"
 #include "NodeTypeRegistry.h"
 #include "Project.h"
@@ -123,6 +124,10 @@ public:
     void initializeDisplayImage(const NodeTypes::Display::ImageBuffer &buffer, NodeTypes::Display::Image &image);
     uint64_t getFrameWaitCount() const noexcept { return metrics_.frameWaitCount; }
 
+    void setGraphSnippet(std::shared_ptr<GraphSnippet> snippet) { graphSnippet_ = snippet; }
+    std::shared_ptr<GraphSnippet> getGraphSnippet() { return graphSnippet_; }
+    void clearGraphSnippet() { graphSnippet_ = nullptr; }
+
 private:
     static inline App *appInstance_ = nullptr;
     void showImGui();
@@ -138,6 +143,7 @@ private:
     bool closeRequested_ = false;
     bool closeConfirmed_ = false;
     ChangeTrackingSettings changeTrackingSettings_{};
+    std::shared_ptr<GraphSnippet> graphSnippet_{};
 
     // registries
     NodeTypeRegistry nodeTypeRegistry_;

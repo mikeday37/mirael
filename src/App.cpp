@@ -441,6 +441,11 @@ void App::showImGui()
         ImGui::ShowDemoWindow(&mainWindowSettings_.demo);
     }
 
+    // clear graph snippet if we have a text copy buffer, otherwise it will feel like two independent copy buffers
+    const char *textCopyBuffer = ImGui::GetClipboardText();
+    if (textCopyBuffer && std::strlen(textCopyBuffer) > 0 && getGraphSnippet())
+        clearGraphSnippet();
+
     if (closeRequested_) {
         closeRequested_ = false;
         if (getProject().isModified()) {

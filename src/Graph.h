@@ -2,12 +2,14 @@
 
 #include <memory>
 #include <nlohmann/json.hpp>
+#include <span>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 
 #include "data.h"
+#include "GraphSnippet.h"
 #include "Node.h"
 #include "Runner.h"
 
@@ -149,12 +151,16 @@ private:
     SelectionStatus selectionStatus_ = SelectionStatus::None;
     std::optional<NodeId> selectedNodeId_;
     std::optional<LinkId> selectedLinkId_;
+    std::optional<std::vector<NodeId>> pendingNodeSelection_;
     void processSelectionState(); // called within ne::Begin()/::End()
 
     void showNodesAndLinks();
 
     void removeNode(NodeId nodeId);
     void onNodeAdded(Node *node);
+
+    std::shared_ptr<GraphSnippet> buildSnippet(std::span<NodeId> nodeIds) const;
+    void pasteSnippet(const GraphSnippet &snippet);
 };
 
 } // namespace Mirael

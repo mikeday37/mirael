@@ -158,6 +158,17 @@ std::unique_ptr<Node> Node::deserialize(Graph &owner, NodeId id, const nlohmann:
     return node;
 }
 
+std::unique_ptr<Node> Node::createNewFromSnippet(Graph &owner, const GraphSnippet::NodeInfo &snippetNodeInfo, ImVec2 offset)
+{
+    auto node            = App::get().nodeTypes().createNode(snippetNodeInfo.type);
+    auto newNodeId       = static_cast<NodeId>(owner.getNextElementId());
+    node->pos_           = {snippetNodeInfo.pos.x + offset.x, snippetNodeInfo.pos.y + offset.y};
+    node->pendingSetPos_ = node->pos_;
+    node->onDeserialize(snippetNodeInfo.config);
+    node->init(owner, newNodeId, snippetNodeInfo.type);
+    return node;
+}
+
 void Node::truncatePinKeysToConfigured()
 {
     std::unordered_set<std::string> danglingPinKeys{};

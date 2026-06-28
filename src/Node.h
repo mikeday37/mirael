@@ -9,6 +9,7 @@
 #include <xutility>
 
 #include "data.h"
+#include "GraphSnippet.h"
 #include "NodeCore.h"
 #include "util.h"
 
@@ -30,9 +31,11 @@ public:
 
     bool isDeserializing() const { return deserializing_; }
 
-    const Graph &getGraph() const {
+    const Graph &getGraph() const
+    {
         assert(graph_); // it is an error to call getGraph before init() sets the graph_ pointer.
-        return *graph_; }
+        return *graph_;
+    }
 
 protected:
     virtual void onDeserialize(const nlohmann::json &j) {}
@@ -70,6 +73,8 @@ private:
     void serialize(nlohmann::json &j) const;
     static std::unique_ptr<Node> deserialize(Graph &owner, NodeId id, const nlohmann::json &j);
     bool deserializing_ = false;
+
+    static std::unique_ptr<Node> createNewFromSnippet(Graph &owner, const GraphSnippet::NodeInfo &snippetNodeInfo, ImVec2 offset);
 
     ImVec2 pos_;
     std::optional<ImVec2> pendingSetPos_{};

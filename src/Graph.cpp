@@ -705,6 +705,13 @@ void Graph::showNodesAndLinks()
         ne::Link(static_cast<ne::LinkId>(linkId), link.a.pin, link.b.pin);
     }
 
+    if (pendingNodeSelection_) {
+        ne::ClearSelection();
+        for (auto nodeId : *pendingNodeSelection_)
+            ne::SelectNode(static_cast<ne::NodeId>(nodeId), true);
+        pendingNodeSelection_.reset();
+    }
+
     processSelectionState();
 
     if (ne::BeginCreate()) {
@@ -769,6 +776,36 @@ void Graph::showNodesAndLinks()
 
         ne::EndDelete();
     }
+
+    if (ne::BeginShortcut()) {
+        bool cut  = ne::AcceptCut();
+        bool copy = !cut && ne::AcceptCopy();
+
+        if (cut || copy) {
+            std::vector<ne::NodeId> rawNodeIds(ne::GetActionContextNodes(nullptr, 0));
+            ne::GetActionContextNodes(rawNodeIds.data(), static_cast<int>(rawNodeIds.size()));
+            std::vector<NodeId> nodeIds;
+            nodeIds.reserve(rawNodeIds.size());
+            for (auto id : rawNodeIds)
+                nodeIds.push_back(static_cast<NodeId>(id));
+            auto snippet = buildSnippet(nodeIds);
+            ImGui::SetClipboardText(""); // TODO: adding a string representation would enable copying across Mirael instances
+            App::get().setGraphSnippet(snippet);
+            if (cut && snippet) {
+                ne::ClearSelection();
+                for (const auto &[nodeId, nodeInfo] : snippet->nodes)
+                    removeNode(nodeId);
+                if (!snippet->nodes.empty())
+                    raiseModified(ChangeImpact::RemoveNode);
+            }
+        } else if (ne::AcceptPaste()) {
+            auto snippet = App::get().getGraphSnippet();
+            if (snippet)
+                pasteSnippet(*snippet);
+        }
+
+        ne::EndShortcut();
+    }
 }
 
 void Graph::removeNode(NodeId nodeId)
@@ -794,6 +831,124 @@ void Graph::onNodeAdded(Node *node)
     auto [it, inserted] = pendingDelta_->addedCores.try_emplace(node->id_, std::move(core));
     assert(inserted);
     planDirty_ = true;
+}
+
+std::shared_ptr<GraphSnippet> Graph::buildSnippet(std::span<NodeId> nodeIds) const
+{
+    if (nodeIds.empty())
+        return nullptr;
+
+    auto snippet = std::make_shared<GraphSnippet>();
+
+    snippet->sourceGraphId = id_;
+
+    std::optional<ImVec2> minCorner, maxCorner;
+
+    // build node and pin info
+    for (auto nodeId : nodeIds) {
+        const auto &node = nodes_.at(nodeId);
+        auto &nodeInfo   = snippet->nodes[nodeId];
+        nodeInfo.type    = node->typeName_;
+        nodeInfo.pos     = node->pos_;
+        node->onSerialize(nodeInfo.config);
+        auto &pins = nodeInfo.pins;
+        for (const auto &[pinKey, pinId] : node->pinKeyToId_) {
+            auto &pinInfo  = pins[pinId];
+            pinInfo.key    = pinKey;
+            pinInfo.config = node->pinIdToConfig_.at(pinId);
+        }
+
+        ImVec2 size = ne::GetNodeSize(static_cast<ne::NodeId>(nodeId));
+        ImVec2 lr   = {node->pos_.x + size.x, node->pos_.y + size.y};
+
+        if (minCorner)
+            minCorner = {std::min(minCorner->x, node->pos_.x), std::min(minCorner->y, node->pos_.y)};
+        else
+            minCorner = node->pos_;
+
+        if (maxCorner)
+            maxCorner = {std::max(maxCorner->x, lr.x), std::max(maxCorner->y, lr.y)};
+        else
+            maxCorner = lr;
+    }
+
+    assert(minCorner && maxCorner);
+    snippet->center = {(minCorner->x + maxCorner->x) / 2.0f, (minCorner->y + maxCorner->y) / 2.0f};
+
+    // build links and incomingNodes
+    for (const auto &[nodeId, nodeInfo] : snippet->nodes)
+        for (const auto &[pinId, pinInfo] : nodeInfo.pins)
+            if (pinInfo.config.direction == PinDirection::Input)
+                for (auto linkId : pinLinks_.at(pinId)) {
+                    const auto &link = links_.at(linkId);
+                    assert(link.b.node == nodeId && link.b.pin == pinId);
+                    snippet->links.try_emplace(linkId, link);
+                    if (!snippet->nodes.contains(link.a.node))
+                        snippet->incomingNodes.insert(link.a.node);
+                }
+
+    return snippet;
+}
+
+void Graph::pasteSnippet(const GraphSnippet &snippet)
+{
+    if (snippet.nodes.empty())
+        return;
+
+    ImVec2 at     = ImGui::GetMousePos();
+    ImVec2 offset = {at.x - snippet.center.x, at.y - snippet.center.y};
+
+    std::unordered_map<NodeId, NodeId> oldNodeToNew;
+    std::unordered_map<PinId, PinId> oldPinToNew;
+
+    // first create all the nodes
+    for (const auto &[oldNodeId, oldNodeInfo] : snippet.nodes) {
+        auto node = Node::createNewFromSnippet(*this, oldNodeInfo, offset);
+        for (const auto &[oldPinId, oldPinInfo] : oldNodeInfo.pins) {
+            const auto &pinKey    = oldPinInfo.key;
+            oldPinToNew[oldPinId] = node->pinKeyToId_.at(pinKey);
+            // NOTE: the above relies on the expected invariant that a derived node's custom config completely determines its pins
+            // TODO: add doc: AddingNodeTypes.md, describing how to correctly derive Node Types, including the above required invariant
+        }
+        auto newNodeId      = node->getId();
+        auto [it, inserted] = nodes_.try_emplace(newNodeId, std::move(node));
+        assert(inserted);
+        oldNodeToNew[oldNodeId] = newNodeId;
+        onNodeAdded(it->second.get());
+    }
+
+    auto mapLink = [&](const PinRef &old) -> PinRef {
+        return PinRef{.node = oldNodeToNew.at(old.node), .pin = oldPinToNew.at(old.pin)};
+    };
+
+    // then create the links
+    bool addedLink = false;
+    for (const auto &[oldLinkId, oldLink] : snippet.links) {
+        Link newLink{};
+        if (snippet.incomingNodes.contains(oldLink.a.node)) {
+            // links to "incoming" nodes (outside the snippet) must only be added in the same graph if the node and pin still exist
+            if (snippet.sourceGraphId == id_ && nodes_.contains(oldLink.a.node) && pins_.contains(oldLink.a.pin))
+                newLink.a = oldLink.a;
+            else
+                continue;
+        } else
+            newLink.a = mapLink(oldLink.a);
+        newLink.b = mapLink(oldLink.b);
+        addLink(std::move(newLink));
+        addedLink = true;
+    }
+
+    raiseModified(ChangeImpact::AddNode);
+    if (addedLink)
+        raiseModified(ChangeImpact::AddLink);
+
+    // select what we pasted -- can't do this immediately, have to queue it for next frame
+    ne::ClearSelection();
+    std::vector<NodeId> newNodes;
+    newNodes.reserve(oldNodeToNew.size());
+    for (const auto &[oldNodeId, newNodeId] : oldNodeToNew)
+        newNodes.emplace_back(newNodeId);
+    pendingNodeSelection_ = std::move(newNodes);
 }
 
 void Graph::EditorDeleter::operator()(EditorContext *context) const { ne::DestroyEditor(context); }
