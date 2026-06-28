@@ -12,8 +12,8 @@ debug.  All such phases occur simultaneously.
 
 ## Project Status
 
-This is a very early prototype - basic quality-of-life features like cut/copy/paste and undo/redo are not yet implemented.
-Only Windows is currently supported.
+This is an early prototype - some quality-of-life features like undo/redo are not yet implemented, and only the most basic form
+of image output is implemented.  Only Windows is currently supported.
 
 However, the core premise is already proven:  The system is 'live' in the sense that you can freely modify the dataflow graph,
 *including code within Script nodes*, at any time and see the results instantly (within the next frame, without dropping frames),
