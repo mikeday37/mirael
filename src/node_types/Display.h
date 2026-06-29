@@ -33,11 +33,12 @@ public:
         vk::raii::ImageView view      = nullptr;
         VkDescriptorSet descriptor    = VK_NULL_HANDLE;
         uint32_t rowPitch             = 0;
+        bool written                  = false;
         std::function<void()> cleanup = nullptr; // TODO: this doesn't feel right - reconsider how this cleans up
     };
 
     struct ImageBuffer {               // shared by App and Node, can outlive Node, App won't destroy until !live
-        Dimensions dim;                // immutable upon creation by UI
+        Dimensions dim{};              // immutable upon creation by UI
         std::atomic<bool> live = true; // core -> node, set to false when the core no longer needs it (wrong dimensions or overwritten)
         uint64_t lastDisplayFrameWaitCount = 0; // used to ensure no longer in use before destruction
         TripleBuffer<Image> images{};           // all images in the buffer have the same dimensions

@@ -73,10 +73,13 @@ void Display::displayLatestImage()
     assert(currentImageBuffer_ && requestedDimensions_ && *requestedDimensions_ == currentImageBuffer_->dim);
 
     // draw the latest image
-    // TODO: avoid drawing initial image the core hasn't written to
     currentImageBuffer_->lastDisplayFrameWaitCount = App::get().getFrameWaitCount();
     auto result                                    = currentImageBuffer_->images.fetchLatestReadSlot();
     ImVec2 size{static_cast<float>(currentImageBuffer_->dim.width), static_cast<float>(currentImageBuffer_->dim.height)};
+    if (!result.slot.written) {
+        ImGui::Dummy(size);
+        return;
+    }
     auto *dl = ImGui::GetWindowDrawList();
     dl->AddCallback(io.DrawCallback_SetSamplerNearest, nullptr); // TODO: may want to use linear if zoomed out
     ImGui::Image(reinterpret_cast<ImTextureID>(result.slot.descriptor), size);
@@ -136,6 +139,7 @@ void Display::Core::onFrame(const RunContext &context)
             const auto *end         = dest + info.dim.height * slot.rowPitch;
             for (; dest < end; dest += slot.rowPitch, src += srcPitch)
                 std::memcpy(dest, src, srcPitch);
+            slot.written = true;
             // the above assumes no row padding, which the UI is currently expected to ensure
             buffer->images.commitWrite();
         } else {
