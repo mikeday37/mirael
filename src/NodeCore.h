@@ -7,13 +7,19 @@
 
 #include "BucketCycle.h"
 #include "data.h"
+#include "FrameMetricsBucket.h"
 #include "ValueBuffer.h"
 
 namespace Mirael
 {
 
+class Graph;
 class Runner;
 class ScriptEnv;
+
+struct CoreInternalChannel {
+    BucketCycle<FrameMetricsBucket> frameMetrics;
+};
 
 class NodeCore
 {
@@ -51,28 +57,12 @@ protected:
 
     virtual void onLuaStateReset() {}; // any lua refs kept by the core must be discarded (not released) when this is called
 
+private:
+    std::shared_ptr<CoreInternalChannel> internalChannel_{};
+
+    friend Graph;
     friend Runner;
     friend ScriptEnv;
-};
-
-struct FrameMetricsBucket {
-    uint64_t frameCount = 0, totalFrameNs = 0, minFrameNs = 0, maxFrameNs = 0;
-    void fold(uint64_t frameNs, bool reset)
-    {
-        if (reset) {
-            frameCount   = 1;
-            totalFrameNs = minFrameNs = maxFrameNs = frameNs;
-        } else {
-            frameCount++;
-            totalFrameNs += frameNs;
-            minFrameNs = std::min(minFrameNs, frameNs);
-            maxFrameNs = std::max(maxFrameNs, frameNs);
-        }
-    }
-};
-
-struct CoreInternalChannel {
-    BucketCycle<FrameMetricsBucket> frameMetrics;
 };
 
 } // namespace Mirael

@@ -21,15 +21,10 @@ namespace Mirael
 
 using PlanVersion = uint64_t;
 
-struct CoreInfo {
-    std::unique_ptr<NodeCore> core;
-    std::shared_ptr<CoreInternalChannel> internalChannel;
-};
-
 struct ResourceDelta {
     PlanVersion version = 0;
     std::vector<NodeId> deletedCores;
-    std::unordered_map<NodeId, CoreInfo> addedCores;
+    std::unordered_map<NodeId, std::unique_ptr<NodeCore>> addedCores;
     std::vector<PinId> deletedOutputs;
     std::vector<PinId> addedOutputs;
     std::optional<std::string>
@@ -155,7 +150,7 @@ private:
     void raiseLuaStateReset();
 
     // our thread
-    std::unordered_map<NodeId, CoreInfo> cores_;
+    std::unordered_map<NodeId, std::unique_ptr<NodeCore>> cores_;
     std::unordered_map<PinId, std::unique_ptr<ValueBuffer>> outputPinBuffers_;
     std::unordered_map<PinId, std::vector<const ValueBuffer *>> inputsBackingVectors_;
     NodeCore::RunContext runContext_{};

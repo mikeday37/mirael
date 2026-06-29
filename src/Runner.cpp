@@ -154,12 +154,12 @@ void Runner::executeFrame(std::stop_token st)
             scriptEnv_->setCurrentNode(it->first);
 
             const auto t1 = frameClock_t::now();
-            it->second.core->onFrame(runContext_);
+            it->second->onFrame(runContext_);
             std::chrono::nanoseconds dur = frameClock_t::now() - t1;
 
             uint64_t durNs = dur.count();
             frameCoreTotalExecutionTimeNs_ += durNs;
-            auto fetchResult = it->second.internalChannel->frameMetrics.fetchFoldBucket();
+            auto fetchResult = it->second->internalChannel_->frameMetrics.fetchFoldBucket();
             fetchResult.bucket.fold(durNs, fetchResult.isNew);
         }
         if (st.stop_requested())
@@ -189,8 +189,8 @@ void Runner::applyDelta(ResourceDelta &delta)
         assert(inserted);
     }
 
-    for (auto &[addedCoreNodeId, coreInfo] : delta.addedCores) {
-        auto [it, inserted] = cores_.try_emplace(addedCoreNodeId, std::move(coreInfo));
+    for (auto &[addedCoreNodeId, core] : delta.addedCores) {
+        auto [it, inserted] = cores_.try_emplace(addedCoreNodeId, std::move(core));
         assert(inserted);
     }
 }
@@ -232,8 +232,8 @@ void Runner::raiseLuaStateReset()
     for (auto &[outputPinId, valueBuffer] : outputPinBuffers_)
         valueBuffer->onNewLuaState(scriptEnv_->L); // doing this here is another consequence of TD1 (see TechDebt.md)
 
-    for (auto &[nodeId, coreInfo] : cores_)
-        coreInfo.core->onLuaStateReset();
+    for (auto &[nodeId, core] : cores_)
+        core->onLuaStateReset();
 }
 
 } // namespace Mirael
