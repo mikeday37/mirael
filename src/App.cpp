@@ -10,10 +10,9 @@
 #include <uuid.h>
 #include <vector>
 
-#include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
-#include "imgui_internal.h"
+#include "implot.h"
 
 #include "App.h"
 #include "Fonts.h"
@@ -102,6 +101,11 @@ void App::preInitImGui()
         ImGuiStyle &style                 = ImGui::GetStyle();
         style.WindowRounding              = 0.0f;
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+    }
+
+    auto imPlotContext = ImPlot::CreateContext();
+    if (!imPlotContext) {
+        throw std::runtime_error("Unable to create ImPlot context.");
     }
 }
 
@@ -254,6 +258,8 @@ void App::cleanup()
     assert(imageBufferGraveyard_.empty());
 
     NfdShim::Quit();
+
+    ImPlot::DestroyContext();
 
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -440,6 +446,9 @@ void App::showImGui()
     if (mainWindowSettings_.demo) {
         ImGui::ShowDemoWindow(&mainWindowSettings_.demo);
     }
+    if (mainWindowSettings_.implotDemo) {
+        ImPlot::ShowDemoWindow(&mainWindowSettings_.implotDemo);
+    }
 
     // clear graph snippet if we have a text copy buffer, otherwise it will feel like two independent copy buffers
     const char *textCopyBuffer = ImGui::GetClipboardText();
@@ -526,6 +535,7 @@ void App::imGuiSettings_WriteAll(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *h
     out_buf->appendf("Settings=%d\n", (int)settings.settings);
     out_buf->appendf("Diagnostics=%d\n", (int)settings.diagnostics);
     out_buf->appendf("ImGuiDemo=%d\n", (int)settings.demo);
+    out_buf->appendf("ImPlotDemo=%d\n", (int)settings.implotDemo);
     if (settings.lastProjectPath)
         out_buf->appendf("LastProjectPath=%s\n", settings.lastProjectPath->string().c_str());
     if (settings.lastFocusedGraphId)
@@ -544,7 +554,7 @@ void App::imGuiSettings_ReadLine(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *h
     App &app  = *static_cast<App *>(handler->UserData);
     auto &mws = app.mainWindowSettings_;
 
-    int x, y, width, height, maximized, fullscreen, library, properties, settings, diagnostics, demo;
+    int x, y, width, height, maximized, fullscreen, library, properties, settings, diagnostics, demo, implotDemo;
     uint64_t lastGraphId;
     if (sscanf_s(line, "Pos=%d,%d", &x, &y) == 2) {
         mws.x = x;
@@ -566,6 +576,8 @@ void App::imGuiSettings_ReadLine(ImGuiContext * /*ctx*/, ImGuiSettingsHandler *h
         mws.diagnostics = diagnostics != 0;
     } else if (sscanf_s(line, "ImGuiDemo=%d", &demo) == 1) {
         mws.demo = demo != 0;
+    } else if (sscanf_s(line, "ImPlotDemo=%d", &implotDemo) == 1) {
+        mws.implotDemo = implotDemo != 0;
     } else if (sscanf_s(line, "LastFocusedGraphId=%llu", &lastGraphId) == 1) {
         mws.lastFocusedGraphId = static_cast<GraphId>(lastGraphId);
     } else {

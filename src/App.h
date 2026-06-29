@@ -82,6 +82,7 @@ public:
     bool *getDiagnosticsFlag() { return &mainWindowSettings_.diagnostics; }
     bool *getFullscreenFlag() { return &mainWindowSettings_.fullscreen; }
     bool *getImGuiDemoFlag() { return &mainWindowSettings_.demo; }
+    bool *getImPlotDemoFlag() { return &mainWindowSettings_.implotDemo; }
     void applyFullscreenSetting();
 
     void setDestructiveAction(std::string label, std::string message, std::function<void()> postConfirmAction,
@@ -164,7 +165,7 @@ private:
     //
     struct MainWindowSettings {
         std::optional<int> x, y, width, height; // screen coordinates
-        bool maximized, fullscreen, library, properties, settings, diagnostics, demo, firstRun;
+        bool maximized, fullscreen, library, properties, settings, diagnostics, demo, implotDemo, firstRun;
         std::optional<std::filesystem::path> lastProjectPath{};
         std::optional<GraphId> lastFocusedGraphId{};
     };
@@ -175,6 +176,7 @@ private:
                                               .settings    = false,
                                               .diagnostics = false,
                                               .demo        = false,
+                                              .implotDemo  = false,
                                               .firstRun    = true};
     ImGuiSettingsHandler getImGuiSettingsHandler();
     static void imGuiSettings_WriteAll(ImGuiContext *ctx, ImGuiSettingsHandler *handler, ImGuiTextBuffer *out_buf);

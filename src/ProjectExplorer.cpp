@@ -59,6 +59,7 @@ void ProjectExplorer::show()
                 }
                 ImGui::Separator();
                 ImGui::MenuItem("Show Dear ImGui Demo", nullptr, App::get().getImGuiDemoFlag());
+                ImGui::MenuItem("Show ImPlot Demo", nullptr, App::get().getImPlotDemoFlag());
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("Help")) {

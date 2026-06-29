@@ -81,15 +81,28 @@ endfunction()
 set(IMGUI_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/imgui")
 file(GLOB IMGUI_SOURCES
 	"${IMGUI_SRC_DIR}/*.cpp"
-	"${IMGUI_SRC_DIR}/*.h"
-	"${IMGUI_SRC_DIR}/backends/imgui_impl_vulkan.*"
-	"${IMGUI_SRC_DIR}/backends/imgui_impl_glfw.*"
-	"${IMGUI_SRC_DIR}/misc/cpp/imgui_stdlib.*"
+	"${IMGUI_SRC_DIR}/backends/imgui_impl_vulkan.cpp"
+	"${IMGUI_SRC_DIR}/backends/imgui_impl_glfw.cpp"
+	"${IMGUI_SRC_DIR}/misc/cpp/imgui_stdlib.cpp"
 )
 set_source_files_properties(${IMGUI_SOURCES} PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
 set(IMGUI_INCLUDES
 	"${IMGUI_SRC_DIR}"
 	"${IMGUI_SRC_DIR}/backends"
+)
+
+
+#
+# === ImPlot ===
+#
+
+set(IMPLOT_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/implot")
+file(GLOB IMPLOT_SOURCES
+	"${IMPLOT_SRC_DIR}/*.cpp"
+)
+set_source_files_properties(${IMPLOT_SOURCES} PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+set(IMPLOT_INCLUDES
+	"${IMPLOT_SRC_DIR}"
 )
 
 
@@ -183,6 +196,7 @@ set_source_files_properties("${MIRAEL_SRC_DIR}/vma.cpp" PROPERTIES SKIP_PRECOMPI
 add_executable (Mirael
 	${MIRAEL_SOURCES}
 	${IMGUI_SOURCES}
+	${IMPLOT_SOURCES}
 	${INE_SOURCES}
 	${MIRAEL_EMBEDDED_RESOURCES}
 )
@@ -209,6 +223,7 @@ target_compile_definitions(Mirael PRIVATE
 target_include_directories(Mirael PRIVATE
 	${MIRAEL_INCLUDES}
 	${IMGUI_INCLUDES}
+	${IMPLOT_INCLUDES}
 	${INE_INCLUDES}
 	${OTHER_INCLUDES}
 )
