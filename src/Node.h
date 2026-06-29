@@ -84,6 +84,8 @@ private:
     void truncatePinKeysToConfigured();
     void removeAllPins();
 
+    std::shared_ptr<CoreInternalChannel> internalChannel_{};
+
     friend Graph;
 };
 

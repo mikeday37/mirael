@@ -827,8 +827,10 @@ void Graph::onNodeAdded(Node *node)
     auto core = node->createCore();
     if (!core)
         return;
+    node->internalChannel_ = std::make_shared<CoreInternalChannel>();
     establishDelta();
-    auto [it, inserted] = pendingDelta_->addedCores.try_emplace(node->id_, std::move(core));
+    auto [it, inserted] =
+        pendingDelta_->addedCores.try_emplace(node->id_, CoreInfo{.core = std::move(core), .internalChannel = node->internalChannel_});
     assert(inserted);
     planDirty_ = true;
 }

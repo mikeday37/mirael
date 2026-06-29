@@ -33,11 +33,18 @@ void Runner::mainLoop(std::stop_token st)
 
     while (!st.stop_requested()) {
         // start a frame and remember when we started it
-        const auto frameStart = frameClock_t::now();
+        const auto frameStart          = frameClock_t::now();
+        frameCoreTotalExecutionTimeNs_ = 0;
+
         executeFrame(st);
+
+        const auto t1                = frameClock_t::now();
+        std::chrono::nanoseconds dur = t1 - frameStart;
 
         // enter next frame wait loop
         do {
+            const auto t2 = frameClock_t::now();
+
             // early out if stop requested
             if (st.stop_requested())
                 return;
@@ -45,7 +52,12 @@ void Runner::mainLoop(std::stop_token st)
             // always update plan and run rate after frame and during each wakeup during the wait to next frame
             updatePlan();
             updateRunRate();
+
+            const auto t3 = frameClock_t::now();
+            dur += t3 - t2;
         } while (!waitForNextFrame(frameStart));
+
+        foldFrameMetrics(frameCoreTotalExecutionTimeNs_, dur.count() - frameCoreTotalExecutionTimeNs_);
     }
 }
 
@@ -53,7 +65,7 @@ bool Runner::waitForNextFrame(frameClock_t::time_point frameStart)
 {
     std::optional<float> fps;
 
-    auto waitForeverOrWokenUp = [this]() {
+    auto waitForeverOrUntilWokenUp = [this]() {
         std::unique_lock lock(frameWaitMutex_);
         frameWaitCV_.wait(lock, [this]() { return frameWaitWakeUp_; });
         frameWaitWakeUp_ = false;
@@ -64,7 +76,7 @@ bool Runner::waitForNextFrame(frameClock_t::time_point frameStart)
         return true; // no delay, immediately run next frame
 
     case RunRateMode::Disabled: {
-        waitForeverOrWokenUp();
+        waitForeverOrUntilWokenUp();
         return false; // delay forever (unless or until run rate setting changes)
     }
 
@@ -86,7 +98,7 @@ bool Runner::waitForNextFrame(frameClock_t::time_point frameStart)
 
     // if the framerate is degenerate (negative, too small, or not finite) wait forever or until woken (to allow setting change)
     if (!std::isfinite(*fps) || *fps <= 1e-8f) {
-        waitForeverOrWokenUp();
+        waitForeverOrUntilWokenUp();
         return false;
     }
 
@@ -140,7 +152,15 @@ void Runner::executeFrame(std::stop_token st)
         auto it            = cores_.find(nodeId);
         if (it != cores_.end()) {
             scriptEnv_->setCurrentNode(it->first);
-            it->second->onFrame(runContext_);
+
+            const auto t1 = frameClock_t::now();
+            it->second.core->onFrame(runContext_);
+            std::chrono::nanoseconds dur = frameClock_t::now() - t1;
+
+            uint64_t durNs = dur.count();
+            frameCoreTotalExecutionTimeNs_ += durNs;
+            auto fetchResult = it->second.internalChannel->frameMetrics.fetchFoldBucket();
+            fetchResult.bucket.fold(durNs, fetchResult.isNew);
         }
         if (st.stop_requested())
             return;
@@ -169,8 +189,8 @@ void Runner::applyDelta(ResourceDelta &delta)
         assert(inserted);
     }
 
-    for (auto &[addedCoreNodeId, core] : delta.addedCores) {
-        auto [it, inserted] = cores_.try_emplace(addedCoreNodeId, std::move(core));
+    for (auto &[addedCoreNodeId, coreInfo] : delta.addedCores) {
+        auto [it, inserted] = cores_.try_emplace(addedCoreNodeId, std::move(coreInfo));
         assert(inserted);
     }
 }
@@ -212,8 +232,8 @@ void Runner::raiseLuaStateReset()
     for (auto &[outputPinId, valueBuffer] : outputPinBuffers_)
         valueBuffer->onNewLuaState(scriptEnv_->L); // doing this here is another consequence of TD1 (see TechDebt.md)
 
-    for (auto &[nodeId, core] : cores_)
-        core->onLuaStateReset();
+    for (auto &[nodeId, coreInfo] : cores_)
+        coreInfo.core->onLuaStateReset();
 }
 
 } // namespace Mirael

@@ -5,6 +5,7 @@
 
 #include "lua.hpp"
 
+#include "BucketCycle.h"
 #include "data.h"
 #include "ValueBuffer.h"
 
@@ -52,6 +53,26 @@ protected:
 
     friend Runner;
     friend ScriptEnv;
+};
+
+struct FrameMetricsBucket {
+    uint64_t frameCount = 0, totalFrameNs = 0, minFrameNs = 0, maxFrameNs = 0;
+    void fold(uint64_t frameNs, bool reset)
+    {
+        if (reset) {
+            frameCount   = 1;
+            totalFrameNs = minFrameNs = maxFrameNs = frameNs;
+        } else {
+            frameCount++;
+            totalFrameNs += frameNs;
+            minFrameNs = std::min(minFrameNs, frameNs);
+            maxFrameNs = std::max(maxFrameNs, frameNs);
+        }
+    }
+};
+
+struct CoreInternalChannel {
+    BucketCycle<FrameMetricsBucket> frameMetrics;
 };
 
 } // namespace Mirael

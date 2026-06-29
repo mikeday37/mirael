@@ -21,10 +21,15 @@ namespace Mirael
 
 using PlanVersion = uint64_t;
 
+struct CoreInfo {
+    std::unique_ptr<NodeCore> core;
+    std::shared_ptr<CoreInternalChannel> internalChannel;
+};
+
 struct ResourceDelta {
     PlanVersion version = 0;
     std::vector<NodeId> deletedCores;
-    std::unordered_map<NodeId, std::unique_ptr<NodeCore>> addedCores;
+    std::unordered_map<NodeId, CoreInfo> addedCores;
     std::vector<PinId> deletedOutputs;
     std::vector<PinId> addedOutputs;
     std::optional<std::string>
@@ -91,13 +96,30 @@ public:
     }
     std::unique_ptr<std::string> tryAcceptInitScriptResult() { return initScriptResult_.tryAcceptLatest(); }
 
+    struct RunnerMetricsBuckets {
+        FrameMetricsBucket coreExecution;
+        FrameMetricsBucket runnerOverhead;
+    };
+    const RunnerMetricsBuckets &getMetricsBuckets() const { return metrics_.getReadBucket(); }
+    bool releaseMetricsBuckets() { return metrics_.releaseReadBucket(); }
+
 private:
     // Graph API communications channels/buffer
-    moodycamel::ReaderWriterQueue<std::unique_ptr<ResourceDelta>> deltaQueue_{};
+    moodycamel::ReaderWriterQueue<std::unique_ptr<ResourceDelta>> deltaQueue_{}; // incoming
     std::unique_ptr<ResourceDelta> pendingFutureDelta_{}; // used to store up to 1 dequeued delta for a future plan version
-    Mailbox<ExecutionPlan> pendingPlan_{};
+    Mailbox<ExecutionPlan> pendingPlan_{};                // incoming
     std::unique_ptr<ExecutionPlan> currentPlan_{};
-    Mailbox<std::string> initScriptResult_{};
+    Mailbox<std::string> initScriptResult_{};     // outgoing
+    BucketCycle<RunnerMetricsBuckets> metrics_{}; // outgoing
+    uint64_t frameCoreTotalExecutionTimeNs_ = 0;
+
+    // metrics handling
+    void foldFrameMetrics(uint64_t coreExecutionTotalNs, uint64_t runnerOverheadNs)
+    {
+        auto result = metrics_.fetchFoldBucket();
+        result.bucket.coreExecution.fold(coreExecutionTotalNs, result.isNew);
+        result.bucket.runnerOverhead.fold(runnerOverheadNs, result.isNew);
+    }
 
     // Receiving Graph Communications
     bool try_dequeueDelta(std::unique_ptr<ResourceDelta> &out) { return deltaQueue_.try_dequeue(out); }
@@ -133,12 +155,12 @@ private:
     void raiseLuaStateReset();
 
     // our thread
-    std::unordered_map<NodeId, std::unique_ptr<NodeCore>> cores_;
+    std::unordered_map<NodeId, CoreInfo> cores_;
     std::unordered_map<PinId, std::unique_ptr<ValueBuffer>> outputPinBuffers_;
     std::unordered_map<PinId, std::vector<const ValueBuffer *>> inputsBackingVectors_;
     NodeCore::RunContext runContext_{};
     RunRateSetting runRate_ = {.rateMode = RunRateMode::Disabled, .desiredFramesPerSecond = 60.0f};
-    Mailbox<RunRateSetting> pendingRunRate_;
+    Mailbox<RunRateSetting> pendingRunRate_; // incoming
     std::optional<std::jthread> thread_{};
 
     // frame wait handling
